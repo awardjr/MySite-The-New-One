@@ -1,15 +1,22 @@
 # MySite-The-New-One
+
 Rebuild from the ground up of my personal site
 
 ## Tools (For Now)
-* Vite
-* Svelte
-* SvelteKit
-* Bulma
+
+- Vite
+- Svelte
+- SvelteKit
+- Bulma
 
 ## Languages
-* TypeScript Frontend
-* TBD Backend, if needed
+
+- TypeScript Frontend
+- TBD Backend, if needed
 
 ## IDE
-* JetBrains Webstorm
+
+- JetBrains Webstorm
+
+## Main Development Operating System
+- CachyOS

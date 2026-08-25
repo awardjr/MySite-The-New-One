@@ -7,7 +7,7 @@ Rebuild from the ground up of my personal site
 - Vite
 - Svelte
 - SvelteKit
-- Bulma
+- TailwindCSS (Sorry, I caved)
 
 ## Languages
 
@@ -19,4 +19,5 @@ Rebuild from the ground up of my personal site
 - JetBrains Webstorm
 
 ## Main Development Operating System
+
 - CachyOS

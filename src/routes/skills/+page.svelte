@@ -1,16 +1,71 @@
 <script lang="ts">
+	// Add, remove, or edit categories/skills below to update this page.
+	const skillCategories = [
+		{
+			category: 'Languages',
+			skills: ['HTML', 'JavaScript', 'CSS', 'JSON', 'XML', 'SQL', 'Java', 'PHP', 'C#', '.NET']
+		},
+		{
+			category: 'Frameworks & CMS',
+			skills: ['Node.js', 'Laravel', 'ExpressionEngine', 'Craft CMS', 'WordPress', 'Unity3D']
+		},
+		{
+			category: 'Databases',
+			skills: ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis']
+		},
+		{
+			category: 'Cloud & Infrastructure',
+			skills: ['AWS', 'Docker', 'Apache', 'Nginx']
+		},
+		{
+			category: 'Auth & Integrations',
+			skills: ['SSO', 'OAuth2']
+		},
+		{
+			category: 'Tools & Practices',
+			skills: ['Git', 'Unit Testing', 'Visual Studio', 'Jetbrains IDEs']
+		},
+		{
+			category: 'Operating Systems',
+			skills: ['Microsoft Windows', 'Linux', 'MacOS']
+		}
+		// { category: 'Another Category', skills: ['Skill A', 'Skill B'] }
+	];
 </script>
 
 <svelte:head>
 	<title>Skills - Arthur Ward Jr</title>
+	<meta name="description" content="Skills - Arthur Ward Jr" />
 </svelte:head>
 
-<section class="space-y-4">
-	<h1 class="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-gray-50">
-		Skills
-	</h1>
-	<p class="text-sm leading-relaxed text-gray-600 sm:text-base dark:text-gray-400">
-		Debating on if this is a valuable page. I feel this is better noted as a subsection but we'll
-		see. I don't want skill section to feel like a locked in part because even this site is new tech
-	</p>
+<section class="py-6 sm:py-10">
+	<div class="space-y-1">
+		<h1 class="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl dark:text-gray-50 hotdog:text-yellow-300">
+			Skills
+		</h1>
+		<p class="text-base text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">
+			A categorized overview of the languages, tools, and technologies I work with.
+		</p>
+	</div>
+
+	<div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
+		{#each skillCategories as { category, skills } (category)}
+			<div
+				class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950 hotdog:border-black hotdog:bg-yellow-300"
+			>
+				<h2 class="text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400 hotdog:text-red-800">
+					{category}
+				</h2>
+				<div class="mt-3 flex flex-wrap gap-2">
+					{#each skills as skill (skill)}
+						<span
+							class="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700 dark:bg-gray-900 dark:text-gray-300 hotdog:bg-red-600 hotdog:text-yellow-200"
+						>
+							{skill}
+						</span>
+					{/each}
+				</div>
+			</div>
+		{/each}
+	</div>
 </section>

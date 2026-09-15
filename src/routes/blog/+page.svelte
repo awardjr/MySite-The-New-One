@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { openLightbox } from '$lib/lightbox.svelte';
-	import { posts } from '$lib/posts';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+	let { posts } = $derived(data);
 
 	let expanded: Record<string, boolean> = $state({});
 

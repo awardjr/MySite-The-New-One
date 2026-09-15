@@ -1,14 +1,22 @@
 <script lang="ts">
 	import { openLightbox } from '$lib/lightbox.svelte';
+	import type { PageProps } from './$types';
 
-	// Set your photo URL or path (e.g. '/profile.jpg' in the static/ folder)
-	const photoSrc = '';
-	const name = 'Arthur Ward Jr';
+	let { data }: PageProps = $props();
+	let { name, tagline, photoSrc, introParagraphs } = $derived(data.home);
+	let initials = $derived(
+		name
+			.split(/\s+/)
+			.filter(Boolean)
+			.map((part) => part[0]?.toUpperCase())
+			.slice(0, 2)
+			.join('')
+	);
 </script>
 
 <svelte:head>
-	<title>Home - Arthur Ward Jr</title>
-	<meta name="description" content="Arthur Ward Jr - Personal Homepage" />
+	<title>Home - {name}</title>
+	<meta name="description" content="{name} - Personal Homepage" />
 </svelte:head>
 
 <section class="py-6 sm:py-10">
@@ -25,17 +33,13 @@
 			</div>
 
 			<p class="text-lg font-medium text-gray-700 sm:text-xl dark:text-gray-300 hotdog:text-yellow-100">
-				Developer, creator, and builder.
+				{tagline}
 			</p>
 
 			<div class="space-y-3 text-base leading-relaxed text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">
-				<p>
-					Welcome to my website! This is where I share my work, skills, side projects, and thoughts.
-					Feel free to customize this intro with details about your background, current projects, or areas of expertise.
-				</p>
-				<p>
-					Explore the sections above to see recent works and press mentions, or head over to the contact page to get in touch.
-				</p>
+				{#each introParagraphs as paragraph, i (i)}
+					<p>{paragraph}</p>
+				{/each}
 			</div>
 		</div>
 
@@ -57,10 +61,10 @@
 					<div
 						class="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-600 sm:h-24 sm:w-24 sm:text-3xl dark:bg-gray-800 dark:text-gray-300 hotdog:bg-yellow-300 hotdog:text-red-700"
 					>
-						AW
+						{initials}
 					</div>
 					<span class="mt-3 text-xs font-medium text-gray-500 dark:text-gray-400 hotdog:text-yellow-200">
-						Set <code class="rounded bg-gray-200 px-1 py-0.5 font-mono text-[11px] dark:bg-gray-800 hotdog:bg-red-800 hotdog:text-yellow-100">photoSrc</code> to display photo
+						Set a photo in <a href="/admin/home" class="underline">the admin panel</a> to display it here
 					</span>
 				</div>
 			{/if}

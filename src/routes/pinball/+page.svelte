@@ -2,37 +2,15 @@
 	import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
 	import { openLightbox } from '$lib/lightbox.svelte';
+	import type { PageProps } from './$types';
 
-	type ModeScore = {
-		mode: string;
-		score: string;
-	};
+	let { data }: PageProps = $props();
+	let { machines } = $derived(data);
 
-	type Machine = {
-		name: string;
-		image: string;
-		highScore: string;
-		modeScores?: ModeScore[];
-	};
+	let expanded: Record<number, boolean> = $state({});
 
-	// Add your pinball machines here. `modeScores` is optional — omit it (or leave empty)
-	// if there's nothing additional to show when expanded.
-	const machines: Machine[] = [
-		{
-			name: 'Sample Machine',
-			image: '',
-			highScore: '000,000,000',
-			modeScores: [
-				{ mode: 'Mode A', score: '000,000' },
-				{ mode: 'Mode B', score: '000,000' }
-			]
-		}
-	];
-
-	let expanded: Record<string, boolean> = $state({});
-
-	function toggle(name: string) {
-		expanded[name] = !expanded[name];
+	function toggle(index: number) {
+		expanded[index] = !expanded[index];
 	}
 </script>
 
@@ -52,8 +30,8 @@
 	</div>
 
 	<div class="mt-8 space-y-6">
-		{#each machines as machine (machine.name)}
-			{@const isExpanded = !!expanded[machine.name]}
+		{#each machines as machine, i (i)}
+			{@const isExpanded = !!expanded[i]}
 			{@const hasMore = !!machine.modeScores && machine.modeScores.length > 0}
 			<div
 				class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950 hotdog:border-black hotdog:bg-yellow-300"
@@ -94,7 +72,7 @@
 						<div class="flex shrink-0 justify-end sm:justify-start">
 							<button
 								type="button"
-								onclick={() => toggle(machine.name)}
+								onclick={() => toggle(i)}
 								aria-expanded={isExpanded}
 								class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-900 hotdog:border-black hotdog:text-black hotdog:hover:bg-yellow-200"
 							>
@@ -111,7 +89,7 @@
 							High Scores by Mode
 						</h3>
 						<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-							{#each machine.modeScores ?? [] as modeScore (modeScore.mode)}
+						{#each machine.modeScores ?? [] as modeScore, j (j)}
 								<div
 									class="flex items-center justify-between rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-gray-900 hotdog:bg-red-600 hotdog:text-yellow-200"
 								>

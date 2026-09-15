@@ -3,6 +3,7 @@
 	import { faGlobe, faGamepad } from '@fortawesome/free-solid-svg-icons';
 	import { faWindows, faApple, faLinux, faPlaystation, faXbox } from '@fortawesome/free-brands-svg-icons';
 	import { openLightbox } from '$lib/lightbox.svelte';
+	import type { PageProps } from './$types';
 
 	// Map of supported platform keys to their display label and icon.
 	// Add a new entry here to support another platform, then reference its key in a work's `platforms` array.
@@ -16,27 +17,8 @@
 		switch: { label: 'Nintendo Switch', icon: faGamepad }
 	};
 
-	// Add, remove, or edit works below. `image` can be a path from static/ (e.g. '/works/my-project.png').
-	// `platforms` is a list of keys from `platformIcons` above.
-	const works: {
-		title: string;
-		description: string;
-		image: string;
-		platforms: string[];
-	}[] = [
-		{
-			title: 'Project Title',
-			description: 'A brief description of what this project is, what you built, and the technologies used.',
-			image: '',
-			platforms: ['web', 'windows', 'macos']
-		}
-		// {
-		// 	title: 'Another Project',
-		// 	description: 'Description of another project.',
-		// 	image: '/works/another-project.png',
-		// 	platforms: ['switch', 'playstation', 'xbox']
-		// }
-	];
+	let { data }: PageProps = $props();
+	let { works } = $derived(data);
 </script>
 
 <svelte:head>
@@ -53,7 +35,7 @@
 	</div>
 
 	<div class="mt-8 space-y-6">
-		{#each works as work (work.title)}
+		{#each works as work, i (i)}
 			<div
 				class="flex flex-col gap-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-start dark:border-gray-800 dark:bg-gray-950 hotdog:border-black hotdog:bg-yellow-300"
 			>

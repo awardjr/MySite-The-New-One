@@ -1,36 +1,8 @@
 <script lang="ts">
-	// Add, remove, or edit categories/skills below to update this page.
-	const skillCategories = [
-		{
-			category: 'Languages',
-			skills: ['HTML', 'JavaScript', 'CSS', 'JSON', 'XML', 'SQL', 'Java', 'PHP', 'C#', '.NET']
-		},
-		{
-			category: 'Frameworks & CMS',
-			skills: ['Node.js', 'Laravel', 'ExpressionEngine', 'Craft CMS', 'WordPress', 'Unity3D']
-		},
-		{
-			category: 'Databases',
-			skills: ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis']
-		},
-		{
-			category: 'Cloud & Infrastructure',
-			skills: ['AWS', 'Docker', 'Apache', 'Nginx']
-		},
-		{
-			category: 'Auth & Integrations',
-			skills: ['SSO', 'OAuth2']
-		},
-		{
-			category: 'Tools & Practices',
-			skills: ['Git', 'Unit Testing', 'Visual Studio', 'Jetbrains IDEs']
-		},
-		{
-			category: 'Operating Systems',
-			skills: ['Microsoft Windows', 'Linux', 'MacOS']
-		}
-		// { category: 'Another Category', skills: ['Skill A', 'Skill B'] }
-	];
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+	let { skillCategories } = $derived(data);
 </script>
 
 <svelte:head>

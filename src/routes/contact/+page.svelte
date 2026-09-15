@@ -1,16 +1,10 @@
 <script lang="ts">
 	import Fa from 'svelte-fa';
-	import { faFileLines, faEnvelope, faLink } from '@fortawesome/free-solid-svg-icons';
-	import { faLinkedin, faGithub } from '@fortawesome/free-brands-svg-icons';
+	import { getIcon } from '$lib/icons';
+	import type { PageProps } from './$types';
 
-	// Add, remove, or edit entries below to update the contact links shown on this page.
-	const links = [
-		{ label: 'Resume', href: '/resume.pdf', icon: faFileLines },
-		{ label: 'LinkedIn', href: 'https://www.linkedin.com/in/your-profile', icon: faLinkedin },
-		{ label: 'GitHub', href: 'https://github.com/your-username', icon: faGithub },
-		{ label: 'Email', href: 'mailto:you@example.com', icon: faEnvelope }
-		// { label: 'Another Link', href: 'https://example.com', icon: faLink }
-	];
+	let { data }: PageProps = $props();
+	let { links } = $derived(data);
 </script>
 
 <svelte:head>
@@ -27,7 +21,7 @@
 	</div>
 
 	<div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-		{#each links as link (link.label)}
+		{#each links as link, i (i)}
 			<a
 				href={link.href}
 				target={link.href.startsWith('http') ? '_blank' : undefined}
@@ -37,7 +31,7 @@
 				<span
 					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300 hotdog:bg-red-600 hotdog:text-yellow-200"
 				>
-					<Fa icon={link.icon} class="h-4 w-4" />
+					<Fa icon={getIcon(link.icon)} class="h-4 w-4" />
 				</span>
 				<span class="font-medium">{link.label}</span>
 			</a>

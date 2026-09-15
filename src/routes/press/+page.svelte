@@ -1,21 +1,8 @@
 <script lang="ts">
-	// Add, remove, or edit press mentions below. If `href` is left empty, the card renders without a link.
-	const pressItems: {
-		title: string;
-		summary: string;
-		href: string;
-	}[] = [
-		{
-			title: 'Press Mention Title',
-			summary: 'A brief summary of the article or feature, what it covers, and why it is relevant.',
-			href: ''
-		}
-		// {
-		// 	title: 'Another Press Mention',
-		// 	summary: 'Summary of another press mention.',
-		// 	href: 'https://example.com/article'
-		// }
-	];
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
+	let { pressItems } = $derived(data);
 </script>
 
 <svelte:head>
@@ -32,7 +19,7 @@
 	</div>
 
 	<div class="mt-8 grid grid-cols-1 gap-6">
-		{#each pressItems as item (item.title)}
+		{#each pressItems as item, i (i)}
 			{#if item.href}
 				<a
 					href={item.href}

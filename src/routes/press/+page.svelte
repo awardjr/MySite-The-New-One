@@ -12,10 +12,8 @@
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl dark:text-gray-50 hotdog:text-yellow-300">
-			Press
-		</h1>
-		<p class="text-base text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">A collection of press mentions and features.</p>
+		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Press</h1>
+		<p class="text-base text-muted">A collection of press mentions and features.</p>
 	</div>
 
 	<div class="mt-8 grid grid-cols-1 gap-6">
@@ -25,23 +23,21 @@
 					href={item.href}
 					target={item.href.startsWith('http') ? '_blank' : undefined}
 					rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-					class="block rounded-xl border border-gray-200 bg-white p-8 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700 dark:hover:bg-gray-900 hotdog:border-black hotdog:bg-yellow-300 hotdog:hover:bg-yellow-200"
+					class="block rounded-xl border border-card-border bg-card p-8 shadow-sm transition-colors hover:border-card-border-hover hover:bg-card-hover"
 				>
-					<h2 class="text-2xl font-bold text-gray-950 sm:text-3xl dark:text-gray-50 hotdog:text-black">
+					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
 						{item.title}
 					</h2>
-					<p class="mt-3 text-base leading-relaxed text-gray-600 dark:text-gray-400 hotdog:text-red-900">
+					<p class="mt-3 text-base leading-relaxed text-card-copy">
 						{item.summary}
 					</p>
 				</a>
 			{:else}
-				<div
-					class="rounded-xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-950 hotdog:border-black hotdog:bg-yellow-300"
-				>
-					<h2 class="text-2xl font-bold text-gray-950 sm:text-3xl dark:text-gray-50 hotdog:text-black">
+				<div class="rounded-xl border border-card-border bg-card p-8 shadow-sm">
+					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
 						{item.title}
 					</h2>
-					<p class="mt-3 text-base leading-relaxed text-gray-600 dark:text-gray-400 hotdog:text-red-900">
+					<p class="mt-3 text-base leading-relaxed text-card-copy">
 						{item.summary}
 					</p>
 				</div>

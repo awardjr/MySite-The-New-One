@@ -8,7 +8,7 @@
 
 {#if lightbox.src}
 	<div
-		class="fixed inset-0 z-100 flex items-center justify-center bg-black/80 p-4"
+		class="fixed inset-0 z-100 flex items-center justify-center bg-overlay p-4"
 		role="button"
 		tabindex="0"
 		aria-label="Close expanded image"
@@ -19,7 +19,7 @@
 			type="button"
 			onclick={closeLightbox}
 			aria-label="Close expanded image"
-			class="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+			class="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-overlay-button text-overlay-text transition-colors hover:bg-overlay-button-hover"
 		>
 			<Fa icon={faXmark} class="h-5 w-5" />
 		</button>

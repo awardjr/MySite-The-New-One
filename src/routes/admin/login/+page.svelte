@@ -12,10 +12,8 @@
 </svelte:head>
 
 <section class="mx-auto flex max-w-sm flex-col justify-center py-16">
-	<h1 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-gray-50 hotdog:text-yellow-300">Admin Login</h1>
-	<p class="mt-1 text-sm text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">
-		Sign in to edit the content of this site.
-	</p>
+	<h1 class="text-2xl font-bold tracking-tight text-heading">Admin Login</h1>
+	<p class="mt-1 text-sm text-muted">Sign in to edit this site</p>
 
 	<form
 		method="POST"
@@ -29,27 +27,25 @@
 		}}
 	>
 		<div class="space-y-1">
-			<label for="password" class="text-sm font-medium text-gray-700 dark:text-gray-300 hotdog:text-yellow-100">
-				Password
-			</label>
+			<label for="password" class="text-sm font-medium text-copy"> Password </label>
 			<input
 				id="password"
 				name="password"
 				type="password"
 				required
 				autocomplete="current-password"
-				class="w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-gray-500 focus:outline-none dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+				class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
 			/>
 		</div>
 
 		{#if form?.error}
-			<p class="text-sm text-red-600 dark:text-red-400">{form.error}</p>
+			<p class="text-sm text-error">{form.error}</p>
 		{/if}
 
 		<button
 			type="submit"
 			disabled={submitting}
-			class="w-full rounded-lg bg-gray-950 px-4 py-2 font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60 dark:bg-gray-50 dark:text-gray-950 dark:hover:bg-gray-200 hotdog:bg-yellow-300 hotdog:text-black hotdog:hover:bg-yellow-200"
+			class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
 		>
 			{submitting ? 'Signing in…' : 'Sign in'}
 		</button>

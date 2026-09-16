@@ -20,23 +20,23 @@
 </svelte:head>
 
 <section class="py-6 sm:py-10">
-	<div class="flex flex-col-reverse items-center gap-8 md:flex-row md:items-start md:justify-between md:gap-12">
+	<div
+		class="flex flex-col-reverse items-center gap-8 md:flex-row md:items-start md:justify-between md:gap-12"
+	>
 		<!-- Text Introduction Section -->
 		<div class="flex-1 space-y-4 text-center md:text-left">
 			<div class="space-y-1">
-				<p class="text-sm font-semibold tracking-wide text-gray-500 uppercase dark:text-gray-400 hotdog:text-yellow-200">
-					Welcome
-				</p>
-				<h1 class="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl lg:text-5xl dark:text-gray-50 hotdog:text-yellow-300">
+				<p class="text-sm font-semibold tracking-wide text-eyebrow uppercase">Welcome</p>
+				<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl lg:text-5xl">
 					Hi, I'm {name}
 				</h1>
 			</div>
 
-			<p class="text-lg font-medium text-gray-700 sm:text-xl dark:text-gray-300 hotdog:text-yellow-100">
+			<p class="text-lg font-medium text-copy sm:text-xl">
 				{tagline}
 			</p>
 
-			<div class="space-y-3 text-base leading-relaxed text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">
+			<div class="space-y-3 text-base leading-relaxed text-muted">
 				{#each introParagraphs as paragraph, i (i)}
 					<p>{paragraph}</p>
 				{/each}
@@ -52,20 +52,18 @@
 					onclick={() => openLightbox(photoSrc, name)}
 					onkeydown={(e) => e.key === 'Enter' && openLightbox(photoSrc, name)}
 					tabindex="0"
-					class="h-56 w-56 cursor-pointer rounded-2xl object-cover shadow-md ring-1 ring-gray-200 sm:h-72 sm:w-72 dark:ring-gray-800 hotdog:ring-yellow-400"
+					class="h-56 w-56 cursor-pointer rounded-2xl object-cover shadow-md ring-1 ring-photo-ring sm:h-72 sm:w-72"
 				/>
 			{:else}
 				<div
-					class="flex h-56 w-56 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-4 text-center text-gray-400 sm:h-72 sm:w-72 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500 hotdog:border-yellow-400 hotdog:bg-red-700 hotdog:text-yellow-200"
+					class="flex h-56 w-56 flex-col items-center justify-center rounded-2xl border-2 border-dashed border-photo-border bg-photo-placeholder p-4 text-center text-photo-placeholder-text sm:h-72 sm:w-72"
 				>
 					<div
-						class="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 text-2xl font-bold text-gray-600 sm:h-24 sm:w-24 sm:text-3xl dark:bg-gray-800 dark:text-gray-300 hotdog:bg-yellow-300 hotdog:text-red-700"
+						class="flex h-20 w-20 items-center justify-center rounded-full bg-avatar text-2xl font-bold text-avatar-text sm:h-24 sm:w-24 sm:text-3xl"
 					>
 						{initials}
 					</div>
-					<span class="mt-3 text-xs font-medium text-gray-500 dark:text-gray-400 hotdog:text-yellow-200">
-						Set a photo in <a href="/admin/home" class="underline">the admin panel</a> to display it here
-					</span>
+					<span class="mt-3 text-xs font-medium text-eyebrow"> No photo set yet </span>
 				</div>
 			{/if}
 		</div>

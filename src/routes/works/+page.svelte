@@ -1,7 +1,13 @@
 <script lang="ts">
 	import Fa from 'svelte-fa';
 	import { faGlobe, faGamepad } from '@fortawesome/free-solid-svg-icons';
-	import { faWindows, faApple, faLinux, faPlaystation, faXbox } from '@fortawesome/free-brands-svg-icons';
+	import {
+		faWindows,
+		faApple,
+		faLinux,
+		faPlaystation,
+		faXbox
+	} from '@fortawesome/free-brands-svg-icons';
 	import { openLightbox } from '$lib/lightbox.svelte';
 	import type { PageProps } from './$types';
 
@@ -28,16 +34,14 @@
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl dark:text-gray-50 hotdog:text-yellow-300">
-			Works
-		</h1>
-		<p class="text-base text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">A selection of things I've built.</p>
+		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Works</h1>
+		<p class="text-base text-muted">A selection of things I've built.</p>
 	</div>
 
 	<div class="mt-8 space-y-6">
 		{#each works as work, i (i)}
 			<div
-				class="flex flex-col gap-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:flex-row sm:items-start dark:border-gray-800 dark:bg-gray-950 hotdog:border-black hotdog:bg-yellow-300"
+				class="flex flex-col gap-5 rounded-xl border border-card-border bg-card p-5 shadow-sm sm:flex-row sm:items-start"
 			>
 				<!-- Image Section -->
 				<div class="flex shrink-0 justify-center sm:justify-start">
@@ -48,11 +52,11 @@
 							onclick={() => openLightbox(work.image, work.title)}
 							onkeydown={(e) => e.key === 'Enter' && openLightbox(work.image, work.title)}
 							tabindex="0"
-							class="h-40 w-40 cursor-pointer rounded-lg object-cover ring-1 ring-gray-200 sm:h-32 sm:w-32 dark:ring-gray-800 hotdog:ring-black"
+							class="h-40 w-40 cursor-pointer rounded-lg object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
 						/>
 					{:else}
 						<div
-							class="flex h-40 w-40 items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 text-center text-xs text-gray-400 sm:h-32 sm:w-32 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-500 hotdog:border-red-700 hotdog:bg-red-600 hotdog:text-yellow-100"
+							class="flex h-40 w-40 items-center justify-center rounded-lg border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
 						>
 							No Image
 						</div>
@@ -61,10 +65,10 @@
 
 				<!-- Text + Platforms Section -->
 				<div class="flex-1 space-y-3">
-					<h2 class="text-lg font-semibold text-gray-950 dark:text-gray-50 hotdog:text-black">
+					<h2 class="text-lg font-semibold text-card-heading">
 						{work.title}
 					</h2>
-					<p class="text-sm leading-relaxed text-gray-600 dark:text-gray-400 hotdog:text-red-900">
+					<p class="text-sm leading-relaxed text-card-copy">
 						{work.description}
 					</p>
 					<div class="flex flex-wrap gap-2 pt-1">
@@ -72,7 +76,7 @@
 							{#if platformIcons[platformKey]}
 								<span
 									title={platformIcons[platformKey].label}
-									class="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300 hotdog:bg-red-600 hotdog:text-yellow-200"
+									class="flex h-8 w-8 items-center justify-center rounded-lg bg-badge text-badge-text"
 								>
 									<Fa icon={platformIcons[platformKey].icon} class="h-4 w-4" />
 								</span>

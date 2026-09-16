@@ -22,10 +22,8 @@
 	<title>Admin - Contact</title>
 </svelte:head>
 
-<h1 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-gray-50 hotdog:text-yellow-300">Contact Links</h1>
-<p class="mt-1 text-sm text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">
-	Add, remove, or edit the links shown on the contact page.
-</p>
+<h1 class="text-2xl font-bold tracking-tight text-heading">Contact Links</h1>
+<p class="mt-1 text-sm text-muted">Add, remove, or edit the links shown on the contact page.</p>
 
 <form
 	method="POST"
@@ -33,7 +31,7 @@
 	use:enhance={() => {
 		saving = true;
 		return async ({ update }) => {
-			await update();
+			await update({ reset: false });
 			saving = false;
 		};
 	}}
@@ -42,20 +40,22 @@
 
 	<div class="space-y-3">
 		{#each links as link, i (i)}
-			<div class="grid grid-cols-1 gap-2 rounded-lg border border-gray-200 p-3 sm:grid-cols-[1fr_2fr_auto_auto] sm:items-center dark:border-gray-800">
+			<div
+				class="grid grid-cols-1 gap-2 rounded-lg border border-form-border p-3 sm:grid-cols-[1fr_2fr_auto_auto] sm:items-center"
+			>
 				<input
 					bind:value={link.label}
 					placeholder="Label (e.g. LinkedIn)"
-					class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<input
 					bind:value={link.href}
 					placeholder="URL (e.g. https://... or mailto:you@example.com)"
-					class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<select
 					bind:value={link.icon}
-					class="rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				>
 					{#each iconOptions as iconKey (iconKey)}
 						<option value={iconKey}>{iconKey}</option>
@@ -64,7 +64,7 @@
 				<button
 					type="button"
 					onclick={() => removeLink(i)}
-					class="rounded-lg border border-gray-300 px-3 py-1.5 text-sm text-red-600 transition-colors hover:bg-red-50 dark:border-gray-700 dark:hover:bg-red-950"
+					class="rounded-lg border border-field-border px-3 py-1.5 text-sm text-danger-text transition-colors hover:bg-danger-hover"
 				>
 					Remove
 				</button>
@@ -75,22 +75,22 @@
 	<button
 		type="button"
 		onclick={addLink}
-		class="rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-900"
+		class="rounded-lg border border-dashed border-field-border px-4 py-2 text-sm text-form-muted transition-colors hover:bg-secondary-hover"
 	>
 		+ Add Link
 	</button>
 
 	{#if form?.error}
-		<p class="text-sm text-red-600 dark:text-red-400">{form.error}</p>
+		<p class="text-sm text-error">{form.error}</p>
 	{:else if form?.success}
-		<p class="text-sm text-green-600 dark:text-green-400">Saved.</p>
+		<p class="text-sm text-success">Saved.</p>
 	{/if}
 
 	<div>
 		<button
 			type="submit"
 			disabled={saving}
-			class="rounded-lg bg-gray-950 px-4 py-2 font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60 dark:bg-gray-50 dark:text-gray-950 dark:hover:bg-gray-200 hotdog:bg-yellow-300 hotdog:text-black hotdog:hover:bg-yellow-200"
+			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
 		>
 			{saving ? 'Saving…' : 'Save changes'}
 		</button>

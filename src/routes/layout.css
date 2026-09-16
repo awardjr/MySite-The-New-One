@@ -1,8 +1,9 @@
 @import 'tailwindcss';
 @import '@fontsource/fira-mono';
-
-@custom-variant dark (&:where(.dark, .dark *));
-@custom-variant hotdog (&:where(.hotdog, .hotdog *));
+@import '../lib/themes/tokens.css';
+@import '../lib/themes/light.css';
+@import '../lib/themes/dark.css';
+@import '../lib/themes/hotdog.css';
 
 :root {
 	--font-mono: 'Fira Mono', monospace;

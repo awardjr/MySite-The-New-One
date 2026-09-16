@@ -24,8 +24,8 @@
 				<a
 					href={item.href}
 					class="rounded-lg px-3 py-2 text-sm transition-colors {isActive
-						? 'bg-gray-100 font-semibold text-gray-950 dark:bg-gray-900 dark:text-gray-50 hotdog:bg-red-800 hotdog:text-yellow-300'
-						: 'text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100 hotdog:text-yellow-100 hotdog:hover:bg-red-800'}"
+						? 'bg-nav-active font-semibold text-heading'
+						: 'text-muted hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
 				>
 					{item.label}
 				</a>
@@ -35,7 +35,7 @@
 		<form method="POST" action="/admin/logout" class="mt-4">
 			<button
 				type="submit"
-				class="w-full rounded-lg border border-gray-200 px-3 py-2 text-left text-sm text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-800 dark:text-gray-400 dark:hover:bg-gray-900 hotdog:border-black hotdog:text-yellow-100 hotdog:hover:bg-red-800"
+				class="w-full rounded-lg border border-card-border px-3 py-2 text-left text-sm text-muted transition-colors hover:bg-nav-surface-hover"
 			>
 				Log out
 			</button>

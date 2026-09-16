@@ -47,14 +47,12 @@
 	}
 </script>
 
-<header
-	class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/95 backdrop-blur dark:border-gray-800 dark:bg-gray-950/95 hotdog:border-yellow-400 hotdog:bg-red-700/95"
->
+<header class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header backdrop-blur">
 	<div class="mx-auto flex h-16 max-w-7/10 items-center justify-between px-4">
 		<div class="flex items-center gap-6">
 			<a
 				href={resolve('/')}
-				class="text-base font-bold tracking-tight text-gray-950 dark:text-gray-50 hotdog:text-yellow-300"
+				class="text-base font-bold tracking-tight text-heading"
 				onclick={closeMobileMenu}
 			>
 			</a>
@@ -64,8 +62,8 @@
 					<a
 						href={item.href}
 						class="text-lg transition-colors {isActive
-							? 'font-semibold text-gray-950 underline underline-offset-4 decoration-gray-400 dark:text-gray-50 dark:decoration-gray-600 hotdog:text-yellow-300 hotdog:decoration-yellow-300'
-							: 'text-gray-600 hover:text-gray-950 dark:text-gray-400 dark:hover:text-gray-100 hotdog:text-yellow-100 hotdog:hover:text-yellow-300'}"
+							? 'font-semibold text-heading underline underline-offset-4 decoration-nav-decoration'
+							: 'text-muted hover:text-nav-hover'}"
 					>
 						{item.label}
 					</a>
@@ -82,7 +80,7 @@
 					: theme === 'dark'
 						? 'Switch to hotdog stand mode'
 						: 'Switch to light mode'}
-				class="inline-flex h-9 items-center text-gray-950 dark:text-gray-50 hotdog:text-yellow-300"
+				class="inline-flex h-9 items-center text-heading"
 			>
 				{#if theme === 'dark'}
 					<Fa icon={faMoon} class="h-4 w-4" />
@@ -98,7 +96,7 @@
 				onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
 				aria-label="Toggle navigation menu"
 				aria-expanded={isMobileMenuOpen}
-				class="inline-flex h-9 w-9 items-center justify-center rounded border border-gray-300 text-gray-800 transition-colors hover:bg-gray-100 md:hidden dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900 hotdog:border-yellow-400 hotdog:text-yellow-300 hotdog:hover:bg-red-800"
+				class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover md:hidden"
 			>
 				{#if isMobileMenuOpen}
 					<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
@@ -110,7 +108,7 @@
 	</div>
 
 	{#if isMobileMenuOpen}
-		<nav class="border-t border-gray-200 px-4 py-3 md:hidden dark:border-gray-800 hotdog:border-yellow-400">
+		<nav class="border-t border-chrome-border px-4 py-3 md:hidden">
 			<div class="flex flex-col gap-2">
 				{#each navItems as item (item.href)}
 					{@const isActive = page.url.pathname === item.href}
@@ -118,8 +116,8 @@
 						href={item.href}
 						onclick={closeMobileMenu}
 						class="rounded px-2 py-1.5 text-sm transition-colors {isActive
-							? 'bg-gray-100 font-semibold text-gray-950 dark:bg-gray-900 dark:text-gray-50 hotdog:bg-red-800 hotdog:text-yellow-300'
-							: 'text-gray-600 hover:bg-gray-50 hover:text-gray-950 dark:text-gray-400 dark:hover:bg-gray-900 dark:hover:text-gray-100 hotdog:text-yellow-100 hotdog:hover:bg-red-800 hotdog:hover:text-yellow-300'}"
+							? 'bg-nav-active font-semibold text-heading'
+							: 'text-muted hover:bg-nav-surface-hover hover:text-nav-hover'}"
 					>
 						{item.label}
 					</a>

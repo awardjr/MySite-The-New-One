@@ -1,0 +1,98 @@
+/* Light theme. Edit these values to customize this theme independently.
+ * Values accept any CSS color, e.g. #2563eb, oklch(...), or a Tailwind palette variable.
+ * Keep token names in sync with tokens.css and the other theme files.
+ */
+:root {
+	/* Page and typography */
+	--theme-page: var(--color-white);
+	--theme-body: var(--color-gray-900);
+	--theme-heading: var(--color-gray-950);
+	--theme-copy: var(--color-gray-700);
+	--theme-muted: var(--color-gray-600);
+	--theme-subtle: var(--color-gray-500);
+	--theme-eyebrow: var(--color-gray-500);
+	--theme-link: var(--color-blue-600);
+
+	/* Header, footer, and navigation */
+	--theme-chrome-border: var(--color-gray-200);
+	--theme-footer: var(--color-white);
+	--theme-header: color-mix(in oklab, var(--color-white) 95%, transparent);
+	--theme-nav-decoration: var(--color-gray-400);
+	--theme-nav-hover: var(--color-gray-950);
+	--theme-menu-icon: var(--color-gray-800);
+	--theme-menu-hover: var(--color-gray-100);
+	--theme-nav-active: var(--color-gray-100);
+	--theme-nav-surface-hover: var(--color-gray-50);
+	--theme-admin-nav-hover: var(--color-gray-950);
+
+	--theme-menu-border: var(--color-gray-300);
+
+	/* Cards and badges */
+	--theme-card-border: var(--color-gray-200);
+	--theme-card: var(--color-white);
+	--theme-card-border-hover: var(--color-gray-300);
+	--theme-card-hover: var(--color-gray-50);
+	--theme-card-heading: var(--color-gray-950);
+	--theme-card-copy: var(--color-gray-600);
+	--theme-card-meta: var(--color-gray-500);
+	--theme-card-action: var(--color-gray-600);
+	--theme-card-link: var(--color-blue-600);
+	--theme-card-label: var(--color-gray-700);
+	--theme-card-ring: var(--color-gray-200);
+	--theme-badge: var(--color-gray-100);
+	--theme-badge-text: var(--color-gray-700);
+
+	/* Primary buttons */
+	--theme-primary: var(--color-gray-950);
+	--theme-primary-text: var(--color-white);
+	--theme-primary-hover: var(--color-gray-800);
+
+	/* Forms and secondary buttons */
+	--theme-field-label: var(--color-gray-700);
+	--theme-field-border: var(--color-gray-300);
+	--theme-field: transparent;
+	--theme-field-text: currentColor;
+	--theme-field-text-explicit: var(--color-gray-900);
+	--theme-field-focus: var(--color-gray-500);
+	--theme-form-muted: var(--color-gray-600);
+	--theme-form-hint: var(--color-gray-500);
+	--theme-form-border: var(--color-gray-200);
+	--theme-form-border-subtle: var(--color-gray-100);
+	--theme-secondary-hover: var(--color-gray-50);
+
+	--theme-code: var(--color-gray-100);
+	--theme-file-button: var(--color-gray-100);
+	--theme-file-button-text: var(--color-gray-700);
+	--theme-file-button-hover: var(--color-gray-200);
+
+	/* Status and destructive actions */
+	--theme-error: var(--color-red-600);
+	--theme-success: var(--color-green-600);
+	--theme-danger-text: var(--color-red-600);
+	--theme-danger-hover: var(--color-red-50);
+	--theme-danger-border: var(--color-red-200);
+	--theme-danger-heading: var(--color-red-700);
+	--theme-danger-button-border: var(--color-red-300);
+
+	/* Photos and image placeholders */
+	--theme-photo-ring: var(--color-gray-200);
+	--theme-photo-border: var(--color-gray-300);
+	--theme-photo-placeholder: var(--color-gray-50);
+	--theme-photo-placeholder-text: var(--color-gray-400);
+	--theme-avatar: var(--color-gray-200);
+	--theme-avatar-text: var(--color-gray-600);
+	--theme-image-placeholder-border: var(--color-gray-300);
+	--theme-image-placeholder: var(--color-gray-50);
+	--theme-image-placeholder-text: var(--color-gray-400);
+
+	/* Pinball scores */
+	--theme-score-label: var(--color-gray-500);
+	--theme-score-caption: currentColor;
+	--theme-score-value: var(--color-gray-950);
+
+	/* Lightbox */
+	--theme-overlay: color-mix(in oklab, var(--color-black) 80%, transparent);
+	--theme-overlay-button: color-mix(in oklab, var(--color-white) 10%, transparent);
+	--theme-overlay-text: var(--color-white);
+	--theme-overlay-button-hover: color-mix(in oklab, var(--color-white) 20%, transparent);
+}

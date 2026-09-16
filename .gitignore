@@ -21,6 +21,9 @@ Thumbs.db
 # CMS database (runtime data, edited via /admin — not shipped as source)
 /data
 
+# CMS-uploaded images (runtime data, uploaded via /admin — not shipped as source)
+/static/uploads
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

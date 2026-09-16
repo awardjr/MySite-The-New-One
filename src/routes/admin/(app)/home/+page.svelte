@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -16,8 +17,8 @@
 	<title>Admin - Home</title>
 </svelte:head>
 
-<h1 class="text-2xl font-bold tracking-tight text-gray-950 dark:text-gray-50 hotdog:text-yellow-300">Home Page</h1>
-<p class="mt-1 text-sm text-gray-600 dark:text-gray-400 hotdog:text-yellow-100">
+<h1 class="text-2xl font-bold tracking-tight text-heading">Home Page</h1>
+<p class="mt-1 text-sm text-muted">
 	Edit the photo, name, tagline, and intro text shown on the homepage.
 </p>
 
@@ -27,46 +28,45 @@
 	use:enhance={() => {
 		saving = true;
 		return async ({ update }) => {
-			await update();
+			await update({ reset: false });
 			saving = false;
 		};
 	}}
 >
 	<div class="space-y-1">
-		<label for="name" class="text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+		<label for="name" class="text-sm font-medium text-field-label">Name</label>
 		<input
 			id="name"
 			name="name"
 			bind:value={name}
 			required
-			class="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
 	</div>
 
 	<div class="space-y-1">
-		<label for="tagline" class="text-sm font-medium text-gray-700 dark:text-gray-300">Tagline</label>
+		<label for="tagline" class="text-sm font-medium text-field-label">Tagline</label>
 		<input
 			id="tagline"
 			name="tagline"
 			bind:value={tagline}
-			class="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
 	</div>
 
 	<div class="space-y-1">
-		<label for="photoSrc" class="text-sm font-medium text-gray-700 dark:text-gray-300">Photo URL / path</label>
-		<input
+		<ImageUploadField
 			id="photoSrc"
 			name="photoSrc"
+			label="Photo"
+			placeholder="/profile.jpg (put the file in static/, or upload below) or a full URL"
 			bind:value={photoSrc}
-			placeholder="/profile.jpg (put the file in static/) or a full URL"
-			class="w-full rounded-lg border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
 		/>
-		<p class="text-xs text-gray-500 dark:text-gray-400">Leave empty to show the initials placeholder instead.</p>
+		<p class="text-xs text-form-hint">Leave empty to show the initials placeholder instead.</p>
 	</div>
 
 	<div class="space-y-1">
-		<label for="introParagraphs" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+		<label for="introParagraphs" class="text-sm font-medium text-field-label">
 			Intro text (separate paragraphs with a blank line)
 		</label>
 		<textarea
@@ -74,20 +74,20 @@
 			name="introParagraphs"
 			bind:value={introParagraphs}
 			rows="8"
-			class="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+			class="w-full rounded-lg border border-field-border px-3 py-2 font-mono text-sm bg-field text-field-text"
 		></textarea>
 	</div>
 
 	{#if form?.error}
-		<p class="text-sm text-red-600 dark:text-red-400">{form.error}</p>
+		<p class="text-sm text-error">{form.error}</p>
 	{:else if form?.success}
-		<p class="text-sm text-green-600 dark:text-green-400">Saved.</p>
+		<p class="text-sm text-success">Saved.</p>
 	{/if}
 
 	<button
 		type="submit"
 		disabled={saving}
-		class="rounded-lg bg-gray-950 px-4 py-2 font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-60 dark:bg-gray-50 dark:text-gray-950 dark:hover:bg-gray-200 hotdog:bg-yellow-300 hotdog:text-black hotdog:hover:bg-yellow-200"
+		class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
 	>
 		{saving ? 'Saving…' : 'Save changes'}
 	</button>

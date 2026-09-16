@@ -20,6 +20,7 @@
 		ios: {label: 'iOS', icon: faAppStoreIos},
 		linux: { label: 'Linux', icon: faLinux },
 		android: { label: 'Android', icon: faAndroid },
+		playstation: {label: 'Playstation', icon: faPlaystation},
 		switch: { label: 'Nintendo Switch', icon: faGamepad }
 	};
 

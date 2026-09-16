@@ -15,6 +15,8 @@
 	}
 
 	function removeLink(index: number) {
+		const link = links[index];
+		if (!confirm(`Remove "${link.label || 'this link'}"?`)) return;
 		links.splice(index, 1);
 	}
 </script>

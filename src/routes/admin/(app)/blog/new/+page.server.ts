@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { readContent, updateSection, type Post } from '$lib/server/content';
+import sanitizeHtml from 'sanitize-html';
 import type { Actions } from './$types';
 
 function slugify(value: string): string {
@@ -19,7 +20,8 @@ export const actions: Actions = {
 		const date = String(formData.get('date') ?? '').trim();
 		const image = String(formData.get('image') ?? '').trim();
 		const preview = String(formData.get('preview') ?? '').trim();
-		const content = String(formData.get('content') ?? '').trim();
+		const content = sanitizeHtml(String(formData.get('content') ?? '').trim());
+		const draft = formData.get('draft') === 'on';
 
 		if (!title) {
 			return fail(400, {
@@ -29,7 +31,8 @@ export const actions: Actions = {
 				date,
 				image,
 				preview,
-				content
+				content,
+				draft
 			});
 		}
 
@@ -43,7 +46,8 @@ export const actions: Actions = {
 				date,
 				image,
 				preview,
-				content
+				content,
+				draft
 			});
 		}
 
@@ -57,11 +61,12 @@ export const actions: Actions = {
 				date,
 				image,
 				preview,
-				content
+				content,
+				draft
 			});
 		}
 
-		const newPost: Post = { slug, title, date, image, preview, content };
+		const newPost: Post = { slug, title, date, image, preview, content, draft };
 		updateSection('blog', { posts: [...posts, newPost] });
 
 		redirect(303, '/admin/blog');

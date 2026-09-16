@@ -14,6 +14,8 @@
 	}
 
 	function removeItem(index: number) {
+		const item = items[index];
+		if (!confirm(`Remove "${item.title || 'this press mention'}"?`)) return;
 		items.splice(index, 1);
 	}
 </script>

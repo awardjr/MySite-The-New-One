@@ -26,6 +26,8 @@
 	}
 
 	function removeItem(index: number) {
+		const item = items[index];
+		if (!confirm(`Remove "${item.title || 'this work'}"?`)) return;
 		items.splice(index, 1);
 	}
 

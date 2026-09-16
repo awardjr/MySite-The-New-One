@@ -20,7 +20,7 @@
 		{#each pressItems as item, i (i)}
 			{#if item.href}
 				<a
-					href="resolve(item.href)"
+					href={item.href}
 					target={item.href.startsWith('http') ? '_blank' : undefined}
 					rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
 					class="block rounded-xl border border-card-border bg-card p-8 shadow-sm transition-transform duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"

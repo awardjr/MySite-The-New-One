@@ -49,7 +49,7 @@
 				</h2>
 				<p class="mt-1 text-s text-card-meta">{post.date}</p>
 
-				<p class="mt-3 text-sm text-card-copy sm:text-base">
+				<p class="mt-3 text-sm text-card-copy sm:text-lg">
 					{isExpanded ? post.content : post.preview}
 				</p>
 

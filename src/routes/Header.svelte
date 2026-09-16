@@ -62,7 +62,7 @@
 					{@const isActive = page.url.pathname === item.href}
 					<a
 						href={item.href}
-						class="text-lg transition-colors {isActive
+						class="text-xl transition-colors {isActive
 							? 'font-semibold text-heading underline underline-offset-4 decoration-nav-decoration'
 							: 'text-muted hover:text-nav-hover'}"
 					>

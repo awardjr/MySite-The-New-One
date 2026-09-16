@@ -39,7 +39,7 @@
 					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
 						{item.title}
 					</h2>
-					<p class="mt-3 text-base leading-relaxed text-card-copy">
+					<p class="mt-3 text-lg leading-relaxed text-card-copy">
 						{item.summary}
 					</p>
 				</div>

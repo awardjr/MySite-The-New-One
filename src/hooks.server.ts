@@ -8,8 +8,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const isLoginRoute = event.url.pathname === '/admin/login';
 	const isSetupRoute = event.url.pathname === '/admin/setup';
 
-	// No admin password has been created in the database yet: send visitors to
-	// the one-time setup page instead of a login form that can never succeed.
+	// No admin password has been created in the database yet: send user to the one time setup page
 	if (isAdminRoute && !isSetupRoute && !isAdminConfigured()) {
 		redirect(303, '/admin/setup');
 	}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { openLightbox } from '$lib/lightbox.svelte';
 	import type { PageProps } from './$types';
+	import { resolve } from '$app/paths';
 
 	let { data }: PageProps = $props();
 	let { posts } = $derived(data);
@@ -49,9 +50,17 @@
 				</h2>
 				<p class="mt-1 text-s text-card-meta">{post.date}</p>
 
-				<p class="mt-3 text-sm text-card-copy sm:text-lg">
-					{isExpanded ? post.content : post.preview}
-				</p>
+				{#if isExpanded}
+					<div class="post-content mt-3 text-sm text-card-copy sm:text-lg">
+						<!-- Sanitized on the admin page -->
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						{@html post.content}
+					</div>
+				{:else}
+					<p class="mt-3 text-sm text-card-copy sm:text-lg">
+						{post.preview}
+					</p>
+				{/if}
 
 				<div class="mt-4 flex flex-wrap items-center gap-4">
 					<button
@@ -61,7 +70,8 @@
 					>
 						{isExpanded ? 'Show Less' : 'Read More'}
 					</button>
-					<a href={`/blog/${post.slug}`} class="text-sm font-medium text-card-link hover:underline">
+					<a href={resolve('/blog/[slug]', { slug: post.slug })}
+						 class="text-sm font-medium text-card-link hover:underline">
 						View Full →
 					</a>
 				</div>
@@ -69,3 +79,47 @@
 		{/each}
 	</div>
 </section>
+
+<style>
+	.post-content :global(p) {
+		margin: 0.5rem 0;
+	}
+
+	.post-content :global(h2) {
+		margin: 1rem 0 0.5rem;
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--color-card-heading);
+	}
+
+	.post-content :global(h3) {
+		margin: 0.75rem 0 0.5rem;
+		font-size: 1.1rem;
+		font-weight: 600;
+		color: var(--color-card-heading);
+	}
+
+	.post-content :global(ul) {
+		list-style: disc;
+		padding-left: 1.5rem;
+		margin: 0.5rem 0;
+	}
+
+	.post-content :global(ol) {
+		list-style: decimal;
+		padding-left: 1.5rem;
+		margin: 0.5rem 0;
+	}
+
+	.post-content :global(blockquote) {
+		border-left: 3px solid var(--color-card-border);
+		margin: 0.5rem 0;
+		padding-left: 0.75rem;
+		font-style: italic;
+	}
+
+	.post-content :global(a) {
+		color: var(--color-card-link);
+		text-decoration: underline;
+	}
+</style>

@@ -29,7 +29,6 @@
 	--theme-card-border-hover: var(--color-gray-300);
 	--theme-card-hover: var(--color-yellow-200);
 	--theme-card-heading: var(--color-black);
-	--theme-card-heading: var(--color-black);
 	--theme-card-copy: var(--color-red-900);
 	--theme-card-meta: var(--color-red-900);
 	--theme-card-action: var(--color-black);
@@ -45,17 +44,17 @@
 	--theme-primary-hover: var(--color-yellow-500);
 
 	/* Forms and secondary buttons */
-	--theme-field-label: var(--color-gray-700);
+	--theme-field-label: var(--color-yellow-200);
 	--theme-field-border: var(--color-gray-300);
 	--theme-field: transparent;
 	--theme-field-text: currentColor;
 	--theme-field-text-explicit: var(--color-gray-900);
 	--theme-field-focus: var(--color-gray-500);
-	--theme-form-muted: var(--color-gray-600);
+	--theme-form-muted: var(--color-yellow-100);
 	--theme-form-hint: var(--color-gray-500);
 	--theme-form-border: var(--color-gray-200);
 	--theme-form-border-subtle: var(--color-gray-100);
-	--theme-secondary-hover: var(--color-gray-50);
+	--theme-secondary-hover: var(--color-yellow-400);
 
 	--theme-code: var(--color-red-800);
 	--theme-file-button: var(--color-gray-100);
@@ -65,7 +64,7 @@
 	/* Status and destructive actions */
 	--theme-error: var(--color-red-600);
 	--theme-success: var(--color-green-600);
-	--theme-danger-text: var(--color-red-600);
+	--theme-danger-text: var(--color-pink-300);
 	--theme-danger-hover: var(--color-red-50);
 	--theme-danger-border: var(--color-red-200);
 	--theme-danger-heading: var(--color-red-800);

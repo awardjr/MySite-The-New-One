@@ -15,6 +15,8 @@
 	}
 
 	function removeMachine(index: number) {
+		const machine = machines[index];
+		if (!confirm(`Remove "${machine.name || 'this machine'}"?`)) return;
 		machines.splice(index, 1);
 	}
 
@@ -23,6 +25,8 @@
 	}
 
 	function removeModeScore(machine: PinballMachine, index: number) {
+		const modeScore = machine.modeScores[index];
+		if (!confirm(`Remove mode score "${modeScore.mode || 'this mode score'}"?`)) return;
 		machine.modeScores.splice(index, 1);
 	}
 </script>

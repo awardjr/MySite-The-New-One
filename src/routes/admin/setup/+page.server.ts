@@ -13,7 +13,7 @@ const MIN_PASSWORD_LENGTH = 8;
 export const load: PageServerLoad = () => {
 	// Setup is only for a brand-new database with no admin password yet.
 	if (isAdminConfigured()) {
-		throw redirect(303, '/admin/login');
+		redirect(303, '/admin/login');
 	}
 	return {};
 };
@@ -21,7 +21,7 @@ export const load: PageServerLoad = () => {
 export const actions: Actions = {
 	default: async ({ request, cookies }) => {
 		if (isAdminConfigured()) {
-			throw redirect(303, '/admin/login');
+			redirect(303, '/admin/login');
 		}
 
 		const formData = await request.formData();
@@ -40,6 +40,6 @@ export const actions: Actions = {
 		setAdminPassword(password);
 		cookies.set(SESSION_COOKIE_NAME, createSession(), sessionCookieOptions);
 
-		throw redirect(303, '/admin');
+		redirect(303, '/admin');
 	}
 };

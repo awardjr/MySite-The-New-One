@@ -43,6 +43,7 @@ export type Post = {
 	image: string;
 	preview: string;
 	content: string;
+	draft: boolean;
 };
 
 export type HomeContent = {

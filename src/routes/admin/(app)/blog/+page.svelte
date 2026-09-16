@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
+	import { resolve } from '$app/paths';
 
 	let { data, form }: PageProps = $props();
 
@@ -17,7 +18,7 @@
 		<p class="mt-1 text-sm text-muted">Create, edit, or remove posts shown on the public blog.</p>
 	</div>
 	<a
-		href="/admin/blog/new"
+		href={resolve('/admin/blog/new')}
 		class="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
 	>
 		New Post
@@ -34,10 +35,27 @@
 			class="flex flex-col gap-2 rounded-lg border border-form-border p-4 sm:flex-row sm:items-center sm:justify-between"
 		>
 			<div class="min-w-0">
-				<p class="truncate font-semibold text-heading">{post.title}</p>
+				<p class="flex items-center gap-2 truncate font-semibold text-heading">
+					{post.title}
+					{#if post.draft}
+						<span
+							class="shrink-0 rounded-full bg-secondary-hover px-2 py-0.5 text-xs font-medium text-form-hint"
+						>
+							Draft
+						</span>
+					{/if}
+				</p>
 				<p class="text-sm text-subtle">{post.date} &middot; /{post.slug}</p>
 			</div>
 			<div class="flex shrink-0 items-center gap-2">
+				<a
+					href={resolve('/blog/[slug]', { slug: post.slug })}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="rounded-lg border border-field-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary-hover"
+				>
+					Preview
+				</a>
 				<a
 					href="/admin/blog/{post.slug}"
 					class="rounded-lg border border-field-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary-hover"

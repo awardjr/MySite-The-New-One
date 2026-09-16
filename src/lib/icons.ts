@@ -21,7 +21,8 @@ export const iconRegistry: Record<string, IconDefinition> = {
 	globe: faGlobe,
 	linkedin: faLinkedin,
 	github: faGithub,
-	twitch: faTwitch
+	twitch: faTwitch,
+	youtube: faYoutube
 };
 
 export const iconOptions = Object.keys(iconRegistry);

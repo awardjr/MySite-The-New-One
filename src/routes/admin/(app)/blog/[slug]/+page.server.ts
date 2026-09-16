@@ -1,5 +1,6 @@
 import { error, fail, redirect } from '@sveltejs/kit';
 import { readContent, updateSection } from '$lib/server/content';
+import sanitizeHtml from 'sanitize-html';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params }) => {
@@ -20,10 +21,19 @@ export const actions: Actions = {
 		const date = String(formData.get('date') ?? '').trim();
 		const image = String(formData.get('image') ?? '').trim();
 		const preview = String(formData.get('preview') ?? '').trim();
-		const content = String(formData.get('content') ?? '').trim();
+		const content = sanitizeHtml(String(formData.get('content') ?? '').trim());
+		const draft = formData.get('draft') === 'on';
 
 		if (!title) {
-			return fail(400, { error: 'Title is required.', title, date, image, preview, content });
+			return fail(400, {
+				error: 'Title is required.',
+				title,
+				date,
+				image,
+				preview,
+				content,
+				draft
+			});
 		}
 
 		const posts = readContent().blog.posts;
@@ -34,7 +44,7 @@ export const actions: Actions = {
 		}
 
 		const updated = [...posts];
-		updated[index] = { ...updated[index], title, date, image, preview, content };
+		updated[index] = { ...updated[index], title, date, image, preview, content, draft };
 		updateSection('blog', { posts: updated });
 
 		redirect(303, '/admin/blog');

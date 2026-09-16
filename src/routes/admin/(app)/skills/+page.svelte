@@ -14,6 +14,8 @@
 	}
 
 	function removeCategory(index: number) {
+		const category = categories[index];
+		if (!confirm(`Remove "${category.category || 'this category'}"?`)) return;
 		categories.splice(index, 1);
 	}
 

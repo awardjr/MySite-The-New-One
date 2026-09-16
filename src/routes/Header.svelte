@@ -12,10 +12,10 @@
 
 	const navItems = [
 		{ href: resolve('/'), label: 'Home' },
+		{ href: resolve('/blog'), label: 'Posts' },
 		{ href: resolve('/press'), label: 'Press' },
 		{ href: resolve('/works'), label: 'Works' },
 		{ href: resolve('/skills'), label: 'Skills' },
-		{ href: resolve('/blog'), label: 'Blog' },
 		{ href: resolve('/pinball'), label: 'Pinball' },
 		{ href: resolve('/contact'), label: 'Contact' }
 	];
@@ -52,6 +52,7 @@
 		<div class="flex items-center gap-6">
 			<a
 				href={resolve('/')}
+				aria-label="Home"
 				class="text-base font-bold tracking-tight text-heading"
 				onclick={closeMobileMenu}
 			>

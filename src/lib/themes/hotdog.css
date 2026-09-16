@@ -1,12 +1,8 @@
-/* Hotdog theme. Edit these values to customize this theme independently.
- * Values accept any CSS color, e.g. #2563eb, oklch(...), or a Tailwind palette variable.
- * Keep token names in sync with tokens.css and the other theme files.
- */
 :root.hotdog {
 	/* Page and typography */
-	--theme-page: var(--color-red-600);
+	--theme-page: var(--color-red-800);
 	--theme-body: var(--color-yellow-100);
-	--theme-heading: var(--color-yellow-300);
+	--theme-heading: var(--color-yellow-500);
 	--theme-copy: var(--color-yellow-100);
 	--theme-muted: var(--color-yellow-100);
 	--theme-subtle: var(--color-yellow-100);
@@ -15,11 +11,11 @@
 
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-yellow-400);
-	--theme-footer: var(--color-red-700);
-	--theme-header: color-mix(in oklab, var(--color-red-700) 95%, transparent);
-	--theme-nav-decoration: var(--color-yellow-300);
-	--theme-nav-hover: var(--color-yellow-300);
-	--theme-menu-icon: var(--color-yellow-300);
+	--theme-footer: var(--color-red-800);
+	--theme-header: color-mix(in oklab, var(--color-red-800) 95%, transparent);
+	--theme-nav-decoration: var(--color-yellow-500);
+	--theme-nav-hover: var(--color-yellow-500);
+	--theme-menu-icon: var(--color-yellow-500);
 	--theme-menu-hover: var(--color-red-800);
 	--theme-nav-active: var(--color-red-800);
 	--theme-nav-surface-hover: var(--color-red-800);
@@ -29,9 +25,10 @@
 
 	/* Cards and badges */
 	--theme-card-border: var(--color-black);
-	--theme-card: var(--color-yellow-300);
+	--theme-card: var(--color-yellow-500);
 	--theme-card-border-hover: var(--color-gray-300);
 	--theme-card-hover: var(--color-yellow-200);
+	--theme-card-heading: var(--color-black);
 	--theme-card-heading: var(--color-black);
 	--theme-card-copy: var(--color-red-900);
 	--theme-card-meta: var(--color-red-900);
@@ -39,13 +36,13 @@
 	--theme-card-link: var(--color-black);
 	--theme-card-label: var(--color-black);
 	--theme-card-ring: var(--color-black);
-	--theme-badge: var(--color-red-600);
-	--theme-badge-text: var(--color-yellow-200);
+	--theme-badge: var(--color-red-800);
+	--theme-badge-text: var(--color-yellow-500);
 
 	/* Primary buttons */
-	--theme-primary: var(--color-yellow-300);
+	--theme-primary: var(--color-yellow-500);
 	--theme-primary-text: var(--color-black);
-	--theme-primary-hover: var(--color-yellow-200);
+	--theme-primary-hover: var(--color-yellow-500);
 
 	/* Forms and secondary buttons */
 	--theme-field-label: var(--color-gray-700);
@@ -71,18 +68,18 @@
 	--theme-danger-text: var(--color-red-600);
 	--theme-danger-hover: var(--color-red-50);
 	--theme-danger-border: var(--color-red-200);
-	--theme-danger-heading: var(--color-red-700);
+	--theme-danger-heading: var(--color-red-800);
 	--theme-danger-button-border: var(--color-red-300);
 
 	/* Photos and image placeholders */
 	--theme-photo-ring: var(--color-yellow-400);
 	--theme-photo-border: var(--color-yellow-400);
-	--theme-photo-placeholder: var(--color-red-700);
+	--theme-photo-placeholder: var(--color-red-800);
 	--theme-photo-placeholder-text: var(--color-yellow-200);
-	--theme-avatar: var(--color-yellow-300);
-	--theme-avatar-text: var(--color-red-700);
-	--theme-image-placeholder-border: var(--color-red-700);
-	--theme-image-placeholder: var(--color-red-600);
+	--theme-avatar: var(--color-yellow-500);
+	--theme-avatar-text: var(--color-red-800);
+	--theme-image-placeholder-border: var(--color-red-800);
+	--theme-image-placeholder: var(--color-red-800);
 	--theme-image-placeholder-text: var(--color-yellow-100);
 
 	/* Pinball scores */

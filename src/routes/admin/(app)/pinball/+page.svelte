@@ -6,6 +6,7 @@
 
 	let { data, form }: PageProps = $props();
 
+	// svelte-ignore state_referenced_locally
 	let machines = $state<PinballMachine[]>(structuredClone(data.machines));
 	let saving = $state(false);
 

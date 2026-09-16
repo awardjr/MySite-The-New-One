@@ -44,7 +44,7 @@
 	{#each sections as section (section.href)}
 		<a
 			href={section.href}
-			class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition-colors hover:border-card-border-hover hover:bg-card-hover"
+			class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition-transform duration-200 hover:scale-105 hover:border-card-border-hover hover:bg-card-hover"
 		>
 			<h2 class="font-semibold text-card-heading">{section.label}</h2>
 			<p class="mt-1 text-sm text-card-copy">{section.description}</p>

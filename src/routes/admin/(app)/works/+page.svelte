@@ -10,13 +10,14 @@
 		{ key: 'windows', label: 'Windows' },
 		{ key: 'macos', label: 'macOS' },
 		{ key: 'linux', label: 'Linux' },
-		{ key: 'playstation', label: 'PlayStation' },
-		{ key: 'xbox', label: 'Xbox' },
+		{ key: 'ios', label: 'iOS' },
+		{ key: 'android', label: 'Android' },
 		{ key: 'switch', label: 'Nintendo Switch' }
 	];
 
 	let { data, form }: PageProps = $props();
 
+	// svelte-ignore state_referenced_locally
 	let items = $state<WorkItem[]>(structuredClone(data.items));
 	let saving = $state(false);
 

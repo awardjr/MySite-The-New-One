@@ -1,7 +1,3 @@
-/* Expose theme variables as Tailwind utilities (bg-page, text-heading, etc.).
- * inline keeps each utility bound to the active theme on the document root.
- * Edit color values in light.css, dark.css, or hotdog.css.
- */
 @theme inline {
 	--color-page: var(--theme-page);
 	--color-body: var(--theme-body);

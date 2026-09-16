@@ -5,6 +5,7 @@
 
 	let { data, form }: PageProps = $props();
 
+	// svelte-ignore state_referenced_locally
 	let items = $state<PressItem[]>(structuredClone(data.items));
 	let saving = $state(false);
 

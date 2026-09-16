@@ -16,22 +16,26 @@
 
 	<article class="mt-4 max-w-3xl">
 		{#if post.image}
-			<img
-				src={post.image}
-				alt={post.title}
+			<button
+				type="button"
 				onclick={() => openLightbox(post.image, post.title)}
-				onkeydown={(e) => e.key === 'Enter' && openLightbox(post.image, post.title)}
-				tabindex="0"
-				class="mb-6 h-56 w-full cursor-pointer rounded-lg object-cover ring-1 ring-photo-ring sm:h-80"
-			/>
+				aria-label={`View larger image for ${post.title}`}
+				class="block w-full"
+			>
+				<img
+					src={post.image}
+					alt={post.title}
+					class="mb-6 h-56 w-full cursor-pointer rounded-lg object-cover ring-1 ring-photo-ring sm:h-80"
+				/>
+			</button>
 		{/if}
 
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">
 			{post.title}
 		</h1>
-		<p class="mt-1 text-xs text-eyebrow">{post.date}</p>
+		<p class="mt-1 text-s text-eyebrow">{post.date}</p>
 
-		<p class="mt-6 text-base leading-relaxed whitespace-pre-line text-copy">
+		<p class="mt-6 text-lg leading-relaxed whitespace-pre-line text-copy">
 			{post.content}
 		</p>
 	</article>

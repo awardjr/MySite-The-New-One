@@ -38,6 +38,9 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
+		"@fontsource-variable/raleway": "^5.3.0",
+		"@fontsource/jost": "^5.3.0",
+		"@fontsource/spline-sans": "^5.3.0",
 		"@fortawesome/free-brands-svg-icons": "^7.3.1",
 		"@fortawesome/free-solid-svg-icons": "^7.3.1",
 		"better-sqlite3": "^13.0.3",

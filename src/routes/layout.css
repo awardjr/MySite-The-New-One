@@ -1,10 +1,10 @@
 @import 'tailwindcss';
-@import '@fontsource/fira-mono';
-@import '../lib/themes/tokens.css';
+@import '@fontsource-variable/raleway/wght.css';
+@import '../lib/themes/vars.css';
 @import '../lib/themes/light.css';
 @import '../lib/themes/dark.css';
 @import '../lib/themes/hotdog.css';
 
 :root {
-	--font-mono: 'Fira Mono', monospace;
+	--font-sans: 'Raleway Variable', sans-serif;
 }

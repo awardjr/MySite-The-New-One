@@ -1,10 +1,3 @@
-// Filesystem-backed image uploads for the /admin CMS area.
-//
-// Uploaded files are written directly into `static/uploads/` so they're
-// served by SvelteKit like any other static asset, at `/uploads/<filename>`.
-// This means uploads live on disk next to the app (no external storage/CDN),
-// which matches the site's existing "filesystem storage is fine" approach
-// used for the SQLite content database.
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -24,7 +17,6 @@ const ALLOWED_MIME_TO_EXTENSION: Record<string, string> = {
 
 export class UploadError extends Error {}
 
-/** Saves an uploaded image file to disk and returns its public path (e.g. `/uploads/xyz.png`). */
 export async function saveUploadedImage(file: File): Promise<string> {
 	if (!(file instanceof File) || file.size === 0) {
 		throw new UploadError('No file was uploaded.');

@@ -5,9 +5,13 @@
 
 	let { data, form }: PageProps = $props();
 
+	// svelte-ignore state_referenced_locally
 	let name = $state(data.home.name);
+	// svelte-ignore state_referenced_locally
 	let tagline = $state(data.home.tagline);
+	// svelte-ignore state_referenced_locally
 	let photoSrc = $state(data.home.photoSrc);
+	// svelte-ignore state_referenced_locally
 	let introParagraphs = $state(data.home.introParagraphs.join('\n\n'));
 
 	let saving = $state(false);

@@ -1,6 +1,3 @@
-// Registry of icon keys usable for contact links in the CMS. Content is
-// stored as plain JSON, so icons are referenced by string key here rather
-// than as FontAwesome objects directly. Add an entry to support a new icon.
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
 import {
 	faFileLines,
@@ -12,8 +9,7 @@ import {
 import {
 	faLinkedin,
 	faGithub,
-	faXTwitter,
-	faInstagram,
+	faTwitch,
 	faYoutube
 } from '@fortawesome/free-brands-svg-icons';
 
@@ -25,9 +21,7 @@ export const iconRegistry: Record<string, IconDefinition> = {
 	globe: faGlobe,
 	linkedin: faLinkedin,
 	github: faGithub,
-	twitter: faXTwitter,
-	instagram: faInstagram,
-	youtube: faYoutube
+	twitch: faTwitch
 };
 
 export const iconOptions = Object.keys(iconRegistry);

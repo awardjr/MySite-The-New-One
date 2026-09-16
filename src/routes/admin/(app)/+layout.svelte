@@ -6,12 +6,12 @@
 	const navItems = [
 		{ href: '/admin', label: 'Dashboard' },
 		{ href: '/admin/home', label: 'Home' },
+		{ href: '/admin/blog', label: 'Blog' },
 		{ href: '/admin/contact', label: 'Contact' },
 		{ href: '/admin/skills', label: 'Skills' },
 		{ href: '/admin/works', label: 'Works' },
 		{ href: '/admin/press', label: 'Press' },
 		{ href: '/admin/pinball', label: 'Pinball' },
-		{ href: '/admin/blog', label: 'Blog' },
 		{ href: '/admin/settings', label: 'Settings' }
 	];
 </script>

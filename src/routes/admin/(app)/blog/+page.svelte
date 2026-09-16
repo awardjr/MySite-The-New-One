@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>Admin - Blog</title>
+	<title>Admin - Posts</title>
 </svelte:head>
 
 <div class="flex items-center justify-between">

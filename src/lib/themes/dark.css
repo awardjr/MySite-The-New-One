@@ -1,7 +1,3 @@
-/* Dark theme. Edit these values to customize this theme independently.
- * Values accept any CSS color, e.g. #2563eb, oklch(...), or a Tailwind palette variable.
- * Keep token names in sync with tokens.css and the other theme files.
- */
 :root.dark {
 	/* Page and typography */
 	--theme-page: var(--color-gray-950);

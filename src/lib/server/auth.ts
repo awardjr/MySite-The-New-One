@@ -1,10 +1,3 @@
-// SQLite-backed single-admin session auth for the /admin CMS area.
-//
-// The admin password is hashed and stored in the `admin_user` table (see
-// `db.ts`) — there is no `.env` password anymore. On a brand-new database
-// with no admin user yet, `/admin/setup` lets you create the first (and
-// only) admin password. Login sessions are random tokens stored in the
-// `sessions` table; the browser only ever holds the opaque session id.
 import crypto from 'node:crypto';
 import { db } from './db';
 

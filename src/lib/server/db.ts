@@ -1,11 +1,3 @@
-// Shared SQLite connection for the site's CMS.
-//
-// A single database file on disk (data/cms.sqlite3, created on first run)
-// backs both the editable page content and the admin login (password +
-// sessions). See `content.ts` and `auth.ts` for the tables this module sets up.
-//
-// This module can only be imported from server-side code (anything under
-// `$lib/server`), which SvelteKit enforces automatically.
 import fs from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';

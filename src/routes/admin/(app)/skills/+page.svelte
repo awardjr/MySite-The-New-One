@@ -5,6 +5,7 @@
 
 	let { data, form }: PageProps = $props();
 
+	// svelte-ignore state_referenced_locally
 	let categories = $state<SkillCategory[]>(structuredClone(data.categories));
 	let saving = $state(false);
 

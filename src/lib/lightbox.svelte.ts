@@ -1,5 +1,3 @@
-// Shared state for the image lightbox. Call `openLightbox(src, alt)` from any
-// clickable <img> to expand it; the overlay itself lives in Lightbox.svelte.
 let src = $state('');
 let alt = $state('');
 

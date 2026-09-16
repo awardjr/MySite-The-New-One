@@ -23,11 +23,12 @@
 		>
 			<Fa icon={faXmark} class="h-5 w-5" />
 		</button>
-		<img
-			src={lightbox.src}
-			alt={lightbox.alt}
-			class="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
-			onclick={(e) => e.stopPropagation()}
-		/>
+		<div role="presentation" onclick={(e) => e.stopPropagation()}>
+			<img
+				src={lightbox.src}
+				alt={lightbox.alt}
+				class="max-h-[90vh] max-w-full rounded-lg object-contain shadow-2xl"
+			/>
+		</div>
 	</div>
 {/if}

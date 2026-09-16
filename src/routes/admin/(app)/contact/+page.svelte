@@ -6,6 +6,7 @@
 
 	let { data, form }: PageProps = $props();
 
+	// svelte-ignore state_referenced_locally
 	let links = $state<ContactLink[]>(structuredClone(data.links));
 	let saving = $state(false);
 

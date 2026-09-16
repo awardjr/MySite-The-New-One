@@ -1,0 +1,95 @@
+:root.hotdog {
+	/* Page and typography */
+	--theme-page: var(--color-red-800);
+	--theme-body: var(--color-yellow-100);
+	--theme-heading: var(--color-yellow-500);
+	--theme-copy: var(--color-yellow-100);
+	--theme-muted: var(--color-yellow-100);
+	--theme-subtle: var(--color-yellow-100);
+	--theme-eyebrow: var(--color-yellow-200);
+	--theme-link: var(--color-yellow-200);
+
+	/* Header, footer, and navigation */
+	--theme-chrome-border: var(--color-yellow-400);
+	--theme-footer: var(--color-red-800);
+	--theme-header: color-mix(in oklab, var(--color-red-800) 95%, transparent);
+	--theme-nav-decoration: var(--color-yellow-500);
+	--theme-nav-hover: var(--color-yellow-500);
+	--theme-menu-icon: var(--color-yellow-500);
+	--theme-menu-hover: var(--color-red-800);
+	--theme-nav-active: var(--color-red-800);
+	--theme-nav-surface-hover: var(--color-red-800);
+	--theme-admin-nav-hover: var(--color-gray-950);
+
+	--theme-menu-border: var(--color-yellow-400);
+
+	/* Cards and badges */
+	--theme-card-border: var(--color-black);
+	--theme-card: var(--color-yellow-500);
+	--theme-card-border-hover: var(--color-gray-300);
+	--theme-card-hover: var(--color-yellow-200);
+	--theme-card-heading: var(--color-black);
+	--theme-card-heading: var(--color-black);
+	--theme-card-copy: var(--color-red-900);
+	--theme-card-meta: var(--color-red-900);
+	--theme-card-action: var(--color-black);
+	--theme-card-link: var(--color-black);
+	--theme-card-label: var(--color-black);
+	--theme-card-ring: var(--color-black);
+	--theme-badge: var(--color-red-800);
+	--theme-badge-text: var(--color-yellow-500);
+
+	/* Primary buttons */
+	--theme-primary: var(--color-yellow-500);
+	--theme-primary-text: var(--color-black);
+	--theme-primary-hover: var(--color-yellow-500);
+
+	/* Forms and secondary buttons */
+	--theme-field-label: var(--color-gray-700);
+	--theme-field-border: var(--color-gray-300);
+	--theme-field: transparent;
+	--theme-field-text: currentColor;
+	--theme-field-text-explicit: var(--color-gray-900);
+	--theme-field-focus: var(--color-gray-500);
+	--theme-form-muted: var(--color-gray-600);
+	--theme-form-hint: var(--color-gray-500);
+	--theme-form-border: var(--color-gray-200);
+	--theme-form-border-subtle: var(--color-gray-100);
+	--theme-secondary-hover: var(--color-gray-50);
+
+	--theme-code: var(--color-red-800);
+	--theme-file-button: var(--color-gray-100);
+	--theme-file-button-text: var(--color-gray-700);
+	--theme-file-button-hover: var(--color-gray-200);
+
+	/* Status and destructive actions */
+	--theme-error: var(--color-red-600);
+	--theme-success: var(--color-green-600);
+	--theme-danger-text: var(--color-red-600);
+	--theme-danger-hover: var(--color-red-50);
+	--theme-danger-border: var(--color-red-200);
+	--theme-danger-heading: var(--color-red-800);
+	--theme-danger-button-border: var(--color-red-300);
+
+	/* Photos and image placeholders */
+	--theme-photo-ring: var(--color-yellow-400);
+	--theme-photo-border: var(--color-yellow-400);
+	--theme-photo-placeholder: var(--color-red-800);
+	--theme-photo-placeholder-text: var(--color-yellow-200);
+	--theme-avatar: var(--color-yellow-500);
+	--theme-avatar-text: var(--color-red-800);
+	--theme-image-placeholder-border: var(--color-red-800);
+	--theme-image-placeholder: var(--color-red-800);
+	--theme-image-placeholder-text: var(--color-yellow-100);
+
+	/* Pinball scores */
+	--theme-score-label: var(--color-red-800);
+	--theme-score-caption: var(--color-yellow-200);
+	--theme-score-value: var(--color-yellow-200);
+
+	/* Lightbox */
+	--theme-overlay: color-mix(in oklab, var(--color-black) 80%, transparent);
+	--theme-overlay-button: color-mix(in oklab, var(--color-white) 10%, transparent);
+	--theme-overlay-text: var(--color-white);
+	--theme-overlay-button-hover: color-mix(in oklab, var(--color-white) 20%, transparent);
+}

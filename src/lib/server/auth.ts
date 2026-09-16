@@ -40,7 +40,10 @@ export function isAdminConfigured(): boolean {
 
 /** Sets (or replaces) the single admin password. */
 export function setAdminPassword(password: string): void {
-	upsertAdminStmt.run({ passwordHash: hashPassword(password), updatedAt: new Date().toISOString() });
+	upsertAdminStmt.run({
+		passwordHash: hashPassword(password),
+		updatedAt: new Date().toISOString()
+	});
 }
 
 /** Checks a submitted login password against the stored admin password. */
@@ -51,7 +54,9 @@ export function checkPassword(candidate: string): boolean {
 	return verifyPassword(candidate, row.password_hash);
 }
 
-const insertSessionStmt = db.prepare('INSERT INTO sessions (id, created_at, expires_at) VALUES (?, ?, ?)');
+const insertSessionStmt = db.prepare(
+	'INSERT INTO sessions (id, created_at, expires_at) VALUES (?, ?, ?)'
+);
 const getSessionStmt = db.prepare('SELECT expires_at FROM sessions WHERE id = ?');
 const deleteSessionStmt = db.prepare('DELETE FROM sessions WHERE id = ?');
 const deleteExpiredSessionsStmt = db.prepare('DELETE FROM sessions WHERE expires_at <= ?');

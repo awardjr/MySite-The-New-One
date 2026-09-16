@@ -105,7 +105,10 @@ export const defaultContent: SiteContent = {
 			{ category: 'Databases', skills: ['MySQL', 'PostgreSQL', 'MongoDB', 'Redis'] },
 			{ category: 'Cloud & Infrastructure', skills: ['AWS', 'Docker', 'Apache', 'Nginx'] },
 			{ category: 'Auth & Integrations', skills: ['SSO', 'OAuth2'] },
-			{ category: 'Tools & Practices', skills: ['Git', 'Unit Testing', 'Visual Studio', 'Jetbrains IDEs'] },
+			{
+				category: 'Tools & Practices',
+				skills: ['Git', 'Unit Testing', 'Visual Studio', 'Jetbrains IDEs']
+			},
 			{ category: 'Operating Systems', skills: ['Microsoft Windows', 'Linux', 'MacOS'] }
 		]
 	},
@@ -113,7 +116,8 @@ export const defaultContent: SiteContent = {
 		items: [
 			{
 				title: 'Project Title',
-				description: 'A brief description of what this project is, what you built, and the technologies used.',
+				description:
+					'A brief description of what this project is, what you built, and the technologies used.',
 				image: '',
 				platforms: ['web', 'windows', 'macos']
 			}
@@ -123,7 +127,8 @@ export const defaultContent: SiteContent = {
 		items: [
 			{
 				title: 'Press Mention Title',
-				summary: 'A brief summary of the article or feature, what it covers, and why it is relevant.',
+				summary:
+					'A brief summary of the article or feature, what it covers, and why it is relevant.',
 				href: ''
 			}
 		]
@@ -148,7 +153,8 @@ export const defaultContent: SiteContent = {
 				title: 'Sample Post',
 				date: '2026-01-01',
 				image: '',
-				preview: 'This is a short preview of the sample post. Replace this with a teaser of your real content.',
+				preview:
+					'This is a short preview of the sample post. Replace this with a teaser of your real content.',
 				content:
 					'This is the full body of the sample post. Replace this with your real writeup — it can be as long as you like, and will be shown in full both when a post is expanded on the blog listing page and on its own dedicated page.'
 			}
@@ -210,7 +216,10 @@ export function writeContent(content: SiteContent): void {
 }
 
 /** Reads the current content, replaces one top-level section, and persists the result. */
-export function updateSection<K extends keyof SiteContent>(key: K, value: SiteContent[K]): SiteContent {
+export function updateSection<K extends keyof SiteContent>(
+	key: K,
+	value: SiteContent[K]
+): SiteContent {
 	const current = readContent();
 	const updated = { ...current, [key]: value };
 	setSection(key, value);

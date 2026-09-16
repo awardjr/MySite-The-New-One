@@ -15,7 +15,9 @@ export const actions: Actions = {
 			return fail(401, { error: 'Current password is incorrect.' });
 		}
 		if (newPassword.length < MIN_PASSWORD_LENGTH) {
-			return fail(400, { error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters long.` });
+			return fail(400, {
+				error: `New password must be at least ${MIN_PASSWORD_LENGTH} characters long.`
+			});
 		}
 		if (newPassword !== confirmPassword) {
 			return fail(400, { error: 'New passwords do not match.' });

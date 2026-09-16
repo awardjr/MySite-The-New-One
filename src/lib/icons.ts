@@ -2,8 +2,20 @@
 // stored as plain JSON, so icons are referenced by string key here rather
 // than as FontAwesome objects directly. Add an entry to support a new icon.
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
-import { faFileLines, faEnvelope, faLink, faGlobe, faPhone } from '@fortawesome/free-solid-svg-icons';
-import { faLinkedin, faGithub, faXTwitter, faInstagram, faYoutube } from '@fortawesome/free-brands-svg-icons';
+import {
+	faFileLines,
+	faEnvelope,
+	faLink,
+	faGlobe,
+	faPhone
+} from '@fortawesome/free-solid-svg-icons';
+import {
+	faLinkedin,
+	faGithub,
+	faXTwitter,
+	faInstagram,
+	faYoutube
+} from '@fortawesome/free-brands-svg-icons';
 
 export const iconRegistry: Record<string, IconDefinition> = {
 	resume: faFileLines,

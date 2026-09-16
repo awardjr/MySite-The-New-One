@@ -1,5 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { checkPassword, createSession, isAdminConfigured, sessionCookieOptions, SESSION_COOKIE_NAME } from '$lib/server/auth';
+import {
+	checkPassword,
+	createSession,
+	isAdminConfigured,
+	sessionCookieOptions,
+	SESSION_COOKIE_NAME
+} from '$lib/server/auth';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ locals, url }) => {

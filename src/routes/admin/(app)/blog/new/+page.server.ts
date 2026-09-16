@@ -22,13 +22,29 @@ export const actions: Actions = {
 		const content = String(formData.get('content') ?? '').trim();
 
 		if (!title) {
-			return fail(400, { error: 'Title is required.', title, slug: slugInput, date, image, preview, content });
+			return fail(400, {
+				error: 'Title is required.',
+				title,
+				slug: slugInput,
+				date,
+				image,
+				preview,
+				content
+			});
 		}
 
 		const slug = slugify(slugInput || title);
 
 		if (!slug) {
-			return fail(400, { error: 'Slug is required.', title, slug: slugInput, date, image, preview, content });
+			return fail(400, {
+				error: 'Slug is required.',
+				title,
+				slug: slugInput,
+				date,
+				image,
+				preview,
+				content
+			});
 		}
 
 		const posts = readContent().blog.posts;

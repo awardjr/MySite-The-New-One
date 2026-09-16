@@ -35,7 +35,9 @@ export async function saveUploadedImage(file: File): Promise<string> {
 
 	const extension = ALLOWED_MIME_TO_EXTENSION[file.type];
 	if (!extension) {
-		throw new UploadError('Unsupported file type. Please upload a JPEG, PNG, GIF, WebP, or SVG image.');
+		throw new UploadError(
+			'Unsupported file type. Please upload a JPEG, PNG, GIF, WebP, or SVG image.'
+		);
 	}
 
 	await fs.mkdir(UPLOAD_DIR, { recursive: true });

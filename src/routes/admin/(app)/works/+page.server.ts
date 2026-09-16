@@ -28,7 +28,9 @@ export const actions: Actions = {
 				description: String(item?.description ?? '').trim(),
 				image: String(item?.image ?? '').trim(),
 				platforms: Array.isArray(item?.platforms)
-					? (item.platforms as unknown[]).map((platform) => String(platform ?? '').trim()).filter(Boolean)
+					? (item.platforms as unknown[])
+							.map((platform) => String(platform ?? '').trim())
+							.filter(Boolean)
 					: []
 			}))
 			.filter((item) => item.title);

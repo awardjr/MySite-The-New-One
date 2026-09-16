@@ -1,5 +1,10 @@
 import { fail } from '@sveltejs/kit';
-import { readContent, updateSection, type PinballMachine, type ModeScore } from '$lib/server/content';
+import {
+	readContent,
+	updateSection,
+	type PinballMachine,
+	type ModeScore
+} from '$lib/server/content';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -29,12 +34,10 @@ export const actions: Actions = {
 				highScore: String(item?.highScore ?? '').trim(),
 				modeScores: Array.isArray(item?.modeScores)
 					? (item.modeScores as Record<string, unknown>[])
-							.map(
-								(modeScore): ModeScore => ({
-									mode: String(modeScore?.mode ?? '').trim(),
-									score: String(modeScore?.score ?? '').trim()
-								})
-							)
+							.map((modeScore): ModeScore => ({
+								mode: String(modeScore?.mode ?? '').trim(),
+								score: String(modeScore?.score ?? '').trim()
+							}))
 							.filter((modeScore) => modeScore.mode)
 					: []
 			}))

@@ -29,7 +29,9 @@ export const actions: Actions = {
 		const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
 		if (password.length < MIN_PASSWORD_LENGTH) {
-			return fail(400, { error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.` });
+			return fail(400, {
+				error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`
+			});
 		}
 		if (password !== confirmPassword) {
 			return fail(400, { error: 'Passwords do not match.' });

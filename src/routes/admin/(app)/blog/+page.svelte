@@ -57,7 +57,7 @@
 					Preview
 				</a>
 				<a
-					href="/admin/blog/{post.slug}"
+					href={resolve('/admin/(app)/blog/[slug]', { slug: post.slug })}
 					class="rounded-lg border border-field-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary-hover"
 				>
 					Edit

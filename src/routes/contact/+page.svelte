@@ -15,7 +15,7 @@
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Contact</h1>
-		<p class="text-base text-muted">Feel free to reach out</p>
+		<p class="text-base text-muted">Find me in these places. Check out what I've done as well</p>
 	</div>
 
 	<div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { iconOptions } from '$lib/icons';
 	import type { PageProps } from './$types';
@@ -6,8 +7,7 @@
 
 	let { data, form }: PageProps = $props();
 
-	// svelte-ignore state_referenced_locally
-	let links = $state<ContactLink[]>(structuredClone(data.links));
+	let links = $state<ContactLink[]>(untrack(() => structuredClone(data.links)));
 	let saving = $state(false);
 
 	function addLink() {

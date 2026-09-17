@@ -1,33 +1,47 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
+
 	const sections = [
-		{ href: '/admin/home', label: 'Home', description: 'Name, tagline, photo, and intro text.' },
 		{
-			href: '/admin/contact',
+			href: resolve('/admin/home'),
+			label: 'Home',
+			description: 'Name, tagline, photo, and intro text.'
+		},
+		{
+			href: resolve('/admin/contact'),
 			label: 'Contact',
 			description: 'Resume, LinkedIn, GitHub, email, and other links.'
 		},
 		{
-			href: '/admin/skills',
+			href: resolve('/admin/skills'),
 			label: 'Skills',
 			description: 'Categorized list of languages, tools, and technologies.'
 		},
 		{
-			href: '/admin/works',
+			href: resolve('/admin/works'),
 			label: 'Works',
 			description: 'Projects with an image, description, and platform icons.'
 		},
 		{
-			href: '/admin/press',
+			href: resolve('/admin/press'),
 			label: 'Press',
 			description: 'Press mentions shown as linkable cards.'
 		},
 		{
-			href: '/admin/pinball',
+			href: resolve('/admin/pinball'),
 			label: 'Pinball',
 			description: 'Machines with high scores and expandable per-mode scores.'
 		},
-		{ href: '/admin/blog', label: 'Blog', description: 'Blog posts, each with its own page.' },
-		{ href: '/admin/settings', label: 'Settings', description: 'Change the admin password.' }
+		{
+			href: resolve('/admin/blog'),
+			label: 'Blog',
+			description: 'Blog posts, each with its own page.'
+		},
+		{
+			href: resolve('/admin/settings'),
+			label: 'Settings',
+			description: 'Change the admin password.'
+		}
 	];
 </script>
 

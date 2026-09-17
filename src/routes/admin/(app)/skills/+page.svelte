@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
 	import type { SkillCategory } from '$lib/server/content';
 
 	let { data, form }: PageProps = $props();
 
-	// svelte-ignore state_referenced_locally
-	let categories = $state<SkillCategory[]>(structuredClone(data.categories));
+	let categories = $state<SkillCategory[]>(untrack(() => structuredClone(data.categories)));
 	let saving = $state(false);
 
 	function addCategory() {

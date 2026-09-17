@@ -1,18 +1,15 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	// svelte-ignore state_referenced_locally
-	let name = $state(data.home.name);
-	// svelte-ignore state_referenced_locally
-	let tagline = $state(data.home.tagline);
-	// svelte-ignore state_referenced_locally
-	let photoSrc = $state(data.home.photoSrc);
-	// svelte-ignore state_referenced_locally
-	let introParagraphs = $state(data.home.introParagraphs.join('\n\n'));
+	let name = $state(untrack(() => data.home.name));
+	let tagline = $state(untrack(() => data.home.tagline));
+	let photoSrc = $state(untrack(() => data.home.photoSrc));
+	let introParagraphs = $state(untrack(() => data.home.introParagraphs.join('\n\n')));
 
 	let saving = $state(false);
 </script>

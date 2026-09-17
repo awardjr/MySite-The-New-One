@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
 	import type { PageProps } from './$types';
@@ -17,8 +18,7 @@
 
 	let { data, form }: PageProps = $props();
 
-	// svelte-ignore state_referenced_locally
-	let items = $state<WorkItem[]>(structuredClone(data.items));
+	let items = $state<WorkItem[]>(untrack(() => structuredClone(data.items)));
 	let saving = $state(false);
 
 	function addItem() {

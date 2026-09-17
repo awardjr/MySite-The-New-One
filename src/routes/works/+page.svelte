@@ -36,7 +36,7 @@
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Works</h1>
-		<p class="text-lg text-muted">Some of things I've worked on</p>
+		<p class="text-lg text-muted">Some fun things I worked on. Might add some </p>
 	</div>
 
 	<div class="mt-8 space-y-6">

@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
 	import type { PressItem } from '$lib/server/content';
 
 	let { data, form }: PageProps = $props();
 
-	// svelte-ignore state_referenced_locally
-	let items = $state<PressItem[]>(structuredClone(data.items));
+	let items = $state<PressItem[]>(untrack(() => structuredClone(data.items)));
 	let saving = $state(false);
 
 	function addItem() {

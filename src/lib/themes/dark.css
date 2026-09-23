@@ -71,11 +71,6 @@
 
 	/* Photos and image placeholders */
 	--theme-photo-ring: var(--color-gray-800);
-	--theme-photo-border: var(--color-gray-700);
-	--theme-photo-placeholder: var(--color-gray-900);
-	--theme-photo-placeholder-text: var(--color-gray-500);
-	--theme-avatar: var(--color-gray-800);
-	--theme-avatar-text: var(--color-gray-300);
 	--theme-image-placeholder-border: var(--color-gray-700);
 	--theme-image-placeholder: var(--color-gray-900);
 	--theme-image-placeholder-text: var(--color-gray-500);

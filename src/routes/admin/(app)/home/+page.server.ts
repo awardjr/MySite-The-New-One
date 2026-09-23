@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection } from '$lib/server/content';
+import { text } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -10,11 +11,10 @@ export const actions: Actions = {
 	default: async ({ request }) => {
 		const formData = await request.formData();
 
-		const name = String(formData.get('name') ?? '').trim();
-		const tagline = String(formData.get('tagline') ?? '').trim();
-		const photoSrc = String(formData.get('photoSrc') ?? '').trim();
-		const introRaw = String(formData.get('introParagraphs') ?? '');
-		const introParagraphs = introRaw
+		const name = text(formData.get('name'));
+		const tagline = text(formData.get('tagline'));
+		const photoSrc = text(formData.get('photoSrc'));
+		const introParagraphs = String(formData.get('introParagraphs') ?? '')
 			.split(/\n\s*\n/)
 			.map((paragraph) => paragraph.trim())
 			.filter(Boolean);

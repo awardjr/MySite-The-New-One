@@ -13,7 +13,9 @@
 </svelte:head>
 
 <section class="py-6 sm:py-10">
-	<a href={resolve('/blog')} class="text-sm font-medium text-link hover:underline"> ← Back to Blog </a>
+	<a href={resolve('/blog')} class="text-sm font-medium text-link hover:underline">
+		← Back to Blog
+	</a>
 
 	<article class="mt-4 max-w-3xl">
 		{#if post.draft}
@@ -42,7 +44,7 @@
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">
 			{post.title}
 		</h1>
-		<p class="mt-1 text-s text-eyebrow">{post.date}</p>
+		<p class="mt-1 text-eyebrow">{post.date}</p>
 
 		<div class="post-content mt-6 text-lg leading-relaxed text-copy">
 			<!-- Sanitized on the admin page-->
@@ -93,5 +95,13 @@
 	.post-content :global(a) {
 		color: var(--color-link);
 		text-decoration: underline;
+	}
+
+	.post-content :global(img) {
+		max-width: 100%;
+		height: auto;
+		border-radius: 0.5rem;
+		margin: 1rem 0;
+		display: block;
 	}
 </style>

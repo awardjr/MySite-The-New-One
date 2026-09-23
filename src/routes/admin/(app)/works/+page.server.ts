@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, type WorkItem } from '$lib/server/content';
+import { readJsonRows, text, textList } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -8,30 +9,17 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	default: async ({ request }) => {
-		const formData = await request.formData();
-		const raw = String(formData.get('items') ?? '[]');
-
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(raw);
-		} catch {
+		const rows = readJsonRows(await request.formData(), 'items');
+		if (!rows) {
 			return fail(400, { error: 'Could not read submitted data.' });
 		}
 
-		if (!Array.isArray(parsed)) {
-			return fail(400, { error: 'Could not read submitted data.' });
-		}
-
-		const items: WorkItem[] = (parsed as Record<string, unknown>[])
+		const items: WorkItem[] = rows
 			.map((item) => ({
-				title: String(item?.title ?? '').trim(),
-				description: String(item?.description ?? '').trim(),
-				image: String(item?.image ?? '').trim(),
-				platforms: Array.isArray(item?.platforms)
-					? (item.platforms as unknown[])
-							.map((platform) => String(platform ?? '').trim())
-							.filter(Boolean)
-					: []
+				title: text(item.title),
+				description: text(item.description),
+				image: text(item.image),
+				platforms: textList(item.platforms)
 			}))
 			.filter((item) => item.title);
 

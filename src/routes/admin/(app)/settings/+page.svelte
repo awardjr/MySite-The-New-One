@@ -20,7 +20,7 @@
 
 <form
 	method="POST"
-	class="mt-6 max-w-sm space-y-4"
+	class="mt-6 space-y-4"
 	use:enhance={() => {
 		saving = true;
 		return async ({ update }) => {

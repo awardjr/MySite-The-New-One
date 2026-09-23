@@ -48,7 +48,7 @@
 				<h2 class="text-xl font-bold text-card-heading sm:text-2xl">
 					{post.title}
 				</h2>
-				<p class="mt-1 text-s text-card-meta">{post.date}</p>
+				<p class="mt-1 text-card-meta">{post.date}</p>
 
 				{#if isExpanded}
 					<div class="post-content mt-3 text-sm text-card-copy sm:text-lg">
@@ -70,8 +70,10 @@
 					>
 						{isExpanded ? 'Show Less' : 'Read More'}
 					</button>
-					<a href={resolve('/blog/[slug]', { slug: post.slug })}
-						 class="text-sm font-medium text-card-link hover:underline">
+					<a
+						href={resolve('/blog/[slug]', { slug: post.slug })}
+						class="text-sm font-medium text-card-link hover:underline"
+					>
 						View Full →
 					</a>
 				</div>
@@ -121,5 +123,13 @@
 	.post-content :global(a) {
 		color: var(--color-card-link);
 		text-decoration: underline;
+	}
+
+	.post-content :global(img) {
+		max-width: 100%;
+		height: auto;
+		border-radius: 0.5rem;
+		margin: 0.75rem 0;
+		display: block;
 	}
 </style>

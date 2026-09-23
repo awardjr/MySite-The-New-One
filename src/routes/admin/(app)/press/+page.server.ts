@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, type PressItem } from '$lib/server/content';
+import { readJsonRows, text } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -8,25 +9,16 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	default: async ({ request }) => {
-		const formData = await request.formData();
-		const raw = String(formData.get('items') ?? '[]');
-
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(raw);
-		} catch {
+		const rows = readJsonRows(await request.formData(), 'items');
+		if (!rows) {
 			return fail(400, { error: 'Could not read submitted data.' });
 		}
 
-		if (!Array.isArray(parsed)) {
-			return fail(400, { error: 'Could not read submitted data.' });
-		}
-
-		const items: PressItem[] = (parsed as Record<string, unknown>[])
+		const items: PressItem[] = rows
 			.map((item) => ({
-				title: String(item?.title ?? '').trim(),
-				summary: String(item?.summary ?? '').trim(),
-				href: String(item?.href ?? '').trim()
+				title: text(item.title),
+				summary: text(item.summary),
+				href: text(item.href)
 			}))
 			.filter((item) => item.title);
 

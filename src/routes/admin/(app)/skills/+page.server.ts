@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, type SkillCategory } from '$lib/server/content';
+import { readJsonRows, text, textList } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -8,26 +9,15 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	default: async ({ request }) => {
-		const formData = await request.formData();
-		const raw = String(formData.get('categories') ?? '[]');
-
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(raw);
-		} catch {
+		const rows = readJsonRows(await request.formData(), 'categories');
+		if (!rows) {
 			return fail(400, { error: 'Could not read submitted data.' });
 		}
 
-		if (!Array.isArray(parsed)) {
-			return fail(400, { error: 'Could not read submitted data.' });
-		}
-
-		const categories: SkillCategory[] = (parsed as Record<string, unknown>[])
+		const categories: SkillCategory[] = rows
 			.map((item) => ({
-				category: String(item?.category ?? '').trim(),
-				skills: Array.isArray(item?.skills)
-					? (item.skills as unknown[]).map((skill) => String(skill ?? '').trim()).filter(Boolean)
-					: []
+				category: text(item.category),
+				skills: textList(item.skills)
 			}))
 			.filter((category) => category.category);
 

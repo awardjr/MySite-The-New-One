@@ -5,41 +5,36 @@ import {
 	type PinballMachine,
 	type ModeScore
 } from '$lib/server/content';
+import { readJsonRows, text } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
 	return { machines: readContent().pinball.machines };
 };
 
+function toModeScores(value: unknown): ModeScore[] {
+	if (!Array.isArray(value)) return [];
+	return value
+		.map((modeScore): ModeScore => {
+			const row = modeScore as Record<string, unknown>;
+			return { mode: text(row?.mode), score: text(row?.score) };
+		})
+		.filter((modeScore) => modeScore.mode);
+}
+
 export const actions: Actions = {
 	default: async ({ request }) => {
-		const formData = await request.formData();
-		const raw = String(formData.get('machines') ?? '[]');
-
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(raw);
-		} catch {
+		const rows = readJsonRows(await request.formData(), 'machines');
+		if (!rows) {
 			return fail(400, { error: 'Could not read submitted data.' });
 		}
 
-		if (!Array.isArray(parsed)) {
-			return fail(400, { error: 'Could not read submitted data.' });
-		}
-
-		const machines: PinballMachine[] = (parsed as Record<string, unknown>[])
+		const machines: PinballMachine[] = rows
 			.map((item) => ({
-				name: String(item?.name ?? '').trim(),
-				image: String(item?.image ?? '').trim(),
-				highScore: String(item?.highScore ?? '').trim(),
-				modeScores: Array.isArray(item?.modeScores)
-					? (item.modeScores as Record<string, unknown>[])
-							.map((modeScore): ModeScore => ({
-								mode: String(modeScore?.mode ?? '').trim(),
-								score: String(modeScore?.score ?? '').trim()
-							}))
-							.filter((modeScore) => modeScore.mode)
-					: []
+				name: text(item.name),
+				image: text(item.image),
+				highScore: text(item.highScore),
+				modeScores: toModeScores(item.modeScores)
 			}))
 			.filter((machine) => machine.name);
 

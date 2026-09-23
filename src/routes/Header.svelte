@@ -7,6 +7,8 @@
 
 	type Theme = 'light' | 'dark' | 'hotdog';
 
+	let { siteName = '' }: { siteName?: string } = $props();
+
 	let theme: Theme = $state('light');
 	let isMobileMenuOpen = $state(false);
 
@@ -36,7 +38,10 @@
 		page.url.pathname === resolve('/admin') || page.url.pathname.startsWith(`${resolve('/admin')}/`)
 	);
 	let isAuthPage = $derived(
-		page.url.pathname === resolve('/admin/login') || page.url.pathname === resolve('/admin/setup')
+		page.url.pathname === resolve('/admin/login') ||
+			page.url.pathname === resolve('/admin/setup') ||
+			page.url.pathname === resolve('/admin/forgot-password') ||
+			page.url.pathname === resolve('/admin/reset')
 	);
 
 	const themeOrder: Theme[] = ['light', 'dark', 'hotdog'];
@@ -156,6 +161,7 @@
 					href={resolve('/')}
 					onclick={closeMobileMenu}
 				>
+					{siteName}
 				</a>
 				<nav class="hidden md:flex md:items-center md:gap-4">
 					{#each navItems as item (item.href)}

@@ -5,7 +5,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { machines } = $derived(data);
+	let { machines, siteName } = $derived(data);
 
 	let expanded: Record<number, boolean> = $state({});
 
@@ -15,14 +15,16 @@
 </script>
 
 <svelte:head>
-	<title>Pinball - Arthur Ward Jr</title>
+	<title>{siteName ? `Pinball - ${siteName}` : 'Pinball'}</title>
 	<meta name="description" content="Pinball high scores" />
 </svelte:head>
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Pinball</h1>
-		<p class="text-lg text-muted">Pinball is something I really enjoy. Here's some of my best scores so far</p>
+		<p class="text-lg text-muted">
+			Pinball is something I really enjoy. Here's some of my best scores so far
+		</p>
 	</div>
 
 	<div class="mt-8 space-y-6">

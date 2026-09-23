@@ -43,4 +43,16 @@ describe('sanitizePostHtml', () => {
 		const clean = sanitizePostHtml(dirty);
 		expect(clean).not.toContain('javascript:');
 	});
+
+	it('forces rel="noopener noreferrer" on links that open in a new tab', () => {
+		const dirty = '<a href="https://example.com" target="_blank">click</a>';
+		const clean = sanitizePostHtml(dirty);
+		expect(clean).toContain('rel="noopener noreferrer"');
+	});
+
+	it('leaves rel untouched on links that do not open in a new tab', () => {
+		const dirty = '<a href="https://example.com">click</a>';
+		const clean = sanitizePostHtml(dirty);
+		expect(clean).not.toContain('rel=');
+	});
 });

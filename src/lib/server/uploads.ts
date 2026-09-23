@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import sanitizeHtml from 'sanitize-html';
 
 const UPLOAD_DIR = path.join(process.cwd(), 'static', 'uploads');
 const PUBLIC_PREFIX = '/uploads/';
@@ -16,6 +17,83 @@ const ALLOWED_MIME_TO_EXTENSION: Record<string, string> = {
 };
 
 export class UploadError extends Error {}
+
+// SVG is XML and can carry <script> tags or on* event handlers, so any
+// uploaded SVG is run through a strict allowlist before it's written to
+// static/uploads/, which is served from the same origin.
+const svgSanitizeOptions: sanitizeHtml.IOptions = {
+	allowedTags: [
+		'svg',
+		'g',
+		'path',
+		'circle',
+		'ellipse',
+		'line',
+		'polyline',
+		'polygon',
+		'rect',
+		'text',
+		'tspan',
+		'defs',
+		'clipPath',
+		'linearGradient',
+		'radialGradient',
+		'stop',
+		'title',
+		'desc',
+		'use',
+		'symbol',
+		'mask',
+		'pattern'
+	],
+	allowedAttributes: {
+		'*': [
+			'id',
+			'class',
+			'viewBox',
+			'width',
+			'height',
+			'fill',
+			'fill-rule',
+			'fill-opacity',
+			'stroke',
+			'stroke-width',
+			'stroke-linecap',
+			'stroke-linejoin',
+			'stroke-opacity',
+			'clip-rule',
+			'opacity',
+			'transform',
+			'd',
+			'cx',
+			'cy',
+			'r',
+			'rx',
+			'ry',
+			'x',
+			'y',
+			'x1',
+			'x2',
+			'y1',
+			'y2',
+			'points',
+			'offset',
+			'stop-color',
+			'stop-opacity',
+			'gradientUnits',
+			'gradientTransform',
+			'preserveAspectRatio',
+			'xmlns'
+		]
+	},
+	// No href/xlink:href support at all, which also removes any javascript: URI vector.
+	allowedSchemes: [],
+	allowVulnerableTags: false
+};
+
+function sanitizeSvg(raw: string): string {
+	return sanitizeHtml(raw, svgSanitizeOptions);
+}
 
 export async function saveUploadedImage(file: File): Promise<string> {
 	if (!(file instanceof File) || file.size === 0) {
@@ -38,7 +116,9 @@ export async function saveUploadedImage(file: File): Promise<string> {
 	const filePath = path.join(UPLOAD_DIR, filename);
 
 	const buffer = Buffer.from(await file.arrayBuffer());
-	await fs.writeFile(filePath, buffer);
+	const finalBuffer =
+		file.type === 'image/svg+xml' ? Buffer.from(sanitizeSvg(buffer.toString('utf-8'))) : buffer;
+	await fs.writeFile(filePath, finalBuffer);
 
 	return `${PUBLIC_PREFIX}${filename}`;
 }

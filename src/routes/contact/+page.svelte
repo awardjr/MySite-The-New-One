@@ -4,12 +4,12 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { links } = $derived(data);
+	let { links, siteName } = $derived(data);
 </script>
 
 <svelte:head>
-	<title>Contact - Arthur Ward Jr</title>
-	<meta name="description" content="Contact Arthur Ward Jr" />
+	<title>{siteName ? `Contact - ${siteName}` : 'Contact'}</title>
+	<meta name="description" content={siteName ? `Contact ${siteName}` : 'Contact'} />
 </svelte:head>
 
 <section class="py-6 sm:py-10">

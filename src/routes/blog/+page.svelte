@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 
 	let { data }: PageProps = $props();
-	let { posts } = $derived(data);
+	let { posts, siteName } = $derived(data);
 
 	let expanded: Record<string, boolean> = $state({});
 
@@ -14,8 +14,8 @@
 </script>
 
 <svelte:head>
-	<title>Posts - Arthur Ward Jr</title>
-	<meta name="description" content="Posts by Arthur Ward Jr" />
+	<title>{siteName ? `Posts - ${siteName}` : 'Posts'}</title>
+	<meta name="description" content={siteName ? `Posts by ${siteName}` : 'Posts'} />
 </svelte:head>
 
 <section class="py-6 sm:py-10">

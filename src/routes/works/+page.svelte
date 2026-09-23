@@ -24,12 +24,12 @@
 	};
 
 	let { data }: PageProps = $props();
-	let { works } = $derived(data);
+	let { works, siteName } = $derived(data);
 </script>
 
 <svelte:head>
-	<title>Works - Arthur Ward Jr</title>
-	<meta content="Works - Arthur Ward Jr" name="description" />
+	<title>{siteName ? `Works - ${siteName}` : 'Works'}</title>
+	<meta content={siteName ? `Works - ${siteName}` : 'Works'} name="description" />
 </svelte:head>
 
 <section class="py-6 sm:py-10">

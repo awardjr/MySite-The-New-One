@@ -2,20 +2,18 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { skillCategories } = $derived(data);
+	let { skillCategories, siteName } = $derived(data);
 </script>
 
 <svelte:head>
-	<title>Skills - Arthur Ward Jr</title>
-	<meta name="description" content="Skills - Arthur Ward Jr" />
+	<title>{siteName ? `Skills - ${siteName}` : 'Skills'}</title>
+	<meta name="description" content={siteName ? `Skills - ${siteName}` : 'Skills'} />
 </svelte:head>
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Skills</h1>
-		<p class="text-lg text-muted">
-			Some things I'm familiar with
-		</p>
+		<p class="text-lg text-muted">Some things I'm familiar with</p>
 	</div>
 
 	<div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">

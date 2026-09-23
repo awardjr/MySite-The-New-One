@@ -4,11 +4,11 @@
 	import { resolve } from '$app/paths';
 
 	let { data }: PageProps = $props();
-	let { post } = $derived(data);
+	let { post, siteName } = $derived(data);
 </script>
 
 <svelte:head>
-	<title>{post.title} - Arthur Ward Jr</title>
+	<title>{siteName ? `${post.title} - ${siteName}` : post.title}</title>
 	<meta name="description" content={post.preview} />
 </svelte:head>
 

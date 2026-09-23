@@ -12,7 +12,7 @@
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-yellow-400);
 	--theme-footer: var(--color-red-800);
-	--theme-header: color-mix(in oklab, var(--color-red-800) 95%, transparent);
+	--theme-header: var(--color-red-800);
 	--theme-nav-decoration: var(--color-yellow-500);
 	--theme-nav-hover: var(--color-yellow-500);
 	--theme-menu-icon: var(--color-yellow-500);
@@ -41,34 +41,34 @@
 	/* Primary buttons */
 	--theme-primary: var(--color-yellow-500);
 	--theme-primary-text: var(--color-black);
-	--theme-primary-hover: var(--color-yellow-500);
+	--theme-primary-hover: var(--color-yellow-400);
 
 	/* Forms and secondary buttons */
 	--theme-field-label: var(--color-yellow-200);
-	--theme-field-border: var(--color-gray-300);
+	--theme-field-border: var(--color-yellow-400);
 	--theme-field: transparent;
 	--theme-field-text: currentColor;
-	--theme-field-text-explicit: var(--color-gray-900);
-	--theme-field-focus: var(--color-gray-500);
+	--theme-field-text-explicit: var(--color-yellow-100);
+	--theme-field-focus: var(--color-yellow-300);
 	--theme-form-muted: var(--color-yellow-100);
-	--theme-form-hint: var(--color-gray-500);
-	--theme-form-border: var(--color-gray-200);
-	--theme-form-border-subtle: var(--color-gray-100);
-	--theme-secondary-hover: var(--color-yellow-400);
+	--theme-form-hint: var(--color-yellow-200);
+	--theme-form-border: var(--color-yellow-400);
+	--theme-form-border-subtle: var(--color-red-900);
+	--theme-secondary-hover: var(--color-red-900);
 
-	--theme-code: var(--color-red-800);
-	--theme-file-button: var(--color-gray-100);
-	--theme-file-button-text: var(--color-gray-700);
-	--theme-file-button-hover: var(--color-gray-200);
+	--theme-code: var(--color-red-950);
+	--theme-file-button: var(--color-red-900);
+	--theme-file-button-text: var(--color-yellow-100);
+	--theme-file-button-hover: var(--color-red-950);
 
 	/* Status and destructive actions */
-	--theme-error: var(--color-red-600);
-	--theme-success: var(--color-green-600);
+	--theme-error: var(--color-amber-300);
+	--theme-success: var(--color-lime-400);
 	--theme-danger-text: var(--color-pink-300);
-	--theme-danger-hover: var(--color-red-50);
-	--theme-danger-border: var(--color-red-200);
-	--theme-danger-heading: var(--color-red-800);
-	--theme-danger-button-border: var(--color-red-300);
+	--theme-danger-hover: var(--color-red-900);
+	--theme-danger-border: var(--color-pink-300);
+	--theme-danger-heading: var(--color-pink-300);
+	--theme-danger-button-border: var(--color-pink-300);
 
 	/* Photos and image placeholders */
 	--theme-photo-ring: var(--color-yellow-400);

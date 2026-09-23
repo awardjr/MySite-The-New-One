@@ -12,7 +12,7 @@
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-gray-200);
 	--theme-footer: var(--color-white);
-	--theme-header: color-mix(in oklab, var(--color-white) 95%, transparent);
+	--theme-header: var(--color-white);
 	--theme-nav-decoration: var(--color-gray-400);
 	--theme-nav-hover: var(--color-gray-950);
 	--theme-menu-icon: var(--color-gray-800);

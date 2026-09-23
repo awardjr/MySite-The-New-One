@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
 	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
-	import RichTextEditor from '$lib/components/admin/RichTextEditor.svelte';
+	import CKEditor from '$lib/components/admin/CKEditor.svelte';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 
@@ -26,18 +26,18 @@
 <h1 class="text-2xl font-bold tracking-tight text-heading">Edit Post</h1>
 <p class="mt-1 text-sm text-muted">/{data.post.slug}</p>
 <a
-	href={resolve('/blog/[slug]', { slug: data.post.slug })}
-	target="_blank"
-	rel="noopener noreferrer"
 	class="mt-2 inline-block text-sm font-medium text-link hover:underline"
+	href={resolve('/blog/[slug]', { slug: data.post.slug })}
+	rel="noopener noreferrer"
+	target="_blank"
 >
 	Preview →
 </a>
 
 <form
-	method="POST"
 	action="?/update"
-	class="mt-6 max-w-2xl space-y-5"
+	class="mt-6 space-y-5"
+	method="POST"
 	use:enhance={() => {
 		saving = true;
 		return async ({ update }) => {
@@ -47,53 +47,50 @@
 	}}
 >
 	<div class="space-y-1">
-		<label for="title" class="text-sm font-medium text-field-label">Title</label>
+		<label class="text-sm font-medium text-field-label" for="title">Title</label>
 		<input
+			bind:value={title}
+			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 			id="title"
 			name="title"
-			bind:value={title}
 			required
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
 	</div>
 
 	<div class="space-y-1">
-		<label for="date" class="text-sm font-medium text-field-label">Date</label>
+		<label class="text-sm font-medium text-field-label" for="date">Date</label>
 		<input
+			bind:value={date}
+			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 			id="date"
 			name="date"
-			type="date"
-			bind:value={date}
 			required
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
+			type="date"
 		/>
 	</div>
 
-	<div class="space-y-1">
-		<ImageUploadField
-			id="image"
-			name="image"
-			label="Image URL / path"
-			placeholder="/blog/my-post.jpg (put the file in static/, or upload below) or a full URL"
-			bind:value={image}
-		/>
-	</div>
+	<ImageUploadField
+		bind:value={image}
+		id="image"
+		label="Image URL / path"
+		name="image"
+		placeholder="/blog/my-post.jpg (put the file in static/, or upload below) or a full URL"
+	/>
 
 	<div class="space-y-1">
-		<label for="preview" class="text-sm font-medium text-field-label">Preview</label>
+		<label class="text-sm font-medium text-field-label" for="preview">Preview</label>
 		<textarea
+			bind:value={preview}
+			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 			id="preview"
 			name="preview"
-			bind:value={preview}
-			rows="3"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		></textarea>
+			rows="3"></textarea>
 	</div>
 
-	<RichTextEditor id="content" name="content" label="Content" bind:value={content} />
+	<CKEditor bind:value={content} id="content" label="Content" name="content" />
 
 	<label class="flex items-center gap-2 text-sm text-field-label">
-		<input type="checkbox" name="draft" bind:checked={draft} class="rounded border-field-border" />
+		<input bind:checked={draft} class="rounded border-field-border" name="draft" type="checkbox" />
 		Save as draft (hidden from the public blog)
 	</label>
 
@@ -103,28 +100,28 @@
 
 	<div class="flex items-center gap-3">
 		<button
-			type="submit"
-			disabled={saving}
 			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
+			disabled={saving}
+			type="submit"
 		>
 			{saving ? 'Saving…' : 'Save changes'}
 		</button>
 		<a
-			href={resolve('/admin/blog')}
 			class="rounded-lg border border-field-border px-4 py-2 text-sm transition-colors hover:bg-secondary-hover"
+			href={resolve('/admin/blog')}
 		>
 			Cancel
 		</a>
 	</div>
 </form>
 
-<div class="mt-10 max-w-2xl rounded-lg border border-danger-border p-4">
+<div class="mt-10 rounded-lg border border-danger-border p-4">
 	<h2 class="text-sm font-semibold text-danger-heading">Danger zone</h2>
 	<p class="mt-1 text-sm text-muted">Permanently delete this post. This cannot be undone.</p>
 	<form
-		method="POST"
 		action="?/delete"
 		class="mt-3"
+		method="POST"
 		onsubmit={(event) => {
 			if (!confirm(`Delete "${data.post.title}"? This cannot be undone.`)) {
 				event.preventDefault();
@@ -139,9 +136,9 @@
 		}}
 	>
 		<button
-			type="submit"
-			disabled={deleting}
 			class="rounded-lg border border-danger-button-border px-4 py-2 text-sm text-danger-text transition-colors hover:bg-danger-hover disabled:opacity-60"
+			disabled={deleting}
+			type="submit"
 		>
 			{deleting ? 'Deleting…' : 'Delete Post'}
 		</button>

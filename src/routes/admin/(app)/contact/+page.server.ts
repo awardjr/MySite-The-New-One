@@ -1,5 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, type ContactLink } from '$lib/server/content';
+import { readJsonRows, text } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -8,25 +9,16 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	default: async ({ request }) => {
-		const formData = await request.formData();
-		const raw = String(formData.get('links') ?? '[]');
-
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(raw);
-		} catch {
+		const rows = readJsonRows(await request.formData(), 'links');
+		if (!rows) {
 			return fail(400, { error: 'Could not read submitted data.' });
 		}
 
-		if (!Array.isArray(parsed)) {
-			return fail(400, { error: 'Could not read submitted data.' });
-		}
-
-		const links: ContactLink[] = (parsed as Record<string, unknown>[])
+		const links: ContactLink[] = rows
 			.map((item) => ({
-				label: String(item?.label ?? '').trim(),
-				href: String(item?.href ?? '').trim(),
-				icon: String(item?.icon ?? 'link').trim()
+				label: text(item.label),
+				href: text(item.href),
+				icon: text(item.icon ?? 'link')
 			}))
 			.filter((link) => link.label && link.href);
 

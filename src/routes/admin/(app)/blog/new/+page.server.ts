@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { readContent, updateSection, type Post } from '$lib/server/content';
-import sanitizeHtml from 'sanitize-html';
+import { text } from '$lib/server/forms';
+import { readPostFields } from '../postForm';
 import type { Actions } from './$types';
 
 function slugify(value: string): string {
@@ -14,59 +15,27 @@ function slugify(value: string): string {
 export const actions: Actions = {
 	default: async ({ request }) => {
 		const formData = await request.formData();
+		const fields = readPostFields(formData);
+		const slugInput = text(formData.get('slug'));
+		const invalid = (message: string) => fail(400, { error: message, slug: slugInput, ...fields });
 
-		const title = String(formData.get('title') ?? '').trim();
-		const slugInput = String(formData.get('slug') ?? '').trim();
-		const date = String(formData.get('date') ?? '').trim();
-		const image = String(formData.get('image') ?? '').trim();
-		const preview = String(formData.get('preview') ?? '').trim();
-		const content = sanitizeHtml(String(formData.get('content') ?? '').trim());
-		const draft = formData.get('draft') === 'on';
-
-		if (!title) {
-			return fail(400, {
-				error: 'Title is required.',
-				title,
-				slug: slugInput,
-				date,
-				image,
-				preview,
-				content,
-				draft
-			});
+		if (!fields.title) {
+			return invalid('Title is required.');
 		}
 
-		const slug = slugify(slugInput || title);
+		const slug = slugify(slugInput || fields.title);
 
 		if (!slug) {
-			return fail(400, {
-				error: 'Slug is required.',
-				title,
-				slug: slugInput,
-				date,
-				image,
-				preview,
-				content,
-				draft
-			});
+			return invalid('Slug is required.');
 		}
 
 		const posts = readContent().blog.posts;
 
 		if (posts.some((post) => post.slug === slug)) {
-			return fail(400, {
-				error: 'A post with this slug already exists.',
-				title,
-				slug: slugInput,
-				date,
-				image,
-				preview,
-				content,
-				draft
-			});
+			return invalid('A post with this slug already exists.');
 		}
 
-		const newPost: Post = { slug, title, date, image, preview, content, draft };
+		const newPost: Post = { slug, ...fields };
 		updateSection('blog', { posts: [...posts, newPost] });
 
 		redirect(303, '/admin/blog');

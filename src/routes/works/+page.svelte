@@ -1,26 +1,25 @@
 <script lang="ts">
 	import Fa from 'svelte-fa';
-	import { faGlobe, faGamepad } from '@fortawesome/free-solid-svg-icons';
+	import { faGamepad, faGlobe } from '@fortawesome/free-solid-svg-icons';
 	import {
-		faWindows,
+		faAndroid,
 		faApple,
+		faAppStoreIos,
 		faLinux,
 		faPlaystation,
-		faAppStoreIos,
-		faAndroid,
+		faWindows
 	} from '@fortawesome/free-brands-svg-icons';
 	import { openLightbox } from '$lib/lightbox.svelte';
 	import type { PageProps } from './$types';
-
 
 	const platformIcons: Record<string, { label: string; icon: typeof faGlobe }> = {
 		web: { label: 'Web', icon: faGlobe },
 		windows: { label: 'Windows', icon: faWindows },
 		macos: { label: 'macOS', icon: faApple },
-		ios: {label: 'iOS', icon: faAppStoreIos},
+		ios: { label: 'iOS', icon: faAppStoreIos },
 		linux: { label: 'Linux', icon: faLinux },
 		android: { label: 'Android', icon: faAndroid },
-		playstation: {label: 'Playstation', icon: faPlaystation},
+		playstation: { label: 'Playstation', icon: faPlaystation },
 		switch: { label: 'Nintendo Switch', icon: faGamepad }
 	};
 
@@ -30,13 +29,13 @@
 
 <svelte:head>
 	<title>Works - Arthur Ward Jr</title>
-	<meta name="description" content="Works - Arthur Ward Jr" />
+	<meta content="Works - Arthur Ward Jr" name="description" />
 </svelte:head>
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Works</h1>
-		<p class="text-lg text-muted">Some fun things I worked on. Might add some </p>
+		<p class="text-lg text-muted">Some fun things I worked on. Might add some</p>
 	</div>
 
 	<div class="mt-8 space-y-6">

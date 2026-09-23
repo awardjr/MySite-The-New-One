@@ -28,7 +28,8 @@ describe('runMigrations', () => {
 				'work_items',
 				'press_items',
 				'pinball_machines',
-				'blog_posts'
+				'blog_posts',
+				'password_reset_tokens'
 			])
 		);
 	});
@@ -42,6 +43,8 @@ describe('runMigrations', () => {
 			.map((row) => (row as { name: string }).name);
 
 		expect(applied).toContain('0001_init.sql');
+		expect(applied).toContain('0002_password_reset.sql');
+		expect(applied).toContain('0003_admin_user_fields.sql');
 	});
 
 	it('is idempotent when run multiple times', () => {
@@ -50,7 +53,7 @@ describe('runMigrations', () => {
 		runMigrations(db);
 
 		const applied = db.prepare('SELECT name FROM migrations').all();
-		expect(applied).toHaveLength(1);
+		expect(applied).toHaveLength(3);
 	});
 
 	it('does not fail or duplicate data on repeated runs', () => {

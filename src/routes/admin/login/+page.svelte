@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { form }: PageProps = $props();
@@ -27,7 +28,28 @@
 		}}
 	>
 		<div class="space-y-1">
-			<label for="password" class="text-sm font-medium text-copy"> Password </label>
+			<label for="username" class="text-sm font-medium text-copy"> Username or Email </label>
+			<input
+				id="username"
+				name="username"
+				type="text"
+				required
+				autocomplete="username"
+				value={form?.username ?? ''}
+				class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+			/>
+		</div>
+
+		<div class="space-y-1">
+			<div class="flex items-center justify-between">
+				<label for="password" class="text-sm font-medium text-copy"> Password </label>
+				<a
+					href={resolve('/admin/forgot-password')}
+					class="text-xs text-muted transition-colors hover:text-heading hover:underline"
+				>
+					Forgot password?
+				</a>
+			</div>
 			<input
 				id="password"
 				name="password"

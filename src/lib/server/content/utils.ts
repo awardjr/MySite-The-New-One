@@ -22,6 +22,16 @@ const postSanitizeOptions: sanitizeHtml.IOptions = {
 	allowedSchemes: ['http', 'https', 'mailto'],
 	allowedSchemesByTag: {
 		img: ['http', 'https', 'data']
+	},
+	// Prevent reverse-tabnabbing: any admin-authored link that opens in a new
+	// tab must not be able to access `window.opener`.
+	transformTags: {
+		a: (tagName, attribs) => {
+			if (attribs.target === '_blank') {
+				attribs.rel = 'noopener noreferrer';
+			}
+			return { tagName, attribs };
+		}
 	}
 };
 

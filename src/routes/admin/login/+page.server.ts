@@ -1,8 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
-	checkPassword,
+	checkCredentials,
 	createSession,
 	isAdminConfigured,
+	isLoginLocked,
+	recordFailedLogin,
+	recordSuccessfulLogin,
 	sessionCookieOptions,
 	SESSION_COOKIE_NAME
 } from '$lib/server/auth';
@@ -21,18 +24,32 @@ export const load: PageServerLoad = ({ locals, url }) => {
 };
 
 export const actions: Actions = {
-	default: async ({ request, cookies, url }) => {
+	default: async ({ request, cookies, url, getClientAddress }) => {
 		if (!isAdminConfigured()) {
 			redirect(303, '/admin/setup');
 		}
 
 		const formData = await request.formData();
+		const username = String(formData.get('username') ?? '');
 		const password = String(formData.get('password') ?? '');
 
-		if (!checkPassword(password)) {
-			return fail(401, { error: 'Incorrect password.' });
+		const clientAddress = getClientAddress();
+		if (isLoginLocked(clientAddress)) {
+			return fail(429, {
+				username,
+				error: 'Too many failed attempts. Please try again later.'
+			});
 		}
 
+		if (!checkCredentials(username, password)) {
+			recordFailedLogin(clientAddress);
+			return fail(401, {
+				username,
+				error: 'Incorrect username/email or password.'
+			});
+		}
+
+		recordSuccessfulLogin(clientAddress);
 		cookies.set(SESSION_COOKIE_NAME, createSession(), sessionCookieOptions);
 
 		redirect(303, url.searchParams.get('redirectTo') || '/admin');

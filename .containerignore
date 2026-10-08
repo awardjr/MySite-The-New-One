@@ -1,0 +1,13 @@
+node_modules
+.svelte-kit
+build
+data/*.sqlite3*
+data/*.sqlite*
+static/uploads/*
+!static/uploads/.gitkeep
+.git
+.github
+tests
+.env
+.env.local
+*.log

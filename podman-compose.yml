@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  mysite:
+    image: mysite:latest
+    build:
+      context: .
+      dockerfile: Containerfile
+    container_name: mysite-app
+    restart: unless-stopped
+    ports:
+      - '6941:6941'
+    userns_mode: keep-id
+    env_file:
+      - .env
+    environment:
+      - ORIGIN=${ORIGIN:-http://localhost:6941}
+      - TRUSTED_ORIGINS=${TRUSTED_ORIGINS:-}
+    volumes:
+      - ./data:/app/data:Z
+      - ./static/uploads:/app/static/uploads:Z

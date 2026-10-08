@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
 	import { faBars, faBurger, faHotdog, faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
 
@@ -13,52 +12,48 @@
 	let isMobileMenuOpen = $state(false);
 
 	const navItems = [
-		{ href: resolve('/'), label: 'Home' },
-		{ href: resolve('/blog'), label: 'Posts' },
-		{ href: resolve('/press'), label: 'Press' },
-		{ href: resolve('/works'), label: 'Works' },
-		{ href: resolve('/skills'), label: 'Skills' },
-		{ href: resolve('/pinball'), label: 'Pinball' },
-		{ href: resolve('/contact'), label: 'Contact' }
+		{ href: '/', label: 'Home' },
+		{ href: '/blog', label: 'Posts' },
+		{ href: '/press', label: 'Press' },
+		{ href: '/works', label: 'Works' },
+		{ href: '/skills', label: 'Skills' },
+		{ href: '/pinball', label: 'Pinball' },
+		{ href: '/contact', label: 'Contact' }
 	];
 
 	const adminNavItems = [
-		{ href: resolve('/admin'), label: 'Dashboard' },
-		{ href: resolve('/admin/home'), label: 'Home' },
-		{ href: resolve('/admin/blog'), label: 'Blog' },
-		{ href: resolve('/admin/contact'), label: 'Contact' },
-		{ href: resolve('/admin/skills'), label: 'Skills' },
-		{ href: resolve('/admin/works'), label: 'Works' },
-		{ href: resolve('/admin/press'), label: 'Press' },
-		{ href: resolve('/admin/pinball'), label: 'Pinball' },
-		{ href: resolve('/admin/settings'), label: 'Settings' }
+		{ href: '/admin', label: 'Dashboard' },
+		{ href: '/admin/home', label: 'Home' },
+		{ href: '/admin/blog', label: 'Blog' },
+		{ href: '/admin/contact', label: 'Contact' },
+		{ href: '/admin/skills', label: 'Skills' },
+		{ href: '/admin/works', label: 'Works' },
+		{ href: '/admin/press', label: 'Press' },
+		{ href: '/admin/pinball', label: 'Pinball' },
+		{ href: '/admin/settings', label: 'Settings' }
 	];
 
-	let isAdmin = $derived(
-		page.url.pathname === resolve('/admin') || page.url.pathname.startsWith(`${resolve('/admin')}/`)
-	);
+	let isAdmin = $derived(page.url.pathname === '/admin' || page.url.pathname.startsWith('/admin/'));
 	let isAuthPage = $derived(
-		page.url.pathname === resolve('/admin/login') ||
-			page.url.pathname === resolve('/admin/setup') ||
-			page.url.pathname === resolve('/admin/forgot-password') ||
-			page.url.pathname === resolve('/admin/reset')
+		page.url.pathname === '/admin/login' ||
+			page.url.pathname === '/admin/setup' ||
+			page.url.pathname === '/admin/forgot-password' ||
+			page.url.pathname === '/admin/reset'
 	);
 
 	const themeOrder: Theme[] = ['light', 'dark', 'hotdog'];
 
 	function isAdminItemActive(href: string): boolean {
-		return href === resolve('/admin')
-			? page.url.pathname === href
-			: page.url.pathname.startsWith(href);
+		return href === '/admin' ? page.url.pathname === href : page.url.pathname.startsWith(href);
 	}
 
 	onMount(() => {
 		if (document.documentElement.classList.contains('hotdog')) {
 			theme = 'hotdog';
-		} else if (document.documentElement.classList.contains('light')) {
-			theme = 'light';
-		} else {
+		} else if (document.documentElement.classList.contains('dark')) {
 			theme = 'dark';
+		} else {
+			theme = 'light';
 		}
 	});
 
@@ -82,7 +77,7 @@
 		{#if isAdmin}
 			<div class="flex items-center gap-3 lg:gap-4">
 				<a
-					href={resolve('/')}
+					href="/"
 					onclick={closeMobileMenu}
 					class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
 				>
@@ -108,7 +103,7 @@
 
 			<div class="flex items-center gap-2">
 				{#if !isAuthPage}
-					<form method="POST" action={resolve('/admin/logout')} class="hidden sm:block">
+					<form method="POST" action="/admin/logout" class="hidden sm:block">
 						<button
 							type="submit"
 							class="rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
@@ -158,7 +153,7 @@
 				<a
 					aria-label="Home"
 					class="text-base font-bold tracking-tight text-heading"
-					href={resolve('/')}
+					href="/"
 					onclick={closeMobileMenu}
 				>
 					{siteName}
@@ -220,7 +215,7 @@
 			<nav class="border-t border-chrome-border px-4 py-3 lg:hidden">
 				<div class="flex flex-col gap-2">
 					<a
-						href={resolve('/')}
+						href="/"
 						onclick={closeMobileMenu}
 						class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
 					>
@@ -239,11 +234,7 @@
 								{item.label}
 							</a>
 						{/each}
-						<form
-							method="POST"
-							action={resolve('/admin/logout')}
-							class="pt-2 border-t border-card-border"
-						>
+						<form method="POST" action="/admin/logout" class="pt-2 border-t border-card-border">
 							<button
 								type="submit"
 								class="w-full rounded-lg border border-card-border px-3 py-2 text-left text-sm text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"

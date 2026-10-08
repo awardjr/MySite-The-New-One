@@ -13,7 +13,11 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"podman:build": "podman build -t mysite:latest -f Containerfile .",
+		"podman:up": "podman-compose up -d",
+		"podman:down": "podman-compose down",
+		"podman:logs": "podman logs -f mysite-app"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^2.1.1",

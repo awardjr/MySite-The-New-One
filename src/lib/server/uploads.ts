@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import sanitizeHtml from 'sanitize-html';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'static', 'uploads');
+export const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'static', 'uploads');
 const PUBLIC_PREFIX = '/uploads/';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -16,7 +16,40 @@ const ALLOWED_MIME_TO_EXTENSION: Record<string, string> = {
 	'image/svg+xml': 'svg'
 };
 
+export const EXTENSION_TO_MIME: Record<string, string> = {
+	...Object.fromEntries(
+		Object.entries(ALLOWED_MIME_TO_EXTENSION).map(([mime, extension]) => [extension, mime])
+	),
+	jpeg: 'image/jpeg'
+};
+
 export class UploadError extends Error {}
+
+// Maps a requested /uploads/<path> to a file inside the upload dir. Returns null
+// for anything that escapes the directory or isn't an allowlisted image type.
+export function resolveUploadPath(
+	requestedPath: string,
+	baseDir: string = UPLOAD_DIR
+): { filePath: string; contentType: string } | null {
+	if (!requestedPath || requestedPath.includes('\0') || path.isAbsolute(requestedPath)) {
+		return null;
+	}
+
+	const root = path.resolve(baseDir);
+	const filePath = path.resolve(root, requestedPath);
+	const relative = path.relative(root, filePath);
+	if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+		return null;
+	}
+
+	const extension = path.extname(filePath).slice(1).toLowerCase();
+	const contentType = EXTENSION_TO_MIME[extension];
+	if (!contentType) {
+		return null;
+	}
+
+	return { filePath, contentType };
+}
 
 // SVG is XML and can carry <script> tags or on* event handlers, so any
 // uploaded SVG is run through a strict allowlist before it's written to

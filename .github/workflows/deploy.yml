@@ -1,0 +1,112 @@
+name: Build and deploy
+
+on:
+  push:
+    branches: ['main']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  test:
+    name: Check, test and build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+  build:
+    name: Build and push image (Podman)
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # GHCR image names must be lowercase.
+      - name: Compute image name
+        id: image
+        run: echo "image=${REGISTRY}/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login "$REGISTRY" -u "${{ github.actor }}" --password-stdin
+
+      # --format docker keeps the Containerfile HEALTHCHECK (OCI format drops it).
+      - name: Build image with Podman
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          podman build \
+            --format docker \
+            --file ./Containerfile \
+            --tag "$IMAGE:latest" \
+            --tag "$IMAGE:${GITHUB_SHA::7}" \
+            --tag "$IMAGE:$GITHUB_SHA" \
+            .
+
+      - name: Push image with Podman
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+        run: |
+          podman push "$IMAGE:latest"
+          podman push "$IMAGE:${GITHUB_SHA::7}"
+          podman push "$IMAGE:$GITHUB_SHA"
+
+  deploy:
+    name: Deploy to VPS
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          if [ -n "$VPS_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -H "$VPS_HOST" > ~/.ssh/known_hosts
+          fi
+
+      - name: Pull image and restart service
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          IMAGE: ${{ needs.build.outputs.image }}
+        run: |
+          ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes "$VPS_USER@$VPS_HOST" \
+            "set -e
+             export XDG_RUNTIME_DIR=\${XDG_RUNTIME_DIR:-/run/user/\$(id -u)}
+             podman pull '$IMAGE:$GITHUB_SHA'
+             podman tag '$IMAGE:$GITHUB_SHA' '$IMAGE:latest'
+             systemctl --user restart mysite.service
+             podman image prune -f"

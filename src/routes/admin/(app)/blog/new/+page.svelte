@@ -10,7 +10,9 @@
 
 	let slug = $state(untrack(() => form?.slug ?? ''));
 	let title = $state(untrack(() => form?.title ?? ''));
-	let date = $state(untrack(() => form?.date ?? ''));
+	const today = new Date();
+	const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+	let date = $state(untrack(() => form?.date ?? todayString));
 	let image = $state(untrack(() => form?.image ?? ''));
 	let preview = $state(untrack(() => form?.preview ?? ''));
 	let content = $state(untrack(() => form?.content ?? ''));

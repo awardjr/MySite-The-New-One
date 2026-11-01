@@ -22,7 +22,7 @@
 	let saving = $state(false);
 
 	function addItem() {
-		items.push({ title: '', description: '', image: '', platforms: [] });
+		items.push({ title: '', description: '', image: '', link: '', platforms: [] });
 	}
 
 	function removeItem(index: number) {
@@ -79,6 +79,12 @@
 					rows="3"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				></textarea>
+				<input
+					bind:value={item.link}
+					placeholder="Link URL (optional)"
+					type="url"
+					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
+				/>
 				<ImageUploadField label={null} placeholder="Image URL / path" bind:value={item.image} />
 
 				<div class="flex flex-wrap gap-3 pt-1">

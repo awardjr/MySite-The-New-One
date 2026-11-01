@@ -24,7 +24,6 @@ describe('runMigrations', () => {
 				'sessions',
 				'home',
 				'contact_links',
-				'skill_categories',
 				'work_items',
 				'press_items',
 				'pinball_machines',
@@ -53,7 +52,7 @@ describe('runMigrations', () => {
 		runMigrations(db);
 
 		const applied = db.prepare('SELECT name FROM migrations').all();
-		expect(applied).toHaveLength(3);
+		expect(applied).toHaveLength(5);
 	});
 
 	it('does not fail or duplicate data on repeated runs', () => {

@@ -5,6 +5,7 @@ export type WorkItem = {
 	title: string;
 	description: string;
 	image: string;
+	link: string;
 	platforms: string[];
 };
 
@@ -13,11 +14,11 @@ export type WorksContent = {
 };
 
 const getWorkItemsStmt = db.prepare(
-	'SELECT title, description, image, platforms FROM work_items ORDER BY sort_order, id'
+	'SELECT title, description, image, link, platforms FROM work_items ORDER BY sort_order, id'
 );
 const deleteWorkItemsStmt = db.prepare('DELETE FROM work_items WHERE id IS NOT NULL');
 const insertWorkItemStmt = db.prepare(
-	'INSERT INTO work_items (title, description, image, platforms, sort_order) VALUES (?, ?, ?, ?, ?)'
+	'INSERT INTO work_items (title, description, image, link, platforms, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
 );
 
 export function getWorks(): WorksContent {
@@ -25,6 +26,7 @@ export function getWorks(): WorksContent {
 		title: string;
 		description: string;
 		image: string;
+		link: string;
 		platforms: string;
 	}[];
 	return {
@@ -32,6 +34,7 @@ export function getWorks(): WorksContent {
 			title: row.title ?? '',
 			description: row.description ?? '',
 			image: row.image ?? '',
+			link: row.link ?? '',
 			platforms: parseJsonArray<string>(row.platforms)
 		}))
 	};
@@ -46,6 +49,7 @@ export function setWorks(value: WorksContent): void {
 			item.title,
 			item.description,
 			item.image ?? '',
+			item.link ?? '',
 			JSON.stringify(item.platforms ?? []),
 			i
 		);

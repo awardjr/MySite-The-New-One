@@ -1,6 +1,10 @@
 <script lang="ts">
 	import Fa from 'svelte-fa';
-	import { faGamepad, faGlobe } from '@fortawesome/free-solid-svg-icons';
+	import {
+		faArrowUpRightFromSquare,
+		faGamepad,
+		faGlobe
+	} from '@fortawesome/free-solid-svg-icons';
 	import {
 		faAndroid,
 		faApple,
@@ -41,10 +45,26 @@
 	<div class="mt-8 space-y-6">
 		{#each works as work, i (i)}
 			<div
-				class="flex flex-col gap-5 rounded-xl border border-card-border bg-card p-5 shadow-sm transition-transform duration-200 hover:scale-[1.02] sm:flex-row sm:items-start"
+				class="relative flex flex-col gap-5 rounded-xl border border-card-border bg-card p-5 shadow-sm transition-transform duration-200 hover:scale-[1.02] sm:flex-row sm:items-start"
 			>
+				{#if work.link}
+					<a
+						href={work.link}
+						target="_blank"
+						rel="noopener noreferrer"
+						aria-label={`${work.title} (opens in a new tab)`}
+						class="absolute inset-0 z-0 rounded-xl"
+					></a>
+					<span
+						title="Opens an external site"
+						class="pointer-events-none absolute top-3 right-3 z-10 text-muted"
+					>
+						<Fa icon={faArrowUpRightFromSquare} class="h-4 w-4" />
+					</span>
+				{/if}
+
 				<!-- Image Section -->
-				<div class="flex shrink-0 justify-center sm:justify-start">
+				<div class="relative z-10 flex shrink-0 justify-center sm:justify-start">
 					{#if work.image}
 						<button
 							type="button"
@@ -67,7 +87,7 @@
 				</div>
 
 				<!-- Text + Platforms Section -->
-				<div class="flex-1 space-y-3">
+				<div class="pointer-events-none relative z-10 flex-1 space-y-3">
 					<h2 class="text-xl font-semibold text-card-heading">
 						{work.title}
 					</h2>

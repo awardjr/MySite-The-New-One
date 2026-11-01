@@ -13,11 +13,6 @@
 			description: 'Resume, LinkedIn, GitHub, email, and other links.'
 		},
 		{
-			href: resolve('/admin/skills'),
-			label: 'Skills',
-			description: 'Categorized list of languages, tools, and technologies.'
-		},
-		{
 			href: resolve('/admin/works'),
 			label: 'Works',
 			description: 'Projects with an image, description, and platform icons.'

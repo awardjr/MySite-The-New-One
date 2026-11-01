@@ -1,7 +1,6 @@
 import { db } from './db';
 import { getHome, setHome } from './content/home';
 import { getContact, setContact } from './content/contact';
-import { getSkills, setSkills } from './content/skills';
 import { getWorks, setWorks } from './content/works';
 import { getPress, setPress } from './content/press';
 import { getPinball, setPinball } from './content/pinball';
@@ -16,7 +15,6 @@ type SectionKey = keyof SiteContent;
 const sectionSetters: { [K in SectionKey]: (value: SiteContent[K]) => void } = {
 	home: setHome,
 	contact: setContact,
-	skills: setSkills,
 	works: setWorks,
 	press: setPress,
 	pinball: setPinball,
@@ -31,7 +29,6 @@ export function readContent(): SiteContent {
 	cache = {
 		home: getHome(),
 		contact: getContact(),
-		skills: getSkills(),
 		works: getWorks(),
 		press: getPress(),
 		pinball: getPinball(),

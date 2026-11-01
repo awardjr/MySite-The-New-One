@@ -13,12 +13,11 @@ const testDb = getTestDb();
 function resetContentTables(): void {
 	testDb.exec(`
 		DELETE FROM home;
-		DELETE FROM contact_links WHERE id IS NOT NULL;
-		DELETE FROM skill_categories WHERE id IS NOT NULL;
-		DELETE FROM work_items WHERE id IS NOT NULL;
-		DELETE FROM press_items WHERE id IS NOT NULL;
+		DELETE FROM links WHERE id IS NOT NULL;
+		DELETE FROM works WHERE id IS NOT NULL;
+		DELETE FROM press WHERE id IS NOT NULL;
 		DELETE FROM pinball_machines WHERE id IS NOT NULL;
-		DELETE FROM blog_posts WHERE slug IS NOT NULL;
+		DELETE FROM posts WHERE slug IS NOT NULL;
 	`);
 }
 
@@ -35,7 +34,6 @@ describe('readContent', () => {
 
 		expect(content.home).toEqual({ name: '', tagline: '', photoSrc: '', introParagraphs: [] });
 		expect(content.contact).toEqual({ links: [] });
-		expect(content.skills).toEqual({ categories: [] });
 		expect(content.works).toEqual({ items: [] });
 		expect(content.press).toEqual({ items: [] });
 		expect(content.pinball).toEqual({ machines: [] });
@@ -137,10 +135,10 @@ describe('updateSection', () => {
 
 	it('refreshes the cache so subsequent reads see the update', () => {
 		const before = readContent();
-		updateSection('skills', { categories: [{ category: 'Languages', skills: ['TS'] }] });
+		updateSection('press', { items: [{ title: 'Changed', summary: 'a', href: '/a' }] });
 		const after = readContent();
 
 		expect(before).not.toBe(after);
-		expect(after.skills.categories).toEqual([{ category: 'Languages', skills: ['TS'] }]);
+		expect(after.press.items[0].title).toBe('Changed');
 	});
 });

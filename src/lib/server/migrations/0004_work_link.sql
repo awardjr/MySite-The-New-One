@@ -1,0 +1,1 @@
+ALTER TABLE work_items ADD COLUMN link TEXT NOT NULL DEFAULT '';

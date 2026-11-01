@@ -19,6 +19,7 @@ export const actions: Actions = {
 				title: text(item.title),
 				description: text(item.description),
 				image: text(item.image),
+				link: text(item.link),
 				platforms: textList(item.platforms)
 			}))
 			.filter((item) => item.title);

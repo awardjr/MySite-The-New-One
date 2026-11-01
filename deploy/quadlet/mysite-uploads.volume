@@ -1,0 +1,5 @@
+[Unit]
+Description=mysite uploads
+
+[Volume]
+VolumeName=mysite-uploads

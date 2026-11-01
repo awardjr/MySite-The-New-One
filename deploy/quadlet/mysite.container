@@ -1,0 +1,26 @@
+[Unit]
+Description=mysite SvelteKit app
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=mysite
+Image=ghcr.io/awardjr/mysite-the-new-one:latest
+Network=mysite.network
+# Only reachable through Caddy on the mysite network; no published ports.
+Volume=mysite-data.volume:/app/data
+Volume=mysite-uploads.volume:/app/uploads
+EnvironmentFile=%h/.config/mysite/mysite.env
+AutoUpdate=registry
+HealthCmd=node -e "fetch('http://127.0.0.1:3000/').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+HealthInterval=30s
+HealthStartPeriod=15s
+HealthRetries=3
+
+[Service]
+Restart=always
+# The first start may need to pull the image.
+TimeoutStartSec=300
+
+[Install]
+WantedBy=default.target

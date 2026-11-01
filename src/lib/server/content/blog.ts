@@ -15,11 +15,11 @@ export type BlogContent = {
 };
 
 const getBlogPostsStmt = db.prepare(
-	'SELECT slug, title, date, image, preview, content, draft FROM blog_posts ORDER BY sort_order, rowid'
+	'SELECT slug, title, date, image, preview, content, draft FROM posts ORDER BY sort_order, rowid'
 );
-const deleteBlogPostsStmt = db.prepare('DELETE FROM blog_posts WHERE slug IS NOT NULL');
+const deleteBlogPostsStmt = db.prepare('DELETE FROM posts WHERE slug IS NOT NULL');
 const insertBlogPostStmt = db.prepare(
-	'INSERT INTO blog_posts (slug, title, date, image, preview, content, draft, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+	'INSERT INTO posts (slug, title, date, image, preview, content, draft, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
 );
 
 export function getBlog(): BlogContent {

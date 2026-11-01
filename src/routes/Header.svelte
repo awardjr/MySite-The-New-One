@@ -17,7 +17,6 @@
 		{ href: resolve('/blog'), label: 'Posts' },
 		{ href: resolve('/press'), label: 'Press' },
 		{ href: resolve('/works'), label: 'Works' },
-		{ href: resolve('/skills'), label: 'Skills' },
 		{ href: resolve('/pinball'), label: 'Pinball' },
 		{ href: resolve('/contact'), label: 'Contact' }
 	];
@@ -27,7 +26,6 @@
 		{ href: resolve('/admin/home'), label: 'Home' },
 		{ href: resolve('/admin/blog'), label: 'Blog' },
 		{ href: resolve('/admin/contact'), label: 'Contact' },
-		{ href: resolve('/admin/skills'), label: 'Skills' },
 		{ href: resolve('/admin/works'), label: 'Works' },
 		{ href: resolve('/admin/press'), label: 'Press' },
 		{ href: resolve('/admin/pinball'), label: 'Pinball' },

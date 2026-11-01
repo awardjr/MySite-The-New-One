@@ -55,7 +55,7 @@
 			<ul
 				role="listbox"
 				aria-multiselectable="true"
-				class="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-field-border bg-field shadow-lg"
+				class="absolute z-20 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-field-border bg-card shadow-lg"
 			>
 				{#each options as option (option.id)}
 					{@const isSelected = selected.includes(option.id)}
@@ -97,7 +97,7 @@
 					{/if}
 					<span class="max-w-48 truncate">{option.title}</span>
 					<button type="button" aria-label="Remove {option.title}" onclick={() => toggle(option.id)}
-						>×</button
+					>×</button
 					>
 				</li>
 			{/each}

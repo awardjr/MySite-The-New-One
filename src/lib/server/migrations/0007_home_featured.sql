@@ -1,0 +1,2 @@
+ALTER TABLE home ADD COLUMN featured_posts TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE home ADD COLUMN featured_works TEXT NOT NULL DEFAULT '[]';

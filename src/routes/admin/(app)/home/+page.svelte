@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
+	import FeaturedPicker from '$lib/components/admin/FeaturedPicker.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -10,6 +11,9 @@
 	let tagline = $state(untrack(() => data.home.tagline));
 	let photoSrc = $state(untrack(() => data.home.photoSrc));
 	let introParagraphs = $state(untrack(() => data.home.introParagraphs.join('\n\n')));
+
+	let featuredPosts = $state(untrack(() => [...data.home.featuredPosts]));
+	let featuredWorks = $state(untrack(() => [...data.home.featuredWorks]));
 
 	let saving = $state(false);
 </script>
@@ -78,6 +82,27 @@
 			class="w-full rounded-lg border border-field-border px-3 py-2 font-mono text-sm bg-field text-field-text"
 		></textarea>
 	</div>
+
+	<FeaturedPicker
+		label="Featured posts"
+		name="featuredPosts"
+		options={data.posts.map((p) => ({
+			id: p.slug,
+			title: p.title,
+			image: p.image,
+			note: p.draft ? ' (draft)' : ''
+		}))}
+		bind:selected={featuredPosts}
+		emptyText="No posts yet."
+	/>
+
+	<FeaturedPicker
+		label="Featured works"
+		name="featuredWorks"
+		options={data.works.map((w) => ({ id: w.id, title: w.title, image: w.image }))}
+		bind:selected={featuredWorks}
+		emptyText="No works yet."
+	/>
 
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>

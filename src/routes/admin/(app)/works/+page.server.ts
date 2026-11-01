@@ -16,6 +16,7 @@ export const actions: Actions = {
 
 		const items: WorkItem[] = rows
 			.map((item) => ({
+				id: text(item.id),
 				title: text(item.title),
 				description: text(item.description),
 				image: text(item.image),

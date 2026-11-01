@@ -22,7 +22,7 @@
 	let saving = $state(false);
 
 	function addItem() {
-		items.push({ title: '', description: '', image: '', link: '', platforms: [] });
+		items.push({ id: '', title: '', description: '', image: '', link: '', platforms: [] });
 	}
 
 	function removeItem(index: number) {

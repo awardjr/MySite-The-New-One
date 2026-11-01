@@ -1,6 +1,6 @@
 :root {
 	/* Page and typography */
-	--theme-page: var(--color-white);
+	--theme-page: var(--color-gray-50);
 	--theme-body: var(--color-gray-900);
 	--theme-heading: var(--color-gray-950);
 	--theme-copy: var(--color-gray-700);
@@ -11,8 +11,8 @@
 
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-gray-200);
-	--theme-footer: var(--color-white);
-	--theme-header: var(--color-white);
+	--theme-footer: var(--color-gray-50);
+	--theme-header: var(--color-gray-50);
 	--theme-nav-decoration: var(--color-gray-400);
 	--theme-nav-hover: var(--color-gray-950);
 	--theme-menu-icon: var(--color-gray-800);

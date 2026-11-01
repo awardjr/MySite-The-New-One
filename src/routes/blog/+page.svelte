@@ -2,6 +2,8 @@
 	import { openLightbox } from '$lib/lightbox.svelte';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
+	import Fa from 'svelte-fa';
+	import { faRss } from '@fortawesome/free-solid-svg-icons';
 
 	let { data }: PageProps = $props();
 	let { posts, siteName } = $derived(data);
@@ -19,9 +21,21 @@
 </svelte:head>
 
 <section class="py-6 sm:py-10">
-	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Blog</h1>
-		<p class="text-lg text-muted">Musings perhaps</p>
+	<div class="flex items-start justify-between gap-4">
+		<div class="space-y-1">
+			<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Blog</h1>
+			<p class="text-lg text-muted">Musings perhaps</p>
+		</div>
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+		<a
+			href="/blog/rss.xml"
+			data-sveltekit-reload
+			title="RSS feed"
+			aria-label="RSS feed"
+			class="mt-2 text-muted transition-colors hover:text-heading"
+		>
+			<Fa icon={faRss} class="h-5 w-5" />
+		</a>
 	</div>
 
 	<div class="mt-8 space-y-6">

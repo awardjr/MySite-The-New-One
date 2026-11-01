@@ -25,14 +25,28 @@ beforeEach(() => {
 	resetContentTables();
 	// The content controller caches the site content in module state; force a
 	// fresh read from the (now-empty) tables for every test.
-	updateSection('home', { name: '', tagline: '', photoSrc: '', introParagraphs: [] });
+	updateSection('home', {
+		name: '',
+		tagline: '',
+		photoSrc: '',
+		introParagraphs: [],
+		featuredPosts: [],
+		featuredWorks: []
+	});
 });
 
 describe('readContent', () => {
 	it('returns defaults for every section when the database is empty', () => {
 		const content = readContent();
 
-		expect(content.home).toEqual({ name: '', tagline: '', photoSrc: '', introParagraphs: [] });
+		expect(content.home).toEqual({
+			name: '',
+			tagline: '',
+			photoSrc: '',
+			introParagraphs: [],
+			featuredPosts: [],
+			featuredWorks: []
+		});
 		expect(content.contact).toEqual({ links: [] });
 		expect(content.works).toEqual({ items: [] });
 		expect(content.press).toEqual({ items: [] });
@@ -53,7 +67,9 @@ describe('updateSection', () => {
 			name: 'Ada',
 			tagline: 'Engineer',
 			photoSrc: '/photo.jpg',
-			introParagraphs: ['Hello']
+			introParagraphs: ['Hello'],
+			featuredPosts: [],
+			featuredWorks: []
 		});
 
 		const content = readContent();
@@ -140,5 +156,27 @@ describe('updateSection', () => {
 
 		expect(before).not.toBe(after);
 		expect(after.press.items[0].title).toBe('Changed');
+	});
+
+	it('keeps work ids stable across saves and assigns new ids to new or duplicate rows', () => {
+		const w = (title: string, id = '') => ({
+			id,
+			title,
+			description: '',
+			image: '',
+			link: '',
+			platforms: []
+		});
+		updateSection('works', { items: [w('A'), w('B')] });
+		const [a, b] = readContent().works.items;
+
+		updateSection('works', {
+			items: [w('B renamed', b.id), w('A', a.id), w('New'), w('Dup', a.id)]
+		});
+
+		const items = readContent().works.items;
+		expect(items[0].id).toBe(b.id);
+		expect(items[1].id).toBe(a.id);
+		expect(new Set(items.map((i) => i.id)).size).toBe(4);
 	});
 });

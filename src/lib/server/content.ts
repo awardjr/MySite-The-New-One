@@ -40,8 +40,8 @@ export function readContent(): SiteContent {
 
 /** Writes a single section to its own table and refreshes the cached site content. */
 export function updateSection<K extends SectionKey>(key: K, value: SiteContent[K]): SiteContent {
-	const updated = { ...readContent(), [key]: value };
 	db.transaction(() => sectionSetters[key](value))();
-	cache = updated;
-	return updated;
+	// Re-read so generated values (e.g. new item ids) are reflected in the cache.
+	cache = null;
+	return readContent();
 }

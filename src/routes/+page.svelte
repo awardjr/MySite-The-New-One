@@ -48,3 +48,44 @@
 		</div>
 	</div>
 </section>
+
+{#if data.featuredPosts.length}
+	<section class="py-6">
+		<h2 class="text-2xl font-bold tracking-tight text-heading">Featured Posts</h2>
+		<div class="mt-4 grid gap-4 sm:grid-cols-2">
+			{#each data.featuredPosts as post (post.slug)}
+				<a
+					href="/blog/{post.slug}"
+					class="block rounded-xl p-4 ring-1 ring-photo-ring transition-shadow hover:shadow-md"
+				>
+					{#if post.image}
+						<img src={post.image} alt={post.title} class="mb-3 h-40 w-full rounded-lg object-cover" />
+					{/if}
+					<h3 class="line-clamp-2 font-semibold text-heading">{post.title}</h3>
+					<p class="text-xs text-muted">{post.date}</p>
+					<p class="mt-2 line-clamp-3 text-sm text-muted">{post.preview}</p>
+				</a>
+			{/each}
+		</div>
+	</section>
+{/if}
+
+{#if data.featuredWorks.length}
+	<section class="py-6">
+		<h2 class="text-2xl font-bold tracking-tight text-heading">Featured Works</h2>
+		<div class="mt-4 grid gap-4 sm:grid-cols-2">
+			{#each data.featuredWorks as work (work.id)}
+				<a
+					href="/works#work-{work.id}"
+					class="block rounded-xl p-4 ring-1 ring-photo-ring transition-shadow hover:shadow-md"
+				>
+					{#if work.image}
+						<img src={work.image} alt={work.title} class="mb-3 h-40 w-full rounded-lg object-cover" />
+					{/if}
+					<h3 class="line-clamp-2 font-semibold text-heading">{work.title}</h3>
+					<p class="mt-1 line-clamp-3 text-sm text-muted">{work.description}</p>
+				</a>
+			{/each}
+		</div>
+	</section>
+{/if}

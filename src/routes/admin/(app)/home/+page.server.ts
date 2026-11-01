@@ -4,7 +4,17 @@ import { text } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	return { home: readContent().home };
+	const { home, blog, works } = readContent();
+	return {
+		home,
+		posts: blog.posts.map((p) => ({
+			slug: p.slug,
+			title: p.title,
+			draft: p.draft,
+			image: p.image
+		})),
+		works: works.items.map((w) => ({ id: w.id, title: w.title, image: w.image }))
+	};
 };
 
 export const actions: Actions = {
@@ -19,11 +29,21 @@ export const actions: Actions = {
 			.map((paragraph) => paragraph.trim())
 			.filter(Boolean);
 
+		const featuredPosts = formData.getAll('featuredPosts').map(String);
+		const featuredWorks = formData.getAll('featuredWorks').map(String);
+
 		if (!name) {
 			return fail(400, { error: 'Name is required.' });
 		}
 
-		updateSection('home', { name, tagline, photoSrc, introParagraphs });
+		updateSection('home', {
+			name,
+			tagline,
+			photoSrc,
+			introParagraphs,
+			featuredPosts,
+			featuredWorks
+		});
 
 		return { success: true };
 	}

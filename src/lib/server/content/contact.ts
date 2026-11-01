@@ -11,11 +11,11 @@ export type ContactContent = {
 };
 
 const getContactLinksStmt = db.prepare(
-	'SELECT label, href, icon FROM contact_links ORDER BY sort_order, id'
+	'SELECT label, href, icon FROM links ORDER BY sort_order, id'
 );
-const deleteContactLinksStmt = db.prepare('DELETE FROM contact_links WHERE id IS NOT NULL');
+const deleteContactLinksStmt = db.prepare('DELETE FROM links WHERE id IS NOT NULL');
 const insertContactLinkStmt = db.prepare(
-	'INSERT INTO contact_links (label, href, icon, sort_order) VALUES (?, ?, ?, ?)'
+	'INSERT INTO links (label, href, icon, sort_order) VALUES (?, ?, ?, ?)'
 );
 
 export function getContact(): ContactContent {

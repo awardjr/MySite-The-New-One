@@ -14,11 +14,11 @@ export type WorksContent = {
 };
 
 const getWorkItemsStmt = db.prepare(
-	'SELECT title, description, image, link, platforms FROM work_items ORDER BY sort_order, id'
+	'SELECT title, description, image, link, platforms FROM works ORDER BY sort_order, id'
 );
-const deleteWorkItemsStmt = db.prepare('DELETE FROM work_items WHERE id IS NOT NULL');
+const deleteWorkItemsStmt = db.prepare('DELETE FROM works WHERE id IS NOT NULL');
 const insertWorkItemStmt = db.prepare(
-	'INSERT INTO work_items (title, description, image, link, platforms, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
+	'INSERT INTO works (title, description, image, link, platforms, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
 );
 
 export function getWorks(): WorksContent {

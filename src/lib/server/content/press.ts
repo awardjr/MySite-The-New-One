@@ -11,11 +11,11 @@ export type PressContent = {
 };
 
 const getPressItemsStmt = db.prepare(
-	'SELECT title, summary, href FROM press_items ORDER BY sort_order, id'
+	'SELECT title, summary, href FROM press ORDER BY sort_order, id'
 );
-const deletePressItemsStmt = db.prepare('DELETE FROM press_items WHERE id IS NOT NULL');
+const deletePressItemsStmt = db.prepare('DELETE FROM press WHERE id IS NOT NULL');
 const insertPressItemStmt = db.prepare(
-	'INSERT INTO press_items (title, summary, href, sort_order) VALUES (?, ?, ?, ?)'
+	'INSERT INTO press (title, summary, href, sort_order) VALUES (?, ?, ?, ?)'
 );
 
 export function getPress(): PressContent {

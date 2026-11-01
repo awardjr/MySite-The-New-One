@@ -13,11 +13,11 @@ const testDb = getTestDb();
 function resetContentTables(): void {
 	testDb.exec(`
 		DELETE FROM home;
-		DELETE FROM contact_links WHERE id IS NOT NULL;
-		DELETE FROM work_items WHERE id IS NOT NULL;
-		DELETE FROM press_items WHERE id IS NOT NULL;
+		DELETE FROM links WHERE id IS NOT NULL;
+		DELETE FROM works WHERE id IS NOT NULL;
+		DELETE FROM press WHERE id IS NOT NULL;
 		DELETE FROM pinball_machines WHERE id IS NOT NULL;
-		DELETE FROM blog_posts WHERE slug IS NOT NULL;
+		DELETE FROM posts WHERE slug IS NOT NULL;
 	`);
 }
 

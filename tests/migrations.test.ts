@@ -23,11 +23,11 @@ describe('runMigrations', () => {
 				'admin_user',
 				'sessions',
 				'home',
-				'contact_links',
-				'work_items',
-				'press_items',
+				'links',
+				'works',
+				'press',
 				'pinball_machines',
-				'blog_posts',
+				'posts',
 				'password_reset_tokens'
 			])
 		);
@@ -52,7 +52,7 @@ describe('runMigrations', () => {
 		runMigrations(db);
 
 		const applied = db.prepare('SELECT name FROM migrations').all();
-		expect(applied).toHaveLength(5);
+		expect(applied).toHaveLength(6);
 	});
 
 	it('does not fail or duplicate data on repeated runs', () => {

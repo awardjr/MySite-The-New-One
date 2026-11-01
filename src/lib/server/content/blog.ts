@@ -17,9 +17,10 @@ export type BlogContent = {
 const getBlogPostsStmt = db.prepare(
 	'SELECT slug, title, date, image, preview, content, draft FROM posts ORDER BY sort_order, rowid'
 );
+const getBlogIdsStmt = db.prepare('SELECT slug, id FROM posts');
 const deleteBlogPostsStmt = db.prepare('DELETE FROM posts WHERE slug IS NOT NULL');
 const insertBlogPostStmt = db.prepare(
-	'INSERT INTO posts (slug, title, date, image, preview, content, draft, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+	'INSERT INTO posts (id, slug, title, date, image, preview, content, draft, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
 
 export function getBlog(): BlogContent {
@@ -46,11 +47,16 @@ export function getBlog(): BlogContent {
 }
 
 export function setBlog(value: BlogContent): void {
+	// Keep each post's id stable across saves (matched by slug).
+	const ids = new Map(
+		(getBlogIdsStmt.all() as { slug: string; id: number }[]).map((r) => [r.slug, r.id])
+	);
 	deleteBlogPostsStmt.run();
 	const posts = value.posts ?? [];
 	for (let i = 0; i < posts.length; i++) {
 		const post = posts[i];
 		insertBlogPostStmt.run(
+			ids.get(post.slug) ?? null,
 			post.slug,
 			post.title,
 			post.date,

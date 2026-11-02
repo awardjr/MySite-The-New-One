@@ -2,6 +2,13 @@ import crypto from 'node:crypto';
 import { dev } from '$app/environment';
 import { db } from './db';
 import { sendPasswordResetEmail } from './email';
+import { generateTotpSecret, verifyTotp } from './totp';
+import {
+	decryptSecret,
+	encryptSecret,
+	isEncryptedSecret,
+	isEncryptionKeyConfigured
+} from './secretbox';
 
 export const SESSION_COOKIE_NAME = 'cms_session';
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7; // 7 days
@@ -9,6 +16,7 @@ const RESET_TOKEN_MAX_AGE_SECONDS = 15 * 60; // 15 minutes
 const SCRYPT_KEY_LENGTH = 64;
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+const TWO_FACTOR_CHALLENGE_MS = 5 * 60 * 1000; // 5 minutes to enter the code after the password
 
 function hashPassword(password: string): string {
 	const salt = crypto.randomBytes(16).toString('hex');
@@ -30,11 +38,15 @@ interface AdminUserRow {
 	email: string | null;
 	password_hash: string;
 	recovery_key_hash: string | null;
+	totp_secret: string | null;
+	totp_pending_secret: string | null;
+	totp_last_step: number | null;
 	updated_at: string;
 }
 
 const getAdminStmt = db.prepare(
-	'SELECT username, email, password_hash, recovery_key_hash, updated_at FROM admin_user WHERE id = 1'
+	'SELECT username, email, password_hash, recovery_key_hash, totp_secret, totp_pending_secret, ' +
+		'totp_last_step, updated_at FROM admin_user WHERE id = 1'
 );
 
 const upsertAdminCredentialsStmt = db.prepare(
@@ -60,8 +72,40 @@ const updateRecoveryKeyStmt = db.prepare(
 	'UPDATE admin_user SET recovery_key_hash = @recoveryKeyHash, updated_at = @updatedAt WHERE id = 1'
 );
 
+const updateTotpStmt = db.prepare(
+	'UPDATE admin_user SET totp_secret = @secret, totp_pending_secret = @pendingSecret, ' +
+		'totp_last_step = @lastStep, updated_at = @updatedAt WHERE id = 1'
+);
+
+const updateTotpSecretStmt = db.prepare('UPDATE admin_user SET totp_secret = ? WHERE id = 1');
+const updateTotpPendingSecretStmt = db.prepare(
+	'UPDATE admin_user SET totp_pending_secret = ?, updated_at = ? WHERE id = 1'
+);
+const updateTotpLastStepStmt = db.prepare('UPDATE admin_user SET totp_last_step = ? WHERE id = 1');
+
 function getAdmin(): AdminUserRow | undefined {
-	return getAdminStmt.get() as AdminUserRow | undefined;
+	const row = getAdminStmt.get() as AdminUserRow | undefined;
+	if (!row || !isEncryptionKeyConfigured()) return row;
+
+	if (row.totp_secret && !isEncryptedSecret(row.totp_secret)) {
+		row.totp_secret = encryptSecret(row.totp_secret);
+		updateTotpSecretStmt.run(row.totp_secret);
+	}
+	if (row.totp_pending_secret && !isEncryptedSecret(row.totp_pending_secret)) {
+		row.totp_pending_secret = encryptSecret(row.totp_pending_secret);
+		updateTotpPendingSecretStmt.run(row.totp_pending_secret, new Date().toISOString());
+	}
+	return row;
+}
+
+function readTotpSecret(value: string | null): string | null {
+	if (!value) return null;
+	if (!isEncryptedSecret(value)) return value;
+	try {
+		return decryptSecret(value);
+	} catch {
+		return null;
+	}
 }
 
 /** Returns true once an admin user has been configured in the database. */
@@ -172,6 +216,139 @@ export function checkCredentials(identifier: string, candidatePassword: string):
 	return idMatches && passwordMatches;
 }
 
+function saveTotp(secret: string | null, pendingSecret: string | null, lastStep: number | null) {
+	updateTotpStmt.run({
+		secret: secret === null ? null : encryptSecret(secret),
+		pendingSecret: pendingSecret === null ? null : encryptSecret(pendingSecret),
+		lastStep,
+		updatedAt: new Date().toISOString()
+	});
+}
+
+/** Returns true if two-factor authentication is turned on for the admin account. */
+export function isTotpEnabled(): boolean {
+	return Boolean(getAdmin()?.totp_secret);
+}
+
+/** Returns the secret of a 2FA setup that was started but not yet confirmed, if any. */
+export function getPendingTotpSecret(): string | null {
+	return readTotpSecret(getAdmin()?.totp_pending_secret ?? null);
+}
+
+/** Starts 2FA setup by generating a new secret. It only takes effect once confirmed with a code. */
+export function startTotpSetup(): string {
+	if (!isEncryptionKeyConfigured()) {
+		throw new Error(
+			'TOTP_ENCRYPTION_KEY must be configured before setting up two-factor authentication.'
+		);
+	}
+	const secret = generateTotpSecret();
+	updateTotpPendingSecretStmt.run(encryptSecret(secret), new Date().toISOString());
+	return secret;
+}
+
+/** Abandons a pending 2FA setup. */
+export function cancelTotpSetup(): void {
+	updateTotpPendingSecretStmt.run(null, new Date().toISOString());
+}
+
+/** Turns 2FA on if the code matches the pending secret, proving the authenticator app is set up. */
+export function confirmTotpSetup(code: string): boolean {
+	const pending = readTotpSecret(getAdmin()?.totp_pending_secret ?? null);
+	if (!pending) return false;
+	const step = verifyTotp(pending, code);
+	if (step === null) return false;
+	saveTotp(pending, null, step);
+	return true;
+}
+
+/** Turns 2FA off and discards its secret. */
+export function disableTotp(): void {
+	saveTotp(null, null, null);
+}
+
+/** Checks a code from the authenticator app. Each code is accepted only once. */
+export function verifyTotpCode(code: string): boolean {
+	const row = getAdmin();
+	const secret = readTotpSecret(row?.totp_secret ?? null);
+	if (!secret || !row) return false;
+	const step = verifyTotp(secret, code, row.totp_last_step);
+	if (step === null) return false;
+	updateTotpLastStepStmt.run(step);
+	return true;
+}
+
+/**
+ * Checks the second login factor: a 6-digit authenticator code, or the emergency recovery code
+ * as a fallback for a lost authenticator.
+ */
+export function verifySecondFactor(input: string): boolean {
+	return /^\s*\d{3}\s*\d{3}\s*$/.test(input) ? verifyTotpCode(input) : verifyRecoveryKey(input);
+}
+
+// Logins that passed the password check and are waiting for a 2FA code, keyed by a random token.
+const twoFactorChallenges = new Map<string, { expiresAt: number; failures: number }>();
+
+function sweepTwoFactorChallenges(now: number): void {
+	for (const [token, challenge] of twoFactorChallenges) {
+		if (challenge.expiresAt <= now) twoFactorChallenges.delete(token);
+	}
+}
+
+/** Records that the password step succeeded and returns a token for the code step. */
+export function createTwoFactorChallenge(): string {
+	const now = Date.now();
+	sweepTwoFactorChallenges(now);
+	const token = crypto.randomBytes(32).toString('hex');
+	twoFactorChallenges.set(token, { expiresAt: now + TWO_FACTOR_CHALLENGE_MS, failures: 0 });
+	return token;
+}
+
+/** Returns true if the token belongs to a login that is still waiting for its 2FA code. */
+export function hasTwoFactorChallenge(token: string | undefined | null): boolean {
+	if (!token) return false;
+	const challenge = twoFactorChallenges.get(token);
+	if (!challenge) return false;
+	if (challenge.expiresAt <= Date.now()) {
+		twoFactorChallenges.delete(token);
+		return false;
+	}
+	return true;
+}
+
+/**
+ * Completes a pending login with a second-factor code. Returns true on success and consumes the
+ * challenge. After MAX_ATTEMPTS wrong codes the challenge is discarded and the password is needed again.
+ */
+export function completeTwoFactorChallenge(
+	token: string | undefined | null,
+	input: string
+): boolean {
+	if (!token || !hasTwoFactorChallenge(token)) return false;
+	if (verifySecondFactor(input)) {
+		twoFactorChallenges.delete(token);
+		return true;
+	}
+	const challenge = twoFactorChallenges.get(token);
+	if (challenge && ++challenge.failures >= MAX_ATTEMPTS) twoFactorChallenges.delete(token);
+	return false;
+}
+
+/** Discards a pending 2FA login (e.g. when the user goes back to the password step). */
+export function cancelTwoFactorChallenge(token: string | undefined | null): void {
+	if (token) twoFactorChallenges.delete(token);
+}
+
+export const TWO_FACTOR_COOKIE_NAME = 'cms_2fa';
+
+export const twoFactorCookieOptions = {
+	path: '/admin/login',
+	httpOnly: true,
+	secure: !dev,
+	sameSite: 'strict' as const,
+	maxAge: TWO_FACTOR_CHALLENGE_MS / 1000
+};
+
 const insertSessionStmt = db.prepare(
 	'INSERT INTO sessions (id, created_at, expires_at) VALUES (?, ?, ?)'
 );
@@ -210,6 +387,7 @@ export function deleteSession(token: string | undefined | null): void {
 /** Deletes every active session. Used when the admin password changes, so any stolen session is revoked. */
 export function invalidateAllSessions(): void {
 	deleteAllSessionsStmt.run();
+	twoFactorChallenges.clear();
 }
 
 export const sessionCookieOptions = {

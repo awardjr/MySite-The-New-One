@@ -5,6 +5,17 @@
 
 	let { data }: PageProps = $props();
 	let { links, siteName } = $derived(data);
+
+	const iconColors: Record<string, string> = {
+		resume: '#475569',
+		email: '#dc2626',
+		phone: '#16a34a',
+		link: '#0d9488',
+		linkedin: '#0a66c2',
+		github: '#24292f',
+		twitch: '#9146ff',
+		youtube: '#e11d48'
+	};
 </script>
 
 <svelte:head>
@@ -18,16 +29,17 @@
 		<p class="text-base text-muted">Find me in these places. Check out what I've done as well</p>
 	</div>
 
-	<div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+	<div class="mx-auto mt-8 flex w-full flex-col gap-3 md:w-2/3">
 		{#each links as link, i (i)}
 			<a
 				href={link.href}
 				target={link.href.startsWith('http') ? '_blank' : undefined}
 				rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-				class="flex items-center gap-3 rounded-xl border border-card-border bg-card px-4 py-3 text-card-label shadow-sm transition-transform duration-200 hover:scale-105 hover:border-card-border-hover hover:bg-card-hover"
+				style:--link-color={iconColors[link.icon] ?? iconColors.link}
+				class="group flex items-center gap-3 rounded-xl border border-card-border bg-card px-4 py-3 text-card-label shadow-sm transition duration-200 hover:scale-105 hover:border-transparent hover:bg-(--link-color) hover:text-white"
 			>
 				<span
-					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-badge text-badge-text"
+					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--link-color) text-white transition-colors duration-200 group-hover:bg-white/20"
 				>
 					<Fa icon={getIcon(link.icon)} class="h-4 w-4" />
 				</span>

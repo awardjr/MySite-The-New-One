@@ -1,6 +1,6 @@
 :root.hotdog {
 	/* Page and typography */
-	--theme-page: var(--color-red-800);
+	--theme-page: var(--color-red-900);
 	--theme-body: var(--color-yellow-100);
 	--theme-heading: var(--color-yellow-500);
 	--theme-copy: var(--color-yellow-100);
@@ -11,9 +11,10 @@
 
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-yellow-400);
-	--theme-footer: var(--color-red-800);
-	--theme-header: var(--color-red-800);
+	--theme-footer: var(--color-red-900);
+	--theme-header: var(--color-red-900);
 	--theme-nav-decoration: var(--color-yellow-500);
+ --theme-nav-decoration-dim: color-mix(in oklab, var(--color-yellow-400), black 15%);
 	--theme-nav-hover: var(--color-yellow-500);
 	--theme-menu-icon: var(--color-yellow-500);
 	--theme-menu-hover: var(--color-red-800);
@@ -26,8 +27,8 @@
 	/* Cards and badges */
 	--theme-card-border: var(--color-black);
 	--theme-card: var(--color-yellow-500);
-	--theme-card-border-hover: var(--color-gray-300);
-	--theme-card-hover: var(--color-yellow-200);
+	--theme-card-border-hover: var(--color-gray-800);
+	--theme-card-hover: var(--color-yellow-400);
 	--theme-card-heading: var(--color-black);
 	--theme-card-copy: var(--color-red-900);
 	--theme-card-meta: var(--color-red-900);

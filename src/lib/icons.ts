@@ -3,7 +3,6 @@ import {
 	faFileLines,
 	faEnvelope,
 	faLink,
-	faGlobe,
 	faPhone
 } from '@fortawesome/free-solid-svg-icons';
 import {
@@ -18,7 +17,6 @@ export const iconRegistry: Record<string, IconDefinition> = {
 	email: faEnvelope,
 	phone: faPhone,
 	link: faLink,
-	globe: faGlobe,
 	linkedin: faLinkedin,
 	github: faGithub,
 	twitch: faTwitch,

@@ -56,7 +56,7 @@
 		{#each works as work (work.id)}
 			<div
 				id="work-{work.id}"
-				class="relative flex scroll-mt-20 flex-col gap-5 rounded-xl border border-card-border bg-card p-5 shadow-sm transition-transform duration-200 hover:scale-[1.02] target:ring-2 target:ring-photo-ring sm:flex-row sm:items-start"
+				class="relative flex scroll-mt-20 flex-col gap-5 rounded-xl border border-card-border bg-card p-5 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover target:ring-2 target:ring-photo-ring sm:flex-row sm:items-start"
 			>
 				{#if work.link}
 					<a

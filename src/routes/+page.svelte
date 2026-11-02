@@ -41,7 +41,7 @@
 			>
 				<img
 					alt={name}
-					class="h-56 w-56 cursor-pointer rounded-2xl object-cover shadow-md ring-1 ring-photo-ring sm:h-72 sm:w-72"
+					class="h-72 w-72 cursor-pointer rounded-2xl object-cover shadow-md sm:h-96 sm:w-96"
 					src={photoSrc}
 				/>
 			</button>
@@ -56,14 +56,14 @@
 			{#each data.featuredPosts as post (post.slug)}
 				<a
 					href="/blog/{post.slug}"
-					class="block rounded-xl p-4 ring-1 ring-photo-ring transition-shadow hover:shadow-md"
+					class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 				>
 					{#if post.image}
 						<img src={post.image} alt={post.title} class="mb-3 h-40 w-full rounded-lg object-cover" />
 					{/if}
-					<h3 class="line-clamp-2 font-semibold text-heading">{post.title}</h3>
-					<p class="text-xs text-muted">{post.date}</p>
-					<p class="mt-2 line-clamp-3 text-sm text-muted">{post.preview}</p>
+					<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{post.title}</h3>
+					<p class="text-sm text-card-meta">{post.date}</p>
+					<p class="mt-2 line-clamp-3 text-base text-card-copy">{post.preview}</p>
 				</a>
 			{/each}
 		</div>
@@ -77,13 +77,13 @@
 			{#each data.featuredWorks as work (work.id)}
 				<a
 					href="/works#work-{work.id}"
-					class="block rounded-xl p-4 ring-1 ring-photo-ring transition-shadow hover:shadow-md"
+					class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 				>
 					{#if work.image}
 						<img src={work.image} alt={work.title} class="mb-3 h-40 w-full rounded-lg object-cover" />
 					{/if}
-					<h3 class="line-clamp-2 font-semibold text-heading">{work.title}</h3>
-					<p class="mt-1 line-clamp-3 text-sm text-muted">{work.description}</p>
+					<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{work.title}</h3>
+					<p class="mt-1 line-clamp-3 text-base text-card-copy">{work.description}</p>
 				</a>
 			{/each}
 		</div>

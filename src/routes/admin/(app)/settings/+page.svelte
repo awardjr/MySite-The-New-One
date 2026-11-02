@@ -7,6 +7,15 @@
 	let savingProfile = $state(false);
 	let savingPassword = $state(false);
 	let rotatingRecovery = $state(false);
+	let savingTwoFactor = $state(false);
+
+	const twoFactorSubmit = () => {
+		savingTwoFactor = true;
+		return async ({ update }: { update: () => Promise<void> }) => {
+			await update();
+			savingTwoFactor = false;
+		};
+	};
 	let copied = $state(false);
 
 	async function copyRecoveryKey(key: string) {
@@ -182,6 +191,226 @@
 		</form>
 	</section>
 
+	<!-- Two-Factor Authentication -->
+	<section class="rounded-xl border border-form-border bg-page p-6 sm:p-8 shadow-sm">
+		<div class="flex flex-wrap items-center gap-3">
+			<h2 class="text-xl font-bold text-heading sm:text-2xl">Two-Factor Authentication</h2>
+			<span
+				class="rounded-full bg-badge px-2.5 py-0.5 text-sm font-semibold {data.twoFactorEnabled
+					? 'text-success'
+					: 'text-muted'}"
+			>
+				{data.twoFactorEnabled ? 'On' : 'Off'}
+			</span>
+		</div>
+		<p class="mt-1.5 text-base text-muted">
+			When on, signing in also needs a 6-digit code from an authenticator app such as Google
+			Authenticator, 1Password or Authy. If you lose access to the app, you can sign in with your
+			emergency recovery code instead.
+		</p>
+		{#if !data.twoFactorKeyConfigured}
+			<p class="mt-3 text-base text-error">
+				TOTP_ENCRYPTION_KEY is not configured. New two-factor setups are unavailable; if your
+				existing secret is encrypted, restore its original key to use authenticator codes. Your
+				emergency recovery code can still be used to sign in and turn two-factor authentication off.
+			</p>
+		{/if}
+
+		{#if data.twoFactorEnabled}
+			{#if form?.twoFactorRecoveryKey}
+				<div class="mt-6 rounded-xl border border-card-border bg-card p-5 shadow-sm">
+					<div class="flex items-center justify-between">
+						<span class="text-sm font-bold uppercase tracking-wider text-card-meta">
+							Your Emergency Recovery Code
+						</span>
+						<button
+							type="button"
+							onclick={() => copyRecoveryKey(form?.twoFactorRecoveryKey ?? '')}
+							class="text-sm font-semibold text-card-action hover:text-card-heading transition-colors"
+						>
+							{copied ? 'Copied!' : 'Copy code'}
+						</button>
+					</div>
+					<p
+						class="mt-3 font-mono text-2xl font-bold tracking-widest text-card-heading selection:bg-nav-active"
+					>
+						{form.twoFactorRecoveryKey}
+					</p>
+					<p class="mt-3 text-base text-card-copy">
+						Save this code somewhere safe now. It won't be shown again, and it replaces any previous
+						recovery code. You can use it to sign in if you lose your authenticator.
+					</p>
+				</div>
+			{/if}
+			<form
+				method="POST"
+				action="?/disableTwoFactor"
+				class="mt-6 space-y-5"
+				use:enhance={twoFactorSubmit}
+			>
+				<div class="grid gap-5 sm:grid-cols-2">
+					<div class="space-y-2">
+						<label for="disableTwoFactorPassword" class="text-base font-medium text-field-label">
+							Current password
+						</label>
+						<input
+							id="disableTwoFactorPassword"
+							name="currentPassword"
+							type="password"
+							required
+							autocomplete="current-password"
+							class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
+						/>
+					</div>
+					<div class="space-y-2">
+						<label for="disableTwoFactorCode" class="text-base font-medium text-field-label">
+							Authentication or recovery code
+						</label>
+						<input
+							id="disableTwoFactorCode"
+							name="code"
+							type="text"
+							required
+							autocomplete="one-time-code"
+							spellcheck="false"
+							maxlength="32"
+							class="w-full rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
+						/>
+					</div>
+				</div>
+
+				{#if form?.twoFactorError}
+					<p class="text-base font-medium text-error">{form.twoFactorError}</p>
+				{:else if form?.twoFactorSuccess}
+					<p class="text-base font-medium text-success">{form.twoFactorSuccess}</p>
+				{/if}
+
+				<div>
+					<button
+						type="submit"
+						disabled={savingTwoFactor}
+						class="rounded-lg border border-field-border bg-field px-5 py-2.5 text-base font-semibold text-field-label transition-colors hover:bg-secondary-hover hover:text-heading disabled:opacity-60"
+					>
+						{savingTwoFactor ? 'Turning off…' : 'Turn Off Two-Factor Authentication'}
+					</button>
+				</div>
+			</form>
+		{:else if data.twoFactorSetup}
+			<div class="mt-6 flex flex-col gap-6 sm:flex-row sm:items-start">
+				<img
+					src={data.twoFactorSetup.qrCode}
+					alt="QR code for setting up two-factor authentication"
+					width="200"
+					height="200"
+					class="h-[200px] w-[200px] shrink-0 rounded-lg bg-white"
+				/>
+				<div class="space-y-3">
+					<p class="text-base text-copy">
+						1. Scan this QR code with your authenticator app. If you can't scan it, enter this key
+						manually:
+					</p>
+					<p
+						class="rounded-lg bg-code px-3 py-2 font-mono text-base font-semibold tracking-widest break-all text-heading"
+					>
+						{data.twoFactorSetup.secret}
+					</p>
+					<p class="text-base text-copy">2. Enter the 6-digit code the app shows to finish.</p>
+				</div>
+			</div>
+
+			<form
+				method="POST"
+				action="?/confirmTwoFactor"
+				class="mt-6 space-y-5"
+				use:enhance={twoFactorSubmit}
+			>
+				<div class="space-y-2">
+					<label for="confirmTwoFactorCode" class="text-base font-medium text-field-label">
+						Authentication code
+					</label>
+					<input
+						id="confirmTwoFactorCode"
+						name="code"
+						type="text"
+						required
+						inputmode="numeric"
+						autocomplete="one-time-code"
+						pattern={String.raw`[0-9]{3}\s?[0-9]{3}`}
+						maxlength="7"
+						class="w-full max-w-xs rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
+					/>
+				</div>
+
+				{#if form?.twoFactorError}
+					<p class="text-base font-medium text-error">{form.twoFactorError}</p>
+				{/if}
+
+				<div class="flex flex-wrap items-center gap-3">
+					<button
+						type="submit"
+						disabled={savingTwoFactor || !data.twoFactorKeyConfigured}
+						class="rounded-lg bg-primary px-5 py-2.5 text-base font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
+					>
+						{savingTwoFactor ? 'Verifying…' : 'Turn On Two-Factor Authentication'}
+					</button>
+					<button
+						type="submit"
+						formaction="?/cancelTwoFactor"
+						formnovalidate
+						disabled={savingTwoFactor}
+						class="rounded-lg border border-field-border bg-field px-5 py-2.5 text-base font-semibold text-field-label transition-colors hover:bg-secondary-hover hover:text-heading disabled:opacity-60"
+					>
+						Cancel
+					</button>
+				</div>
+			</form>
+		{:else}
+			<form
+				method="POST"
+				action="?/startTwoFactor"
+				class="mt-6 space-y-5"
+				use:enhance={twoFactorSubmit}
+			>
+				<div class="space-y-2">
+					<label for="startTwoFactorPassword" class="text-base font-medium text-field-label">
+						Current password (required to set up two-factor authentication)
+					</label>
+					<input
+						id="startTwoFactorPassword"
+						name="currentPassword"
+						type="password"
+						required
+						autocomplete="current-password"
+						class="w-full max-w-md rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
+					/>
+				</div>
+
+				{#if form?.twoFactorError}
+					<p class="text-base font-medium text-error">{form.twoFactorError}</p>
+				{:else if form?.twoFactorSuccess}
+					<p class="text-base font-medium text-success">{form.twoFactorSuccess}</p>
+				{/if}
+
+				{#if !data.hasRecoveryKey}
+					<p class="text-base text-muted">
+						Tip: generate an emergency recovery code below first, so you can still sign in if you
+						lose your authenticator.
+					</p>
+				{/if}
+
+				<div>
+					<button
+						type="submit"
+						disabled={savingTwoFactor || !data.twoFactorKeyConfigured}
+						class="rounded-lg bg-primary px-5 py-2.5 text-base font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
+					>
+						{savingTwoFactor ? 'Starting…' : 'Set Up Two-Factor Authentication'}
+					</button>
+				</div>
+			</form>
+		{/if}
+	</section>
+
 	<!-- Emergency Recovery Code -->
 	<section class="rounded-xl border border-form-border bg-page p-6 sm:p-8 shadow-sm">
 		<h2 class="text-xl font-bold text-heading sm:text-2xl">Emergency Recovery Code</h2>
@@ -240,6 +469,23 @@
 					class="w-full max-w-md rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
 				/>
 			</div>
+
+			{#if data.twoFactorEnabled}
+				<div class="space-y-2">
+					<label for="recoveryTwoFactorCode" class="text-base font-medium text-field-label">
+						Authentication code (required because two-factor authentication is on)
+					</label>
+					<input
+						id="recoveryTwoFactorCode"
+						name="code"
+						type="text"
+						required
+						inputmode="text"
+						autocomplete="one-time-code"
+						class="w-full max-w-xs rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
+					/>
+				</div>
+			{/if}
 
 			{#if form?.recoveryError}
 				<p class="text-base font-medium text-error">{form.recoveryError}</p>

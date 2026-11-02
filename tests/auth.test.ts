@@ -33,12 +33,26 @@ import {
 	updateAdminProfile,
 	verifyRecoveryKey,
 	verifyResetToken,
-	verifySessionToken
+	verifySessionToken,
+	cancelTotpSetup,
+	completeTwoFactorChallenge,
+	confirmTotpSetup,
+	createTwoFactorChallenge,
+	disableTotp,
+	getPendingTotpSecret,
+	hasTwoFactorChallenge,
+	isTotpEnabled,
+	startTotpSetup,
+	verifySecondFactor,
+	verifyTotpCode
 } from '../src/lib/server/auth';
+import { totpCode, totpStep } from '../src/lib/server/totp';
 
 const testDb = getTestDb();
+const TEST_TOTP_ENCRYPTION_KEY = 'test-only-totp-encryption-key-with-more-than-32-bytes';
 
 beforeEach(() => {
+	process.env.TOTP_ENCRYPTION_KEY = TEST_TOTP_ENCRYPTION_KEY;
 	testDb.exec('DELETE FROM admin_user');
 	testDb.exec('DELETE FROM sessions');
 	testDb.exec('DELETE FROM password_reset_tokens');
@@ -275,5 +289,152 @@ describe('brute force attempt lockouts', () => {
 		} finally {
 			vi.useRealTimers();
 		}
+	});
+});
+
+describe('two-factor authentication', () => {
+	const currentCode = (secret: string, offset = 0) => totpCode(secret, totpStep() + offset);
+
+	beforeEach(() => {
+		setAdminCredentials('admin', 'admin@example.com', 'supersecret123', 'A1B2-C3D4-E5F6-G7H8');
+	});
+
+	it('only turns on after the pending secret is confirmed with a valid code', () => {
+		expect(isTotpEnabled()).toBe(false);
+		const secret = startTotpSetup();
+		expect(getPendingTotpSecret()).toBe(secret);
+		expect(isTotpEnabled()).toBe(false);
+
+		// A code from 5 steps (2.5 minutes) ahead is outside the drift window.
+		expect(confirmTotpSetup(currentCode(secret, 5))).toBe(false);
+		expect(isTotpEnabled()).toBe(false);
+
+		expect(confirmTotpSetup(currentCode(secret))).toBe(true);
+		expect(isTotpEnabled()).toBe(true);
+		expect(getPendingTotpSecret()).toBeNull();
+	});
+
+	it('stores pending and enabled secrets as ciphertext', () => {
+		const secret = startTotpSetup();
+		const pending = testDb
+			.prepare('SELECT totp_pending_secret FROM admin_user WHERE id = 1')
+			.get() as { totp_pending_secret: string };
+		expect(pending.totp_pending_secret).toMatch(/^v1:/);
+		expect(pending.totp_pending_secret).not.toContain(secret);
+		expect(getPendingTotpSecret()).toBe(secret);
+
+		expect(confirmTotpSetup(currentCode(secret))).toBe(true);
+		const active = testDb.prepare('SELECT totp_secret FROM admin_user WHERE id = 1').get() as {
+			totp_secret: string;
+		};
+		expect(active.totp_secret).toMatch(/^v1:/);
+		expect(active.totp_secret).not.toContain(secret);
+	});
+
+	it('upgrades legacy plaintext TOTP secrets on read', () => {
+		const secret = startTotpSetup();
+		testDb.prepare('UPDATE admin_user SET totp_pending_secret = ? WHERE id = 1').run(secret);
+		expect(getPendingTotpSecret()).toBe(secret);
+		const pending = testDb
+			.prepare('SELECT totp_pending_secret FROM admin_user WHERE id = 1')
+			.get() as { totp_pending_secret: string };
+		expect(pending.totp_pending_secret).toMatch(/^v1:/);
+
+		expect(confirmTotpSetup(currentCode(secret))).toBe(true);
+		testDb.prepare('UPDATE admin_user SET totp_secret = ? WHERE id = 1').run(secret);
+		expect(verifyTotpCode(currentCode(secret, 1))).toBe(true);
+		const active = testDb.prepare('SELECT totp_secret FROM admin_user WHERE id = 1').get() as {
+			totp_secret: string;
+		};
+		expect(active.totp_secret).toMatch(/^v1:/);
+	});
+
+	it('fails closed on an incorrect encryption key but keeps recovery available', () => {
+		const secret = startTotpSetup();
+		expect(confirmTotpSetup(currentCode(secret, -1))).toBe(true);
+
+		process.env.TOTP_ENCRYPTION_KEY = 'wrong-key-that-is-also-longer-than-32-bytes';
+		try {
+			expect(isTotpEnabled()).toBe(true);
+			expect(verifyTotpCode(currentCode(secret))).toBe(false);
+			expect(verifySecondFactor('A1B2-C3D4-E5F6-G7H8')).toBe(true);
+		} finally {
+			process.env.TOTP_ENCRYPTION_KEY = TEST_TOTP_ENCRYPTION_KEY;
+		}
+	});
+
+	it('refuses to start setup without a sufficiently long encryption key', () => {
+		process.env.TOTP_ENCRYPTION_KEY = 'short';
+		expect(() => startTotpSetup()).toThrow('TOTP_ENCRYPTION_KEY');
+	});
+
+	it('can cancel a pending setup without turning 2FA on', () => {
+		startTotpSetup();
+		cancelTotpSetup();
+		expect(getPendingTotpSecret()).toBeNull();
+		expect(isTotpEnabled()).toBe(false);
+	});
+
+	it('accepts each code only once and rejects older ones', () => {
+		const secret = startTotpSetup();
+		confirmTotpSetup(currentCode(secret, -1));
+
+		// The confirming code (and anything older) can't be reused.
+		expect(verifyTotpCode(currentCode(secret, -1))).toBe(false);
+		expect(verifyTotpCode(currentCode(secret))).toBe(true);
+		expect(verifyTotpCode(currentCode(secret))).toBe(false);
+	});
+
+	it('accepts the recovery code as a second factor', () => {
+		const secret = startTotpSetup();
+		confirmTotpSetup(currentCode(secret));
+		expect(verifySecondFactor('a1b2-c3d4-e5f6-g7h8')).toBe(true);
+		expect(verifySecondFactor('WRONG-CODE')).toBe(false);
+		expect(verifySecondFactor(currentCode(secret, 5))).toBe(false);
+		expect(verifySecondFactor(currentCode(secret, 1))).toBe(true);
+	});
+
+	it('completes a login challenge with a valid code and discards it after use', () => {
+		const secret = startTotpSetup();
+		confirmTotpSetup(currentCode(secret, -1));
+
+		const token = createTwoFactorChallenge();
+		expect(hasTwoFactorChallenge(token)).toBe(true);
+		expect(completeTwoFactorChallenge(token, currentCode(secret))).toBe(true);
+		expect(hasTwoFactorChallenge(token)).toBe(false);
+		expect(completeTwoFactorChallenge('not-a-token', currentCode(secret, 1))).toBe(false);
+	});
+
+	it('discards a login challenge after too many wrong codes or when sessions are revoked', () => {
+		const secret = startTotpSetup();
+		confirmTotpSetup(currentCode(secret));
+
+		const token = createTwoFactorChallenge();
+		for (let i = 0; i < 5; i++) completeTwoFactorChallenge(token, 'WRONG-CODE');
+		expect(hasTwoFactorChallenge(token)).toBe(false);
+		expect(completeTwoFactorChallenge(token, 'A1B2-C3D4-E5F6-G7H8')).toBe(false);
+
+		const other = createTwoFactorChallenge();
+		invalidateAllSessions();
+		expect(hasTwoFactorChallenge(other)).toBe(false);
+	});
+
+	it('expires a login challenge after 5 minutes', () => {
+		vi.useFakeTimers();
+		try {
+			const token = createTwoFactorChallenge();
+			vi.advanceTimersByTime(5 * 60 * 1000);
+			expect(hasTwoFactorChallenge(token)).toBe(false);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('turns off and forgets the secret', () => {
+		const secret = startTotpSetup();
+		confirmTotpSetup(currentCode(secret));
+		disableTotp();
+		expect(isTotpEnabled()).toBe(false);
+		expect(verifyTotpCode(currentCode(secret, 1))).toBe(false);
 	});
 });

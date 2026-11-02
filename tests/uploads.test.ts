@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { resolveUploadPath } from '$lib/server/uploads.ts';
+import { resolveUploadPath } from '../src/lib/server/uploads';
 
 const BASE = path.resolve('/srv/uploads');
 

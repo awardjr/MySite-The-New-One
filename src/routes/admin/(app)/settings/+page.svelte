@@ -134,7 +134,9 @@
 
 			<div class="grid gap-5 sm:grid-cols-2">
 				<div class="space-y-2">
-					<label for="newPassword" class="text-base font-medium text-field-label"> New password </label>
+					<label for="newPassword" class="text-base font-medium text-field-label">
+						New password
+					</label>
 					<input
 						id="newPassword"
 						name="newPassword"

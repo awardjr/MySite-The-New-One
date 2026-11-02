@@ -1,16 +1,6 @@
 import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
-import {
-	faFileLines,
-	faEnvelope,
-	faLink,
-	faPhone
-} from '@fortawesome/free-solid-svg-icons';
-import {
-	faLinkedin,
-	faGithub,
-	faTwitch,
-	faYoutube
-} from '@fortawesome/free-brands-svg-icons';
+import { faFileLines, faEnvelope, faLink, faPhone } from '@fortawesome/free-solid-svg-icons';
+import { faLinkedin, faGithub, faTwitch, faYoutube } from '@fortawesome/free-brands-svg-icons';
 
 export const iconRegistry: Record<string, IconDefinition> = {
 	resume: faFileLines,

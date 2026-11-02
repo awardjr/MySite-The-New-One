@@ -97,7 +97,7 @@
 					{/if}
 					<span class="max-w-48 truncate">{option.title}</span>
 					<button type="button" aria-label="Remove {option.title}" onclick={() => toggle(option.id)}
-					>×</button
+						>×</button
 					>
 				</li>
 			{/each}

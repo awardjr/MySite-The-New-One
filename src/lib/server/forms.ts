@@ -19,6 +19,21 @@ export function text(value: unknown): string {
 	return String(value ?? '').trim();
 }
 
+const URL_SCHEME = /^([a-z][a-z0-9+.-]*):/i;
+const SAFE_SCHEMES = new Set(['http', 'https', 'mailto', 'tel']);
+
+/**
+ * Coerces a submitted link to a trimmed string, or '' if it uses a scheme other than
+ * http, https, mailto or tel (e.g. `javascript:`). Relative and scheme-less links pass through.
+ */
+export function safeUrl(value: unknown): string {
+	const url = text(value);
+	// Browsers skip control characters and tabs/newlines in URLs, so "\x01java\tscript:" must be caught too.
+	// eslint-disable-next-line no-control-regex
+	const scheme = URL_SCHEME.exec(url.replace(/[\u0000-\u0020]/g, ''))?.[1].toLowerCase();
+	return scheme === undefined || SAFE_SCHEMES.has(scheme) ? url : '';
+}
+
 /** Coerces a submitted value to a list of non-empty trimmed strings. */
 export function textList(value: unknown): string[] {
 	return Array.isArray(value) ? value.map(text).filter(Boolean) : [];

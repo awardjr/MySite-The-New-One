@@ -9,8 +9,13 @@ function truncate(text: string, max: number): string {
 
 export const load: PageServerLoad = () => {
 	const { home, blog, works } = readContent();
+	const { name, tagline, photoSrc, introParagraphs } = home;
+
+	const postsBySlug = new Map(blog.posts.filter((p) => !p.draft).map((p) => [p.slug, p]));
+	const worksById = new Map(works.items.map((w) => [w.id, w]));
+
 	const featuredPosts = home.featuredPosts
-		.map((slug) => blog.posts.find((p) => p.slug === slug && !p.draft))
+		.map((slug) => postsBySlug.get(slug))
 		.filter((p) => !!p)
 		.map((p) => ({
 			slug: p.slug,
@@ -20,7 +25,7 @@ export const load: PageServerLoad = () => {
 			preview: truncate(p.preview, 200)
 		}));
 	const featuredWorks = home.featuredWorks
-		.map((id) => works.items.find((w) => w.id === id))
+		.map((id) => worksById.get(id))
 		.filter((w) => !!w)
 		.map((w) => ({
 			id: w.id,
@@ -28,5 +33,6 @@ export const load: PageServerLoad = () => {
 			title: truncate(w.title, 100),
 			description: truncate(w.description, 200)
 		}));
-	return { home, featuredPosts, featuredWorks };
+
+	return { home: { name, tagline, photoSrc, introParagraphs }, featuredPosts, featuredWorks };
 };

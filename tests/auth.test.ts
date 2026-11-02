@@ -72,6 +72,9 @@ describe('admin credentials and profile', () => {
 		expect(checkCredentials('ADMIN@EXAMPLE.COM', 'correct-password')).toBe(true);
 
 		expect(checkCredentials('wronguser', 'correct-password')).toBe(false);
+		expect(checkCredentials('', 'correct-password')).toBe(false);
+		expect(checkCredentials('   ', 'correct-password')).toBe(false);
+		expect(checkCredentials('myusername', '')).toBe(false);
 		expect(checkCredentials('myusername', 'wrong-password')).toBe(false);
 		expect(checkCredentials('admin@example.com', 'wrong-password')).toBe(false);
 	});
@@ -255,5 +258,22 @@ describe('brute force attempt lockouts', () => {
 
 		recordSuccessfulReset('2.2.2.2');
 		expect(isResetLocked('2.2.2.2')).toBe(false);
+	});
+
+	it('forgets old failures and lifts the lockout after 15 minutes', () => {
+		vi.useFakeTimers();
+		try {
+			for (let i = 0; i < 4; i++) recordFailedLogin('3.3.3.3');
+			vi.advanceTimersByTime(15 * 60 * 1000);
+			recordFailedLogin('3.3.3.3');
+			expect(isLoginLocked('3.3.3.3')).toBe(false);
+
+			for (let i = 0; i < 4; i++) recordFailedLogin('3.3.3.3');
+			expect(isLoginLocked('3.3.3.3')).toBe(true);
+			vi.advanceTimersByTime(15 * 60 * 1000);
+			expect(isLoginLocked('3.3.3.3')).toBe(false);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });

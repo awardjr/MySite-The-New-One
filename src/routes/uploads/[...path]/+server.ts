@@ -5,18 +5,9 @@ import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {
 	const resolved = resolveUploadPath(params.path);
-	if (!resolved) {
-		error(404, 'Not found');
-	}
-
-	let body: Buffer;
-	try {
-		const stat = await fs.stat(resolved.filePath);
-		if (!stat.isFile()) {
-			error(404, 'Not found');
-		}
-		body = await fs.readFile(resolved.filePath);
-	} catch {
+	// readFile also fails for directories (EISDIR), so no separate stat is needed.
+	const body = resolved ? await fs.readFile(resolved.filePath).catch(() => null) : null;
+	if (!resolved || !body) {
 		error(404, 'Not found');
 	}
 

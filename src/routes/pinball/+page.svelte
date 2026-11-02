@@ -77,7 +77,7 @@
 								aria-expanded={isExpanded}
 								class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:border-card-border-hover hover:bg-card-border"
 							>
-        {isExpanded ? 'Hide Mode High Scores' : 'Show Mode High Scores'}
+								{isExpanded ? 'Hide Mode High Scores' : 'Show Mode High Scores'}
 								<Fa icon={isExpanded ? faChevronUp : faChevronDown} class="h-3 w-3" />
 							</button>
 						</div>

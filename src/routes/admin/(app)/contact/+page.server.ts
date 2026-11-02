@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, type ContactLink } from '$lib/server/content';
-import { readJsonRows, text } from '$lib/server/forms';
+import { readJsonRows, safeUrl, text } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -17,7 +17,7 @@ export const actions: Actions = {
 		const links: ContactLink[] = rows
 			.map((item) => ({
 				label: text(item.label),
-				href: text(item.href),
+				href: safeUrl(item.href),
 				icon: text(item.icon ?? 'link')
 			}))
 			.filter((link) => link.label && link.href);

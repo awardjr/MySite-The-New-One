@@ -60,14 +60,18 @@ const updateRecoveryKeyStmt = db.prepare(
 	'UPDATE admin_user SET recovery_key_hash = @recoveryKeyHash, updated_at = @updatedAt WHERE id = 1'
 );
 
+function getAdmin(): AdminUserRow | undefined {
+	return getAdminStmt.get() as AdminUserRow | undefined;
+}
+
 /** Returns true once an admin user has been configured in the database. */
 export function isAdminConfigured(): boolean {
-	return getAdminStmt.get() !== undefined;
+	return getAdmin() !== undefined;
 }
 
 /** Returns the stored admin username and email. */
 export function getAdminProfile(): { username: string; email: string } | null {
-	const row = getAdminStmt.get() as AdminUserRow | undefined;
+	const row = getAdmin();
 	if (!row) return null;
 	return {
 		username: row.username ?? '',
@@ -103,11 +107,6 @@ export function updateAdminProfile(username: string, email: string): void {
 
 /** Sets (or replaces) the single admin password. */
 export function setAdminPassword(password: string): void {
-	const row = getAdminStmt.get() as AdminUserRow | undefined;
-	if (!row) {
-		setAdminCredentials('admin', 'admin@example.com', password);
-		return;
-	}
 	updateAdminPasswordStmt.run({
 		passwordHash: hashPassword(password),
 		updatedAt: new Date().toISOString()
@@ -130,15 +129,14 @@ export function normalizeRecoveryKey(key: string): string {
 
 /** Returns true if a recovery key is configured in the database. */
 export function hasRecoveryKey(): boolean {
-	const row = getAdminStmt.get() as AdminUserRow | undefined;
-	return Boolean(row?.recovery_key_hash);
+	return Boolean(getAdmin()?.recovery_key_hash);
 }
 
 /** Verifies a candidate recovery key against the stored recovery key hash. */
 export function verifyRecoveryKey(candidate: string): boolean {
 	const normalized = normalizeRecoveryKey(candidate);
 	if (!normalized) return false;
-	const row = getAdminStmt.get() as AdminUserRow | undefined;
+	const row = getAdmin();
 	if (!row?.recovery_key_hash) return false;
 	return verifyPassword(normalized, row.recovery_key_hash);
 }
@@ -155,27 +153,23 @@ export function setRecoveryKey(key: string): void {
 /** Checks a submitted login password against the stored admin password. */
 export function checkPassword(candidate: string): boolean {
 	if (!candidate) return false;
-	const row = getAdminStmt.get() as AdminUserRow | undefined;
+	const row = getAdmin();
 	if (!row) return false;
 	return verifyPassword(candidate, row.password_hash);
 }
 
-/** Checks submitted login credentials (username/email and password). */
+/** Checks submitted login credentials (username/email and password). Both are required. */
 export function checkCredentials(identifier: string, candidatePassword: string): boolean {
-	if (!candidatePassword) return false;
-	const row = getAdminStmt.get() as AdminUserRow | undefined;
+	const normId = identifier.trim().toLowerCase();
+	if (!normId || !candidatePassword) return false;
+	const row = getAdmin();
 	if (!row) return false;
 
-	if (identifier.trim()) {
-		const normId = identifier.trim().toLowerCase();
-		const storedUsername = (row.username ?? '').toLowerCase();
-		const storedEmail = (row.email ?? '').toLowerCase();
-		if (normId !== storedUsername && normId !== storedEmail) {
-			return false;
-		}
-	}
-
-	return verifyPassword(candidatePassword, row.password_hash);
+	const idMatches =
+		normId === (row.username ?? '').toLowerCase() || normId === (row.email ?? '').toLowerCase();
+	// Always hash the password, so response time doesn't reveal whether the identifier matched.
+	const passwordMatches = verifyPassword(candidatePassword, row.password_hash);
+	return idMatches && passwordMatches;
 }
 
 const insertSessionStmt = db.prepare(
@@ -283,14 +277,11 @@ export async function requestEmailPasswordReset(
 	identifierOrEmail: string,
 	origin?: string
 ): Promise<boolean> {
-	const row = getAdminStmt.get() as AdminUserRow | undefined;
+	const row = getAdmin();
 	if (!row || !row.email) return false;
 
-	const trimmed = identifierOrEmail.trim().toLowerCase();
-	const adminEmail = (row.email ?? '').toLowerCase();
-	const adminUsername = (row.username ?? '').toLowerCase();
-
-	if (trimmed !== adminEmail && trimmed !== adminUsername) {
+	const normId = identifierOrEmail.trim().toLowerCase();
+	if (normId !== row.email.toLowerCase() && normId !== (row.username ?? '').toLowerCase()) {
 		return false;
 	}
 
@@ -320,61 +311,85 @@ export function resetPasswordWithRecoveryKey(recoveryKey: string, newPassword: s
 
 interface AttemptState {
 	failures: number;
-	lockedUntil: number | null;
+	/** When this record stops counting: end of the lockout, or end of the failure window. */
+	expiresAt: number;
+	locked: boolean;
 }
 
-// In-memory brute-force guards, keyed by client address.
-const loginAttempts = new Map<string, AttemptState>();
-const resetAttempts = new Map<string, AttemptState>();
+// Above this many tracked addresses, expired records are swept so memory stays bounded.
+const MAX_TRACKED_ADDRESSES = 1000;
+
+/** In-memory brute-force guard keyed by client address. Failures older than LOCKOUT_MS are forgotten. */
+function createAttemptLimiter() {
+	const attempts = new Map<string, AttemptState>();
+
+	function current(identifier: string, now: number): AttemptState | undefined {
+		const state = attempts.get(identifier);
+		if (state && state.expiresAt <= now) {
+			attempts.delete(identifier);
+			return undefined;
+		}
+		return state;
+	}
+
+	return {
+		isLocked(identifier: string): boolean {
+			return current(identifier, Date.now())?.locked ?? false;
+		},
+		recordFailure(identifier: string): void {
+			const now = Date.now();
+			if (attempts.size >= MAX_TRACKED_ADDRESSES) {
+				for (const [key, state] of attempts) {
+					if (state.expiresAt <= now) attempts.delete(key);
+				}
+			}
+			const state = current(identifier, now) ?? {
+				failures: 0,
+				expiresAt: now + LOCKOUT_MS,
+				locked: false
+			};
+			state.failures += 1;
+			if (state.failures >= MAX_ATTEMPTS && !state.locked) {
+				state.locked = true;
+				state.expiresAt = now + LOCKOUT_MS;
+			}
+			attempts.set(identifier, state);
+		},
+		clear(identifier: string): void {
+			attempts.delete(identifier);
+		}
+	};
+}
+
+const loginAttempts = createAttemptLimiter();
+const resetAttempts = createAttemptLimiter();
 
 /** Returns true if the given identifier (e.g. client IP) is currently locked out from logging in. */
 export function isLoginLocked(identifier: string): boolean {
-	const state = loginAttempts.get(identifier);
-	if (!state?.lockedUntil) return false;
-	if (state.lockedUntil <= Date.now()) {
-		loginAttempts.delete(identifier);
-		return false;
-	}
-	return true;
+	return loginAttempts.isLocked(identifier);
 }
 
 /** Records a failed login attempt, locking out the identifier after too many failures. */
 export function recordFailedLogin(identifier: string): void {
-	const state = loginAttempts.get(identifier) ?? { failures: 0, lockedUntil: null };
-	state.failures += 1;
-	if (state.failures >= MAX_ATTEMPTS) {
-		state.lockedUntil = Date.now() + LOCKOUT_MS;
-	}
-	loginAttempts.set(identifier, state);
+	loginAttempts.recordFailure(identifier);
 }
 
 /** Clears any recorded failures for the identifier after a successful login. */
 export function recordSuccessfulLogin(identifier: string): void {
-	loginAttempts.delete(identifier);
+	loginAttempts.clear(identifier);
 }
 
 /** Returns true if the given identifier is currently locked out from requesting/performing resets. */
 export function isResetLocked(identifier: string): boolean {
-	const state = resetAttempts.get(identifier);
-	if (!state?.lockedUntil) return false;
-	if (state.lockedUntil <= Date.now()) {
-		resetAttempts.delete(identifier);
-		return false;
-	}
-	return true;
+	return resetAttempts.isLocked(identifier);
 }
 
-/** Records a failed reset attempt, locking out the identifier after too many failures. */
+/** Records a failed (or rate-limited) reset attempt, locking out the identifier after too many. */
 export function recordFailedReset(identifier: string): void {
-	const state = resetAttempts.get(identifier) ?? { failures: 0, lockedUntil: null };
-	state.failures += 1;
-	if (state.failures >= MAX_ATTEMPTS) {
-		state.lockedUntil = Date.now() + LOCKOUT_MS;
-	}
-	resetAttempts.set(identifier, state);
+	resetAttempts.recordFailure(identifier);
 }
 
 /** Clears any recorded reset failures for the identifier after a successful reset. */
 export function recordSuccessfulReset(identifier: string): void {
-	resetAttempts.delete(identifier);
+	resetAttempts.clear(identifier);
 }

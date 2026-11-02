@@ -6,6 +6,8 @@ import {
 	getAdminProfile,
 	hasRecoveryKey,
 	invalidateAllSessions,
+	isLoginLocked,
+	recordFailedLogin,
 	sessionCookieOptions,
 	SESSION_COOKIE_NAME,
 	setAdminPassword,
@@ -16,6 +18,14 @@ import type { Actions, PageServerLoad } from './$types';
 
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Checks the current password, sharing the login lockout so a stolen session can't brute-force it. */
+function verifyCurrentPassword(password: string, clientAddress: string): boolean {
+	if (isLoginLocked(clientAddress)) return false;
+	if (checkPassword(password)) return true;
+	recordFailedLogin(clientAddress);
+	return false;
+}
 
 export const load: PageServerLoad = () => {
 	const profile = getAdminProfile();
@@ -44,13 +54,13 @@ export const actions: Actions = {
 		return { profileSuccess: true };
 	},
 
-	changePassword: async ({ request, cookies }) => {
+	changePassword: async ({ request, cookies, getClientAddress }) => {
 		const formData = await request.formData();
 		const currentPassword = String(formData.get('currentPassword') ?? '');
 		const newPassword = String(formData.get('newPassword') ?? '');
 		const confirmPassword = String(formData.get('confirmPassword') ?? '');
 
-		if (!checkPassword(currentPassword)) {
+		if (!verifyCurrentPassword(currentPassword, getClientAddress())) {
 			return fail(401, { passwordError: 'Current password is incorrect.' });
 		}
 		if (newPassword.length < MIN_PASSWORD_LENGTH) {
@@ -71,11 +81,11 @@ export const actions: Actions = {
 		return { passwordSuccess: true };
 	},
 
-	rotateRecoveryKey: async ({ request }) => {
+	rotateRecoveryKey: async ({ request, getClientAddress }) => {
 		const formData = await request.formData();
 		const currentPassword = String(formData.get('currentPassword') ?? '');
 
-		if (!checkPassword(currentPassword)) {
+		if (!verifyCurrentPassword(currentPassword, getClientAddress())) {
 			return fail(401, { recoveryError: 'Current password is incorrect.' });
 		}
 

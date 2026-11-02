@@ -41,6 +41,8 @@ export const actions: Actions = {
 			return fail(400, { emailError: 'Please enter your username or email address.' });
 		}
 
+		// Every request counts toward the limit, so this form can't be used to flood the admin inbox.
+		recordFailedReset(clientAddress);
 		await requestEmailPasswordReset(identifier, url.origin);
 		return { emailSent: true };
 	},

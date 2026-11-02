@@ -14,7 +14,7 @@
 	--theme-footer: var(--color-red-900);
 	--theme-header: var(--color-red-900);
 	--theme-nav-decoration: var(--color-yellow-500);
- --theme-nav-decoration-dim: color-mix(in oklab, var(--color-yellow-400), black 15%);
+	--theme-nav-decoration-dim: color-mix(in oklab, var(--color-yellow-400), black 15%);
 	--theme-nav-hover: var(--color-yellow-500);
 	--theme-menu-icon: var(--color-yellow-500);
 	--theme-menu-hover: var(--color-red-800);

@@ -221,7 +221,9 @@
 						style:width="{activeBar.width}px"
 						style:top="{activeBar.top}px"
 						style:transform="translateX({activeBar.left}px)"
-						style:opacity={hoveredIndex !== null && hoveredIndex !== activeIndex && activeBar.width ? 1 : 0}
+						style:opacity={hoveredIndex !== null && hoveredIndex !== activeIndex && activeBar.width
+							? 1
+							: 0}
 					></span>
 					<span
 						aria-hidden="true"

@@ -121,12 +121,11 @@ const svgSanitizeOptions: sanitizeHtml.IOptions = {
 	},
 	// No href/xlink:href support at all, which also removes any javascript: URI vector.
 	allowedSchemes: [],
-	allowVulnerableTags: false
+	allowVulnerableTags: false,
+	// SVG names are case-sensitive; the default HTML parsing lowercases them, which would
+	// strip camelCase entries like viewBox or clipPath from the allowlist above.
+	parser: { lowerCaseTags: false, lowerCaseAttributeNames: false }
 };
-
-function sanitizeSvg(raw: string): string {
-	return sanitizeHtml(raw, svgSanitizeOptions);
-}
 
 export async function saveUploadedImage(file: File): Promise<string> {
 	if (!(file instanceof File) || file.size === 0) {
@@ -150,7 +149,9 @@ export async function saveUploadedImage(file: File): Promise<string> {
 
 	const buffer = Buffer.from(await file.arrayBuffer());
 	const finalBuffer =
-		file.type === 'image/svg+xml' ? Buffer.from(sanitizeSvg(buffer.toString('utf-8'))) : buffer;
+		file.type === 'image/svg+xml'
+			? Buffer.from(sanitizeHtml(buffer.toString('utf-8'), svgSanitizeOptions))
+			: buffer;
 	await fs.writeFile(filePath, finalBuffer);
 
 	return `${PUBLIC_PREFIX}${filename}`;

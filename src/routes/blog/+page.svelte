@@ -6,7 +6,6 @@
 
 	let { data }: PageProps = $props();
 	let { posts, siteName } = $derived(data);
-
 </script>
 
 <svelte:head>
@@ -66,55 +65,3 @@
 		{/each}
 	</div>
 </section>
-
-<style>
-	.post-content :global(p) {
-		margin: 0.5rem 0;
-	}
-
-	.post-content :global(h2) {
-		margin: 1rem 0 0.5rem;
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: var(--color-card-heading);
-	}
-
-	.post-content :global(h3) {
-		margin: 0.75rem 0 0.5rem;
-		font-size: 1.1rem;
-		font-weight: 600;
-		color: var(--color-card-heading);
-	}
-
-	.post-content :global(ul) {
-		list-style: disc;
-		padding-left: 1.5rem;
-		margin: 0.5rem 0;
-	}
-
-	.post-content :global(ol) {
-		list-style: decimal;
-		padding-left: 1.5rem;
-		margin: 0.5rem 0;
-	}
-
-	.post-content :global(blockquote) {
-		border-left: 3px solid var(--color-card-border);
-		margin: 0.5rem 0;
-		padding-left: 0.75rem;
-		font-style: italic;
-	}
-
-	.post-content :global(a) {
-		color: var(--color-card-link);
-		text-decoration: underline;
-	}
-
-	.post-content :global(img) {
-		max-width: 100%;
-		height: auto;
-		border-radius: 0.5rem;
-		margin: 0.75rem 0;
-		display: block;
-	}
-</style>

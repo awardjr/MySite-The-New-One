@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readJsonRows, text, textList } from '../src/lib/server/forms';
+import { readJsonRows, safeUrl, text, textList } from '../src/lib/server/forms';
 
 function formDataWith(field: string, value: string): FormData {
 	const formData = new FormData();
@@ -41,6 +41,26 @@ describe('text', () => {
 
 	it('coerces non-string values to a string', () => {
 		expect(text(42)).toBe('42');
+	});
+});
+
+describe('safeUrl', () => {
+	it('keeps http, https, mailto, tel, relative and scheme-less links', () => {
+		expect(safeUrl(' https://example.com ')).toBe('https://example.com');
+		expect(safeUrl('http://example.com')).toBe('http://example.com');
+		expect(safeUrl('mailto:me@example.com')).toBe('mailto:me@example.com');
+		expect(safeUrl('tel:+15551234')).toBe('tel:+15551234');
+		expect(safeUrl('/works#work-1')).toBe('/works#work-1');
+		expect(safeUrl('example.com/page')).toBe('example.com/page');
+	});
+
+	it('drops script and other unsafe schemes, including obfuscated ones', () => {
+		expect(safeUrl('javascript:alert(1)')).toBe('');
+		expect(safeUrl('JavaScript:alert(1)')).toBe('');
+		expect(safeUrl('java\tscript:alert(1)')).toBe('');
+		expect(safeUrl('\u0001javascript:alert(1)')).toBe('');
+		expect(safeUrl('data:text/html,<script>alert(1)</script>')).toBe('');
+		expect(safeUrl('vbscript:msgbox(1)')).toBe('');
 	});
 });
 

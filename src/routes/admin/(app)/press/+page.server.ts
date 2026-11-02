@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, type PressItem } from '$lib/server/content';
-import { readJsonRows, text } from '$lib/server/forms';
+import { readJsonRows, safeUrl, text } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -18,7 +18,7 @@ export const actions: Actions = {
 			.map((item) => ({
 				title: text(item.title),
 				summary: text(item.summary),
-				href: text(item.href)
+				href: safeUrl(item.href)
 			}))
 			.filter((item) => item.title);
 

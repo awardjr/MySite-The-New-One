@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, type WorkItem } from '$lib/server/content';
-import { readJsonRows, text, textList } from '$lib/server/forms';
+import { readJsonRows, safeUrl, text, textList } from '$lib/server/forms';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -20,7 +20,7 @@ export const actions: Actions = {
 				title: text(item.title),
 				description: text(item.description),
 				image: text(item.image),
-				link: text(item.link),
+				link: safeUrl(item.link),
 				platforms: textList(item.platforms)
 			}))
 			.filter((item) => item.title);

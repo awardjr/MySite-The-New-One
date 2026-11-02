@@ -59,7 +59,11 @@
 					class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 				>
 					{#if post.image}
-						<img src={post.image} alt={post.title} class="mb-3 h-40 w-full rounded-lg object-cover" />
+						<img
+							src={post.image}
+							alt={post.title}
+							class="mb-3 h-40 w-full rounded-lg object-cover"
+						/>
 					{/if}
 					<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{post.title}</h3>
 					<p class="text-sm text-card-meta">{post.date}</p>
@@ -80,7 +84,11 @@
 					class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 				>
 					{#if work.image}
-						<img src={work.image} alt={work.title} class="mb-3 h-40 w-full rounded-lg object-cover" />
+						<img
+							src={work.image}
+							alt={work.title}
+							class="mb-3 h-40 w-full rounded-lg object-cover"
+						/>
 					{/if}
 					<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{work.title}</h3>
 					<p class="mt-1 line-clamp-3 text-base text-card-copy">{work.description}</p>

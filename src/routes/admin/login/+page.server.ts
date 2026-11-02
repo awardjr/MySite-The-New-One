@@ -11,9 +11,17 @@ import {
 } from '$lib/server/auth';
 import type { Actions, PageServerLoad } from './$types';
 
+/** Only allow redirects to admin paths on this site, so `redirectTo` can't send users off-site. */
+function safeRedirectTarget(url: URL): string {
+	const target = url.searchParams.get('redirectTo') ?? '';
+	const isAdminPath =
+		target === '/admin' || target.startsWith('/admin/') || target.startsWith('/admin?');
+	return isAdminPath && !target.includes('\\') ? target : '/admin';
+}
+
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.isAdmin) {
-		redirect(303, url.searchParams.get('redirectTo') || '/admin');
+		redirect(303, safeRedirectTarget(url));
 	}
 	// hooks.server.ts already redirects to /admin/setup when no admin exists,
 	// but guard here too in case this load ever runs on its own.
@@ -52,6 +60,6 @@ export const actions: Actions = {
 		recordSuccessfulLogin(clientAddress);
 		cookies.set(SESSION_COOKIE_NAME, createSession(), sessionCookieOptions);
 
-		redirect(303, url.searchParams.get('redirectTo') || '/admin');
+		redirect(303, safeRedirectTarget(url));
 	}
 };

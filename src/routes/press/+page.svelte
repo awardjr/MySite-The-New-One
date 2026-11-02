@@ -34,7 +34,7 @@
 				</a>
 			{:else}
 				<div
-					class="rounded-xl border border-card-border bg-card p-8 shadow-sm transition-transform duration-200 hover:scale-[1.02]"
+					class="rounded-xl border border-card-border bg-card p-8 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 				>
 					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
 						{item.title}

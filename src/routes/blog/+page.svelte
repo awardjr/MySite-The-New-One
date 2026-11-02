@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { openLightbox } from '$lib/lightbox.svelte';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
@@ -8,11 +7,6 @@
 	let { data }: PageProps = $props();
 	let { posts, siteName } = $derived(data);
 
-	let expanded: Record<string, boolean> = $state({});
-
-	function toggle(slug: string) {
-		expanded[slug] = !expanded[slug];
-	}
 </script>
 
 <svelte:head>
@@ -40,23 +34,16 @@
 
 	<div class="mt-8 space-y-6">
 		{#each posts as post (post.slug)}
-			{@const isExpanded = !!expanded[post.slug]}
-			<article
-				class="rounded-xl border border-card-border bg-card p-5 shadow-sm transition-transform duration-200 hover:scale-[1.02]"
+			<a
+				href={resolve('/blog/[slug]', { slug: post.slug })}
+				class="block rounded-xl border border-card-border bg-card p-5 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 			>
 				{#if post.image}
-					<button
-						type="button"
-						onclick={() => openLightbox(post.image, post.title)}
-						aria-label={`View larger image for ${post.title}`}
-						class="block w-full"
-					>
-						<img
-							src={post.image}
-							alt={post.title}
-							class="mb-4 h-48 w-full cursor-pointer rounded-lg object-cover ring-1 ring-card-ring sm:h-64"
-						/>
-					</button>
+					<img
+						src={post.image}
+						alt={post.title}
+						class="mb-4 h-48 w-full rounded-lg object-cover ring-1 ring-card-ring sm:h-64"
+					/>
 				{/if}
 
 				<h2 class="text-xl font-bold text-card-heading sm:text-2xl">
@@ -64,34 +51,18 @@
 				</h2>
 				<p class="mt-1 text-card-meta">{post.date}</p>
 
-				{#if isExpanded}
-					<div class="post-content mt-3 text-sm text-card-copy sm:text-lg">
-						<!-- Sanitized on the admin page -->
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html post.content}
-					</div>
-				{:else}
-					<p class="mt-3 text-sm text-card-copy sm:text-lg">
-						{post.preview}
-					</p>
-				{/if}
+				<p class="mt-3 text-sm text-card-copy sm:text-lg">
+					{post.preview}
+				</p>
 
-				<div class="mt-4 flex flex-wrap items-center gap-4">
-					<button
-						type="button"
-						onclick={() => toggle(post.slug)}
-						class="inline-flex items-center rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:bg-card-hover"
+				<div class="mt-4 flex justify-end">
+					<span
+						class="inline-flex items-center rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:border-card-border-hover hover:bg-card-border"
 					>
-						{isExpanded ? 'Show Less' : 'Read More'}
-					</button>
-					<a
-						href={resolve('/blog/[slug]', { slug: post.slug })}
-						class="text-sm font-medium text-card-link hover:underline"
-					>
-						View Full →
-					</a>
+						Read More
+					</span>
 				</div>
-			</article>
+			</a>
 		{/each}
 	</div>
 </section>

@@ -189,7 +189,7 @@
 		</p>
 
 		{#if form?.recoverySuccess && form.newRecoveryKey}
-			<div class="my-6 rounded-xl border border-card-border bg-card p-5">
+			<div class="my-6 rounded-xl border border-card-border bg-card p-5 shadow-sm">
 				<div class="flex items-center justify-between">
 					<span class="text-sm font-bold uppercase tracking-wider text-card-meta">
 						New Emergency Recovery Code

@@ -11,7 +11,7 @@
 	let saving = $state(false);
 
 	function addLink() {
-		links.push({ label: '', href: '', icon: 'link' });
+		links.push({ label: '', href: 'https://', icon: 'link' });
 	}
 
 	function removeLink(index: number) {

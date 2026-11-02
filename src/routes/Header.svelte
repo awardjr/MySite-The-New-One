@@ -44,6 +44,39 @@
 
 	const themeOrder: Theme[] = ['light', 'dark', 'hotdog'];
 
+	let navLinks: HTMLAnchorElement[] = $state([]);
+	let hoveredIndex: number | null = $state(null);
+	let activeIndex = $derived(navItems.findIndex((item) => item.href === page.url.pathname));
+	let underlineIndex = $derived(hoveredIndex ?? activeIndex);
+	let underline = $state({ left: 0, width: 0, top: 0, ready: false });
+	let activeBar = $state({ left: 0, width: 0, top: 0 });
+
+	function updateUnderline() {
+		const activeLink = activeIndex >= 0 ? navLinks[activeIndex] : undefined;
+		if (activeLink) {
+			activeBar.left = activeLink.offsetLeft;
+			activeBar.width = activeLink.offsetWidth;
+			activeBar.top = activeLink.offsetTop + activeLink.offsetHeight - 2;
+		} else {
+			activeBar.width = 0;
+		}
+		const link = underlineIndex >= 0 ? navLinks[underlineIndex] : undefined;
+		if (!link) {
+			underline.width = 0;
+			return;
+		}
+		underline.left = link.offsetLeft;
+		underline.width = link.offsetWidth;
+		underline.top = link.offsetTop + link.offsetHeight - 2;
+		underline.ready = true;
+	}
+
+	$effect(() => {
+		void underlineIndex;
+		void isAdmin;
+		updateUnderline();
+	});
+
 	function isAdminItemActive(href: string): boolean {
 		return href === resolve('/admin')
 			? page.url.pathname === href
@@ -74,6 +107,8 @@
 		isMobileMenuOpen = false;
 	}
 </script>
+
+<svelte:window onresize={updateUnderline} />
 
 <header class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header">
 	<div class="mx-auto flex h-16 max-w-7/10 items-center justify-between px-4">
@@ -161,18 +196,43 @@
 				>
 					{siteName}
 				</a>
-				<nav class="hidden md:flex md:items-center md:gap-4">
-					{#each navItems as item (item.href)}
+				<nav
+					class="relative hidden md:flex md:items-center md:gap-4"
+					onmouseleave={() => (hoveredIndex = null)}
+				>
+					{#each navItems as item, i (item.href)}
 						{@const isActive = page.url.pathname === item.href}
 						<a
+							bind:this={navLinks[i]}
 							href={item.href}
-							class="text-xl transition-colors {isActive
-								? 'font-semibold text-heading underline underline-offset-4 decoration-nav-decoration'
+							onmouseenter={() => (hoveredIndex = i)}
+							onfocus={() => (hoveredIndex = i)}
+							onblur={() => (hoveredIndex = null)}
+							class="pb-1 text-xl transition-colors {isActive
+								? 'font-semibold text-heading'
 								: 'text-muted hover:text-nav-hover'}"
 						>
 							{item.label}
 						</a>
 					{/each}
+					<span
+						aria-hidden="true"
+						class="pointer-events-none absolute left-0 h-0.5 rounded bg-[var(--theme-nav-decoration-dim,color-mix(in_oklab,var(--color-nav-decoration),black_45%))] transition-opacity duration-300 motion-reduce:transition-none"
+						style:width="{activeBar.width}px"
+						style:top="{activeBar.top}px"
+						style:transform="translateX({activeBar.left}px)"
+						style:opacity={hoveredIndex !== null && hoveredIndex !== activeIndex && activeBar.width ? 1 : 0}
+					></span>
+					<span
+						aria-hidden="true"
+						class="pointer-events-none absolute left-0 h-0.5 rounded bg-nav-decoration motion-reduce:transition-none {underline.ready
+							? 'transition-[transform,width,opacity] duration-300 ease-out'
+							: ''}"
+						style:width="{underline.width}px"
+						style:top="{underline.top}px"
+						style:transform="translateX({underline.left}px)"
+						style:opacity={underline.width ? 1 : 0}
+					></span>
 				</nav>
 			</div>
 

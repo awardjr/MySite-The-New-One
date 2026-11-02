@@ -1,6 +1,6 @@
 :root {
 	/* Page and typography */
-	--theme-page: var(--color-gray-50);
+ --theme-page: var(--color-gray-100);
 	--theme-body: var(--color-gray-900);
 	--theme-heading: var(--color-gray-950);
 	--theme-copy: var(--color-gray-700);
@@ -11,13 +11,13 @@
 
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-gray-200);
-	--theme-footer: var(--color-gray-50);
-	--theme-header: var(--color-gray-50);
+ --theme-footer: var(--color-gray-100);
+ --theme-header: var(--color-gray-100);
 	--theme-nav-decoration: var(--color-gray-400);
 	--theme-nav-hover: var(--color-gray-950);
 	--theme-menu-icon: var(--color-gray-800);
-	--theme-menu-hover: var(--color-gray-100);
-	--theme-nav-active: var(--color-gray-100);
+ --theme-menu-hover: var(--color-gray-200);
+ --theme-nav-active: var(--color-gray-200);
 	--theme-nav-surface-hover: var(--color-gray-50);
 	--theme-admin-nav-hover: var(--color-gray-950);
 
@@ -35,7 +35,7 @@
 	--theme-card-link: var(--color-blue-600);
 	--theme-card-label: var(--color-gray-700);
 	--theme-card-ring: var(--color-gray-200);
-	--theme-badge: var(--color-gray-100);
+	--theme-badge: var(--color-gray-200);
 	--theme-badge-text: var(--color-gray-700);
 
 	/* Primary buttons */
@@ -56,10 +56,10 @@
 	--theme-form-border-subtle: var(--color-gray-100);
 	--theme-secondary-hover: var(--color-gray-50);
 
-	--theme-code: var(--color-gray-100);
-	--theme-file-button: var(--color-gray-100);
+	--theme-code: var(--color-gray-200);
+	--theme-file-button: var(--color-gray-200);
 	--theme-file-button-text: var(--color-gray-700);
-	--theme-file-button-hover: var(--color-gray-200);
+	--theme-file-button-hover: var(--color-gray-300);
 
 	/* Status and destructive actions */
 	--theme-error: var(--color-red-600);

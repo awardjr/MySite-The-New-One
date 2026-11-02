@@ -32,7 +32,7 @@
 			{@const isExpanded = !!expanded[i]}
 			{@const hasMore = !!machine.modeScores && machine.modeScores.length > 0}
 			<div
-				class="rounded-xl border border-card-border bg-card p-5 shadow-sm transition-transform duration-200 hover:scale-[1.02]"
+				class="rounded-xl border border-card-border bg-card p-5 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 			>
 				<div class="flex flex-col gap-5 sm:flex-row sm:items-start">
 					<!-- Image Section -->
@@ -75,9 +75,9 @@
 								type="button"
 								onclick={() => toggle(i)}
 								aria-expanded={isExpanded}
-								class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:bg-card-hover"
+								class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:border-card-border-hover hover:bg-card-border"
 							>
-								{isExpanded ? 'Less' : 'More'}
+        {isExpanded ? 'Hide Mode High Scores' : 'Show Mode High Scores'}
 								<Fa icon={isExpanded ? faChevronUp : faChevronDown} class="h-3 w-3" />
 							</button>
 						</div>
@@ -87,7 +87,7 @@
 				{#if hasMore && isExpanded}
 					<div class="mt-4 border-t border-card-border pt-4">
 						<h3 class="text-base font-semibold tracking-wide text-score-label uppercase">
-							Some high scores in modes
+							Mode High Scores
 						</h3>
 						<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
 							{#each machine.modeScores ?? [] as modeScore, j (j)}

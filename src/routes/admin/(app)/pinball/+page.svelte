@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
+	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import type { PageProps } from './$types';
-	import type { PinballMachine } from '$lib/server/content';
+	import type { PinballMachine } from '#lib/server/content.js';
 
 	let { data, form }: PageProps = $props();
 

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import { error } from '@sveltejs/kit';
-import { resolveUploadPath } from '$lib/server/uploads';
+import { resolveUploadPath } from '#lib/server/uploads.js';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {

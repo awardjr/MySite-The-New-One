@@ -18,7 +18,7 @@
 		<p class="mt-1 text-sm text-muted">Create, edit, or remove posts shown on the public blog.</p>
 	</div>
 	<a
-		href={resolve('/admin/blog/new')}
+		href={resolve('admin/blog/new')}
 		class="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
 	>
 		New Post
@@ -45,7 +45,7 @@
 						</span>
 					{/if}
 				</p>
-				<p class="text-sm text-subtle">{post.date} &middot; /{post.slug}</p>
+				<p class="text-sm text-subtle">{post.date} · /{post.slug}</p>
 			</div>
 			<div class="flex shrink-0 items-center gap-2">
 				<a

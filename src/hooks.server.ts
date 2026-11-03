@@ -1,5 +1,6 @@
-import { redirect, type Handle } from '@sveltejs/kit';
-import { SESSION_COOKIE_NAME, isAdminConfigured, verifySessionToken } from '$lib/server/auth';
+import { redirect } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { SESSION_COOKIE_NAME, isAdminConfigured, verifySessionToken } from '#lib/server/auth.js';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.isAdmin = verifySessionToken(event.cookies.get(SESSION_COOKIE_NAME));

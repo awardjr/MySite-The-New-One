@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
-import { readContent, updateSection, type WorkItem } from '$lib/server/content';
-import { readJsonRows, safeUrl, text, textList } from '$lib/server/forms';
+import { readContent, updateSection, type WorkItem } from '#lib/server/content.js';
+import { readJsonRows, safeUrl, text, textList } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {

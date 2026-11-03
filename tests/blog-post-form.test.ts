@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/server/content', async () => {
+vi.mock('#lib/server/content.js', async () => {
 	const { sanitizePostHtml } = await import('../src/lib/server/content/utils');
 	return { sanitizePostHtml };
 });

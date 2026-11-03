@@ -21,10 +21,10 @@ import {
 	startTotpSetup,
 	updateAdminProfile,
 	verifySecondFactor
-} from '$lib/server/auth';
-import { readContent } from '$lib/server/content';
-import { isEncryptionKeyConfigured } from '$lib/server/secretbox';
-import { totpUri } from '$lib/server/totp';
+} from '#lib/server/auth.js';
+import { readContent } from '#lib/server/content.js';
+import { isEncryptionKeyConfigured } from '#lib/server/secretbox.js';
+import { totpUri } from '#lib/server/totp.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const MIN_PASSWORD_LENGTH = 8;

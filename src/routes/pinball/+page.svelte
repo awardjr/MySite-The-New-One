@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
-	import { openLightbox } from '$lib/lightbox.svelte';
+	import { openLightbox } from '#lib/lightbox.svelte.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

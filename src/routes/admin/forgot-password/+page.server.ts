@@ -10,7 +10,7 @@ import {
 	resetPasswordWithRecoveryKey,
 	sessionCookieOptions,
 	SESSION_COOKIE_NAME
-} from '$lib/server/auth';
+} from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
 
 const MIN_PASSWORD_LENGTH = 8;

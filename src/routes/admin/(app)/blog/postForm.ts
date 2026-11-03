@@ -1,5 +1,5 @@
-import { sanitizePostHtml } from '$lib/server/content';
-import { text } from '$lib/server/forms';
+import { sanitizePostHtml } from '#lib/server/content.js';
+import { text } from '#lib/server/forms.js';
 
 export type PostFields = {
 	title: string;

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
+	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import type { PageProps } from './$types';
-	import type { WorkItem } from '$lib/server/content';
+	import type { WorkItem } from '#lib/server/content.js';
 
 	// Keep in sync with the platform keys used in src/routes/works/+page.svelte's `platformIcons` map.
 	const platformOptions: { key: string; label: string }[] = [

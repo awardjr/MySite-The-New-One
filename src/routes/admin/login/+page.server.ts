@@ -15,7 +15,7 @@ import {
 	SESSION_COOKIE_NAME,
 	twoFactorCookieOptions,
 	TWO_FACTOR_COOKIE_NAME
-} from '$lib/server/auth';
+} from '#lib/server/auth.js';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Only allow redirects to admin paths on this site, so `redirectTo` can't send users off-site. */

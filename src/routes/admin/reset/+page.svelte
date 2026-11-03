@@ -21,7 +21,7 @@
 			<p class="text-sm text-error">This password reset link is invalid or has expired.</p>
 			<div class="mt-4">
 				<a
-					href={resolve('/admin/forgot-password')}
+					href={resolve('admin/forgot-password')}
 					class="inline-block w-full text-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
 				>
 					Request New Reset Link
@@ -86,7 +86,7 @@
 
 	<div class="mt-6 text-center">
 		<a
-			href={resolve('/admin/login')}
+			href={resolve('admin/login')}
 			class="text-xs text-muted transition-colors hover:text-heading hover:underline"
 		>
 			← Return to Login

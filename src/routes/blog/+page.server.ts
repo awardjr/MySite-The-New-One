@@ -1,4 +1,4 @@
-import { readContent } from '$lib/server/content';
+import { readContent } from '#lib/server/content.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {

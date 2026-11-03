@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
-	import FeaturedPicker from '$lib/components/admin/FeaturedPicker.svelte';
+	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
+	import FeaturedPicker from '#lib/components/admin/FeaturedPicker.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();

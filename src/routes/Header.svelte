@@ -14,34 +14,33 @@
 
 	const navItems = [
 		{ href: resolve('/'), label: 'Home' },
-		{ href: resolve('/blog'), label: 'Posts' },
-		{ href: resolve('/press'), label: 'Press' },
-		{ href: resolve('/works'), label: 'Works' },
-		{ href: resolve('/pinball'), label: 'Pinball' },
-		{ href: resolve('/contact'), label: 'Contact' }
+		{ href: resolve('blog'), label: 'Posts' },
+		{ href: resolve('press'), label: 'Press' },
+		{ href: resolve('works'), label: 'Works' },
+		{ href: resolve('pinball'), label: 'Pinball' },
+		{ href: resolve('contact'), label: 'Contact' }
 	];
 
 	const adminNavItems = [
-		{ href: resolve('/admin'), label: 'Dashboard' },
-		{ href: resolve('/admin/home'), label: 'Home' },
-		{ href: resolve('/admin/blog'), label: 'Blog' },
-		{ href: resolve('/admin/contact'), label: 'Contact' },
-		{ href: resolve('/admin/works'), label: 'Works' },
-		{ href: resolve('/admin/press'), label: 'Press' },
-		{ href: resolve('/admin/pinball'), label: 'Pinball' },
-		{ href: resolve('/admin/settings'), label: 'Settings' }
+		{ href: resolve('admin'), label: 'Dashboard' },
+		{ href: resolve('admin/home'), label: 'Home' },
+		{ href: resolve('admin/blog'), label: 'Blog' },
+		{ href: resolve('admin/contact'), label: 'Contact' },
+		{ href: resolve('admin/works'), label: 'Works' },
+		{ href: resolve('admin/press'), label: 'Press' },
+		{ href: resolve('admin/pinball'), label: 'Pinball' },
+		{ href: resolve('admin/settings'), label: 'Settings' }
 	];
 
 	let isAdmin = $derived(
-		page.url.pathname === resolve('/admin') || page.url.pathname.startsWith(`${resolve('/admin')}/`)
+		page.url.pathname === resolve('admin') || page.url.pathname.startsWith(`${resolve('admin')}/`)
 	);
 	let isAuthPage = $derived(
-		page.url.pathname === resolve('/admin/login') ||
-			page.url.pathname === resolve('/admin/setup') ||
-			page.url.pathname === resolve('/admin/forgot-password') ||
-			page.url.pathname === resolve('/admin/reset')
+		page.url.pathname === resolve('admin/login') ||
+			page.url.pathname === resolve('admin/setup') ||
+			page.url.pathname === resolve('admin/forgot-password') ||
+			page.url.pathname === resolve('admin/reset')
 	);
-
 	const themeOrder: Theme[] = ['light', 'dark', 'hotdog'];
 
 	let navLinks: HTMLAnchorElement[] = $state([]);
@@ -78,7 +77,7 @@
 	});
 
 	function isAdminItemActive(href: string): boolean {
-		return href === resolve('/admin')
+		return href === resolve('admin')
 			? page.url.pathname === href
 			: page.url.pathname.startsWith(href);
 	}
@@ -118,9 +117,8 @@
 					href={resolve('/')}
 					onclick={closeMobileMenu}
 					class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+					><span aria-hidden="true">←</span> Back to site</a
 				>
-					<span aria-hidden="true">&larr;</span> Back to site
-				</a>
 
 				{#if !isAuthPage}
 					<nav class="hidden lg:flex lg:items-center lg:gap-1">
@@ -141,7 +139,7 @@
 
 			<div class="flex items-center gap-2">
 				{#if !isAuthPage}
-					<form method="POST" action={resolve('/admin/logout')} class="hidden sm:block">
+					<form method="POST" action={resolve('admin/logout')} class="hidden sm:block">
 						<button
 							type="submit"
 							class="rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
@@ -283,9 +281,9 @@
 						href={resolve('/')}
 						onclick={closeMobileMenu}
 						class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+						><span aria-hidden="true">←</span> Back to site</a
 					>
-						<span aria-hidden="true">&larr;</span> Back to site
-					</a>
+
 					{#if !isAuthPage}
 						{#each adminNavItems as item (item.href)}
 							{@const isActive = isAdminItemActive(item.href)}
@@ -301,7 +299,7 @@
 						{/each}
 						<form
 							method="POST"
-							action={resolve('/admin/logout')}
+							action={resolve('admin/logout')}
 							class="pt-2 border-t border-card-border"
 						>
 							<button

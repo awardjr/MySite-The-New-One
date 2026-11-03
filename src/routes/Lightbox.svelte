@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { faXmark } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
-	import { getLightbox, closeLightbox } from '$lib/lightbox.svelte';
+	import { getLightbox, closeLightbox } from '#lib/lightbox.svelte.js';
 
 	const lightbox = getLightbox();
 </script>

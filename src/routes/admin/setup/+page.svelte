@@ -67,7 +67,7 @@
 
 			<div class="mt-6">
 				<a
-					href={resolve('/admin')}
+					href={resolve('admin')}
 					class="inline-block w-full text-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
 				>
 					Continue to Admin Dashboard

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { untrack } from 'svelte';
-	import ImageUploadField from '$lib/components/admin/ImageUploadField.svelte';
-	import CKEditor from '$lib/components/admin/CKEditor.svelte';
+	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
+	import CKEditor from '#lib/components/admin/CKEditor.svelte';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 
@@ -108,10 +108,8 @@
 		</button>
 		<a
 			class="rounded-lg border border-field-border px-4 py-2 text-sm transition-colors hover:bg-secondary-hover"
-			href={resolve('/admin/blog')}
+			href={resolve('admin/blog')}>Cancel</a
 		>
-			Cancel
-		</a>
 	</div>
 </form>
 

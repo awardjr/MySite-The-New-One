@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Fa from 'svelte-fa';
-	import { getIcon } from '$lib/icons';
+	import { getIcon } from '#lib/icons.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

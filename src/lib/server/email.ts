@@ -1,6 +1,5 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
-import { env } from '$env/dynamic/private';
 
 export interface SendEmailOptions {
 	to: string;
@@ -10,10 +9,10 @@ export interface SendEmailOptions {
 }
 
 /**
- * Returns an environment variable from SvelteKit dynamic private env or process.env.
+ * Returns an environment variable from process.env.
  */
 function getEnv(key: string): string | undefined {
-	return env[key] || process.env[key];
+	return process.env[key] || undefined;
 }
 
 /**
@@ -120,7 +119,6 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
 		`${resetUrl}\n\n` +
 		`This link will expire in 15 minutes and can only be used once.\n` +
 		`If you did not request a password reset, you can safely ignore this message.\n`;
-
 	const html =
 		`<p>Hello,</p>` +
 		`<p>A request was received to reset your admin password.</p>` +

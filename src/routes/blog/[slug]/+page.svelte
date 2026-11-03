@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openLightbox } from '$lib/lightbox.svelte';
+	import { openLightbox } from '#lib/lightbox.svelte.js';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 
@@ -13,9 +13,7 @@
 </svelte:head>
 
 <section class="py-6 sm:py-10">
-	<a href={resolve('/blog')} class="text-sm font-medium text-link hover:underline">
-		← Back to Blog
-	</a>
+	<a href={resolve('blog')} class="text-sm font-medium text-link hover:underline">← Back to Blog</a>
 
 	<article class="mt-4 max-w-3xl">
 		{#if post.draft}

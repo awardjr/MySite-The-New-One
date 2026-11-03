@@ -4,8 +4,8 @@ import {
 	updateSection,
 	type PinballMachine,
 	type ModeScore
-} from '$lib/server/content';
-import { readJsonRows, text } from '$lib/server/forms';
+} from '#lib/server/content.js';
+import { readJsonRows, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {

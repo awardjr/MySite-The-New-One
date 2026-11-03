@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { readContent, updateSection, type Post } from '$lib/server/content';
-import { text } from '$lib/server/forms';
+import { readContent, updateSection, type Post } from '#lib/server/content.js';
+import { text } from '#lib/server/forms.js';
 import { readPostFields } from '../postForm';
 import type { Actions } from './$types';
 

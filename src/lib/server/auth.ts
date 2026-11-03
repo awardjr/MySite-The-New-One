@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { dev } from '$app/environment';
+import { dev } from '$app/env';
 import { db } from './db';
 import { sendPasswordResetEmail } from './email';
 import { generateTotpSecret, verifyTotp } from './totp';

@@ -16,8 +16,8 @@
 
 <section class="mx-auto flex max-w-md flex-col justify-center py-16">
 	<h1 class="text-2xl font-bold tracking-tight text-heading">Reset Password</h1>
-	<p class="mt-1 text-sm text-muted">Choose how you would like to reset your admin password.</p>
 
+	<p class="mt-1 text-sm text-muted">Choose how you would like to reset your admin password.</p>
 	<!-- Tabs for selecting recovery method -->
 	<div class="mt-6 grid grid-cols-2 gap-2 rounded-lg border border-card-border bg-page p-1">
 		<button
@@ -184,7 +184,7 @@
 
 	<div class="mt-6 text-center">
 		<a
-			href={resolve('/admin/login')}
+			href={resolve('admin/login')}
 			class="text-xs text-muted transition-colors hover:text-heading hover:underline"
 		>
 			← Return to Login

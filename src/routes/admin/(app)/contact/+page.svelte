@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
-	import { iconOptions } from '$lib/icons';
+	import { iconOptions } from '#lib/icons.js';
 	import type { PageProps } from './$types';
-	import type { ContactLink } from '$lib/server/content';
+	import type { ContactLink } from '#lib/server/content.js';
 
 	let { data, form }: PageProps = $props();
 

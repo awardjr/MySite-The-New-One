@@ -10,7 +10,7 @@
 		faPlaystation,
 		faWindows
 	} from '@fortawesome/free-brands-svg-icons';
-	import { openLightbox } from '$lib/lightbox.svelte';
+	import { openLightbox } from '#lib/lightbox.svelte.js';
 	import type { PageProps } from './$types';
 
 	// Nintendo Switch logo from Simple Icons (CC0)

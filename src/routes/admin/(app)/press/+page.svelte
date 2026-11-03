@@ -2,7 +2,7 @@
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
-	import type { PressItem } from '$lib/server/content';
+	import type { PressItem } from '#lib/server/content.js';
 
 	let { data, form }: PageProps = $props();
 

@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { env } from '$env/dynamic/private';
 
 const ENCRYPTION_KEY_ENV = 'TOTP_ENCRYPTION_KEY';
 const KEY_DERIVATION_SALT = 'mysite-totp-encryption-v1';
@@ -12,7 +11,7 @@ let cachedPassphrase: string | undefined;
 let cachedKey: Buffer | undefined;
 
 function getEncryptionPassphrase(): string | undefined {
-	return process.env[ENCRYPTION_KEY_ENV] || env[ENCRYPTION_KEY_ENV] || undefined;
+	return process.env[ENCRYPTION_KEY_ENV] || undefined;
 }
 
 function getEncryptionKey(): Buffer {

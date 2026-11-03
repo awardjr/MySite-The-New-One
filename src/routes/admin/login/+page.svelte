@@ -89,7 +89,7 @@
 				<div class="flex items-center justify-between">
 					<label for="password" class="text-sm font-medium text-copy"> Password </label>
 					<a
-						href={resolve('/admin/forgot-password')}
+						href={resolve('admin/forgot-password')}
 						class="text-xs text-muted transition-colors hover:text-heading hover:underline"
 					>
 						Forgot password?

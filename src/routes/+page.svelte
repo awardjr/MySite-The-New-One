@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { openLightbox } from '$lib/lightbox.svelte';
+	import { openLightbox } from '#lib/lightbox.svelte.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

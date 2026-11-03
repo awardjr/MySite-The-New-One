@@ -5,32 +5,32 @@
 		{
 			href: resolve('admin/home'),
 			label: 'Home',
-			description: 'Name, tagline, photo, and intro text.'
+			description: 'Headline, name, tagline, photo, and intro text.'
 		},
 		{
 			href: resolve('admin/contact'),
 			label: 'Contact',
-			description: 'Resume, LinkedIn, GitHub, email, and other links.'
+			description: 'Headline, subtitle, and contact links.'
 		},
 		{
 			href: resolve('admin/works'),
 			label: 'Works',
-			description: 'Projects with an image, description, and platform icons.'
+			description: 'Headline, subtitle, and project cards.'
 		},
 		{
 			href: resolve('admin/press'),
 			label: 'Press',
-			description: 'Press mentions shown as linkable cards.'
+			description: 'Headline, subtitle, and press mentions.'
 		},
 		{
 			href: resolve('admin/pinball'),
 			label: 'Pinball',
-			description: 'Machines with high scores and expandable per-mode scores.'
+			description: 'Headline, subtitle, and pinball machines.'
 		},
 		{
 			href: resolve('admin/blog'),
 			label: 'Blog',
-			description: 'Blog posts, each with its own page.'
+			description: 'Headline, subtitle, and blog posts.'
 		},
 		{
 			href: resolve('admin/settings'),

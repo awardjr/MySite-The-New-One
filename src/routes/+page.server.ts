@@ -1,4 +1,4 @@
-import { readContent } from '#lib/server/content.js';
+import { readContent, getHeadlineForPage } from '#lib/server/content.js';
 import type { PageServerLoad } from './$types';
 
 function truncate(text: string, max: number): string {
@@ -34,5 +34,11 @@ export const load: PageServerLoad = () => {
 			description: truncate(w.description, 200)
 		}));
 
-	return { home: { name, tagline, photoSrc, introParagraphs }, featuredPosts, featuredWorks };
+	const { headline } = getHeadlineForPage('home');
+	return {
+		home: { name, tagline, photoSrc, introParagraphs },
+		featuredPosts,
+		featuredWorks,
+		headline
+	};
 };

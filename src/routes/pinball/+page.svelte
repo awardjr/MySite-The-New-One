@@ -5,7 +5,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { machines, siteName } = $derived(data);
+	let { machines, siteName, headline, subtitle } = $derived(data);
 
 	let expanded: Record<number, boolean> = $state({});
 
@@ -21,9 +21,9 @@
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Pinball</h1>
+		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
 		<p class="text-lg text-muted">
-			Pinball is something I really enjoy. Here's some of my best scores so far
+			{subtitle}
 		</p>
 	</div>
 

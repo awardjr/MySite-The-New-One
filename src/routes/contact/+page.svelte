@@ -4,7 +4,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { links, siteName } = $derived(data);
+	let { links, siteName, headline, subtitle } = $derived(data);
 
 	const iconColors: Record<string, string> = {
 		resume: '#475569',
@@ -25,8 +25,8 @@
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Contact</h1>
-		<p class="text-base text-muted">Find me in these places. Check out what I've done as well</p>
+		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
+		<p class="text-base text-muted">{subtitle}</p>
 	</div>
 
 	<div class="mx-auto mt-8 flex w-full flex-col gap-3 md:w-2/3">

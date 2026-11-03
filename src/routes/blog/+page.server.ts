@@ -1,4 +1,4 @@
-import { readContent } from '#lib/server/content.js';
+import { readContent, getHeadlineForPage } from '#lib/server/content.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -6,5 +6,5 @@ export const load: PageServerLoad = () => {
 	const posts = readContent()
 		.blog.posts.filter((post) => !post.draft)
 		.map(({ slug, title, date, image, preview }) => ({ slug, title, date, image, preview }));
-	return { posts };
+	return { posts, ...getHeadlineForPage('blog') };
 };

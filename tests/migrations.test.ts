@@ -28,7 +28,8 @@ describe('runMigrations', () => {
 				'press',
 				'pinball_machines',
 				'posts',
-				'password_reset_tokens'
+				'password_reset_tokens',
+				'page_headlines'
 			])
 		);
 	});
@@ -52,7 +53,7 @@ describe('runMigrations', () => {
 		runMigrations(db);
 
 		const applied = db.prepare('SELECT name FROM migrations').all();
-		expect(applied).toHaveLength(9);
+		expect(applied).toHaveLength(10);
 	});
 
 	it('does not fail or duplicate data on repeated runs', () => {

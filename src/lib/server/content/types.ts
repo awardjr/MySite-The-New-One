@@ -4,6 +4,7 @@ import type { WorksContent } from './works';
 import type { PressContent } from './press';
 import type { PinballContent } from './pinball';
 import type { BlogContent } from './blog';
+import type { PageHeadlinesContent } from './pageheadlines';
 
 export type * from './home';
 export type * from './contact';
@@ -11,6 +12,7 @@ export type * from './works';
 export type * from './press';
 export type * from './pinball';
 export type * from './blog';
+export type * from './pageheadlines';
 
 export type SiteContent = {
 	home: HomeContent;
@@ -19,4 +21,5 @@ export type SiteContent = {
 	press: PressContent;
 	pinball: PinballContent;
 	blog: BlogContent;
+	pageHeadlines: PageHeadlinesContent;
 };

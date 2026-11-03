@@ -5,7 +5,7 @@
 	import { faRss } from '@fortawesome/free-solid-svg-icons';
 
 	let { data }: PageProps = $props();
-	let { posts, siteName } = $derived(data);
+	let { posts, siteName, headline, subtitle } = $derived(data);
 </script>
 
 <svelte:head>
@@ -16,8 +16,8 @@
 <section class="py-6 sm:py-10">
 	<div class="flex items-start justify-between gap-4">
 		<div class="space-y-1">
-			<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Blog</h1>
-			<p class="text-lg text-muted">Musings perhaps</p>
+			<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
+			<p class="text-lg text-muted">{subtitle}</p>
 		</div>
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 		<a

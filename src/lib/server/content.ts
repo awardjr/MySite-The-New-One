@@ -5,10 +5,12 @@ import { getWorks, setWorks } from './content/works';
 import { getPress, setPress } from './content/press';
 import { getPinball, setPinball } from './content/pinball';
 import { getBlog, setBlog } from './content/blog';
+import { getPageHeadlines, setPageHeadlines } from './content/pageheadlines';
 import type { SiteContent } from './content/types';
 
 export type * from './content/types';
 export { sanitizePostHtml } from './content/utils';
+export { getHeadlineForPage } from './content/pageheadlines';
 
 type SectionKey = keyof SiteContent;
 
@@ -18,7 +20,8 @@ const sectionSetters: { [K in SectionKey]: (value: SiteContent[K]) => void } = {
 	works: setWorks,
 	press: setPress,
 	pinball: setPinball,
-	blog: setBlog
+	blog: setBlog,
+	pageHeadlines: setPageHeadlines
 };
 
 let cache: SiteContent | null = null;
@@ -32,7 +35,8 @@ export function readContent(): SiteContent {
 		works: getWorks(),
 		press: getPress(),
 		pinball: getPinball(),
-		blog: getBlog()
+		blog: getBlog(),
+		pageHeadlines: getPageHeadlines()
 	};
 
 	return cache;

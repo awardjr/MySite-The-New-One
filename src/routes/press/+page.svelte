@@ -2,7 +2,7 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { pressItems, siteName } = $derived(data);
+	let { pressItems, siteName, headline, subtitle } = $derived(data);
 </script>
 
 <svelte:head>
@@ -12,8 +12,8 @@
 
 <section class="py-6 sm:py-10">
 	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Press</h1>
-		<p class="text-lg text-muted">A collection of press mentions and appearances</p>
+		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
+		<p class="text-lg text-muted">{subtitle}</p>
 	</div>
 
 	<div class="mt-8 grid grid-cols-1 gap-6">

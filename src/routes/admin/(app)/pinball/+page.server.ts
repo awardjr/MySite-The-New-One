@@ -2,14 +2,18 @@ import { fail } from '@sveltejs/kit';
 import {
 	readContent,
 	updateSection,
+	getHeadlineForPage,
 	type PinballMachine,
 	type ModeScore
 } from '#lib/server/content.js';
+import { getPageHeadlines, setPageHeadlines } from '#lib/server/content/pageheadlines.js';
 import { readJsonRows, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	return { machines: readContent().pinball.machines };
+	const { machines } = readContent().pinball;
+	const { headline, subtitle } = getHeadlineForPage('pinball');
+	return { machines, headline, subtitle };
 };
 
 function toModeScores(value: unknown): ModeScore[] {
@@ -23,8 +27,26 @@ function toModeScores(value: unknown): ModeScore[] {
 }
 
 export const actions: Actions = {
+	saveHeadline: async ({ request }) => {
+		const formData = await request.formData();
+		const headline = text(formData.get('headline'));
+		const subtitle = text(formData.get('subtitle'));
+
+		const allHeadlines = getPageHeadlines();
+		const updatedHeadlines = { ...allHeadlines };
+		const pinballIndex = updatedHeadlines.items.findIndex((item) => item.page === 'pinball');
+		if (pinballIndex >= 0) {
+			updatedHeadlines.items[pinballIndex] = { page: 'pinball', headline, subtitle };
+		} else {
+			updatedHeadlines.items.push({ page: 'pinball', headline, subtitle });
+		}
+		setPageHeadlines(updatedHeadlines);
+
+		return { headlineSuccess: true };
+	},
 	default: async ({ request }) => {
-		const rows = readJsonRows(await request.formData(), 'machines');
+		const formData = await request.formData();
+		const rows = readJsonRows(formData, 'machines');
 		if (!rows) {
 			return fail(400, { error: 'Could not read submitted data.' });
 		}

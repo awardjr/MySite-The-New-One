@@ -4,6 +4,7 @@
 
 	let { data }: PageProps = $props();
 	let { name, tagline, photoSrc, introParagraphs } = $derived(data.home);
+	let { headline } = $derived(data);
 </script>
 
 <svelte:head>
@@ -18,12 +19,15 @@
 		<!-- Text Introduction Section -->
 		<div class="flex-1 space-y-4 text-center md:text-left">
 			<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl lg:text-5xl">
-				Hi, I'm {name}
+				{headline}
+				{name}
 			</h1>
 
-			<p class="text-lg font-medium text-copy sm:text-2xl">
-				{tagline}
-			</p>
+			{#if tagline}
+				<p class="text-lg font-medium text-copy sm:text-2xl">
+					{tagline}
+				</p>
+			{/if}
 
 			<div class="space-y-3 text-lg leading-relaxed text-muted">
 				{#each introParagraphs as paragraph, i (i)}

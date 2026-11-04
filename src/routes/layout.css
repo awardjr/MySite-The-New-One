@@ -5,6 +5,9 @@
 @import '../lib/themes/dark.css';
 @import '../lib/themes/hotdog.css';
 
+/* Apply every `hover:` utility on touch too (while pressed), not only on hover-capable devices */
+@custom-variant hover (&:hover, &:active);
+
 :root {
 	--font-sans: 'Raleway Variable', sans-serif;
 }

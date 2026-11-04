@@ -29,7 +29,7 @@
 		<p class="text-base text-muted">{subtitle}</p>
 	</div>
 
-	<div class="mx-auto mt-8 flex w-full flex-col gap-3 md:w-2/3">
+	<div class="mt-8 flex w-full flex-col gap-3 md:max-w-xl">
 		{#each links as link, i (i)}
 			<a
 				href={link.href}

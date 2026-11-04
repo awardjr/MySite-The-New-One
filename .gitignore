@@ -29,5 +29,4 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # Tools
-.vscode
 .idea

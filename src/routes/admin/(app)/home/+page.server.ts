@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, getHeadlineForPage } from '#lib/server/content.js';
-import { getPageHeadlines, setPageHeadlines } from '#lib/server/content/pageheadlines.js';
+import { saveHeadlineAction } from '#lib/server/headlineAction.js';
 import { text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -21,22 +21,7 @@ export const load: PageServerLoad = () => {
 };
 
 export const actions: Actions = {
-	saveHeadline: async ({ request }) => {
-		const formData = await request.formData();
-		const headline = text(formData.get('headline'));
-
-		const allHeadlines = getPageHeadlines();
-		const updatedHeadlines = { ...allHeadlines };
-		const homeIndex = updatedHeadlines.items.findIndex((item) => item.page === 'home');
-		if (homeIndex >= 0) {
-			updatedHeadlines.items[homeIndex] = { page: 'home', headline, subtitle: '' };
-		} else {
-			updatedHeadlines.items.push({ page: 'home', headline, subtitle: '' });
-		}
-		setPageHeadlines(updatedHeadlines);
-
-		return { headlineSuccess: true };
-	},
+	saveHeadline: saveHeadlineAction('home', { subtitle: false }),
 	default: async ({ request }) => {
 		const formData = await request.formData();
 

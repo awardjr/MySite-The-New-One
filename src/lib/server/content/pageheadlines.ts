@@ -10,23 +10,6 @@ export type PageHeadlinesContent = {
 	items: PageHeadline[];
 };
 
-const PAGE_DEFAULTS: PageHeadline[] = [
-	{ page: 'home', headline: "Hi, I'm", subtitle: '' },
-	{ page: 'blog', headline: 'Blog', subtitle: 'Musings perhaps' },
-	{ page: 'works', headline: 'Works', subtitle: 'Some fun things I worked on.' },
-	{
-		page: 'pinball',
-		headline: 'Pinball',
-		subtitle: "Pinball is something I really enjoy. Here's some of my best scores so far"
-	},
-	{ page: 'press', headline: 'Press', subtitle: 'A collection of press mentions and appearances' },
-	{
-		page: 'contact',
-		headline: 'Contact',
-		subtitle: "Find me in these places. Check out what I've done as well"
-	}
-];
-
 const getPageHeadlinesStmt = db.prepare(
 	'SELECT page, headline, subtitle FROM page_headlines ORDER BY page'
 );
@@ -47,14 +30,6 @@ export function getPageHeadlines(): PageHeadlinesContent {
 		subtitle: row.subtitle ?? ''
 	}));
 
-	// Fill in defaults for pages that have no stored headline yet
-	const storedPages = new Set(items.map((item) => item.page));
-	for (const def of PAGE_DEFAULTS) {
-		if (!storedPages.has(def.page)) {
-			items.push({ ...def });
-		}
-	}
-
 	return { items };
 }
 
@@ -65,16 +40,22 @@ export function setPageHeadlines(value: PageHeadlinesContent): void {
 	}
 }
 
-/** Convenience: get the headline/subtitle for a single page, falling back to defaults. */
+/** Insert or replace the headline/subtitle for a single page, keeping the other pages. */
+export function saveHeadlineForPage(page: string, headline: string, subtitle: string): void {
+	const all = getPageHeadlines();
+	const entry = { page, headline, subtitle };
+	const index = all.items.findIndex((item) => item.page === page);
+	if (index >= 0) {
+		all.items[index] = entry;
+	} else {
+		all.items.push(entry);
+	}
+	setPageHeadlines(all);
+}
+
+/** Convenience: get the headline/subtitle for a single page (empty if none saved). */
 export function getHeadlineForPage(page: string): { headline: string; subtitle: string } {
 	const all = getPageHeadlines();
 	const found = all.items.find((item) => item.page === page);
-	if (found && (found.headline || found.subtitle)) {
-		return { headline: found.headline, subtitle: found.subtitle };
-	}
-	const def = PAGE_DEFAULTS.find((d) => d.page === page);
-	return {
-		headline: def ? def.headline : page.charAt(0).toUpperCase() + page.slice(1),
-		subtitle: def ? def.subtitle : ''
-	};
+	return { headline: found?.headline ?? '', subtitle: found?.subtitle ?? '' };
 }

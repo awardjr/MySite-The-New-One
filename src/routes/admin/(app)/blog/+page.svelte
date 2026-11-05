@@ -2,11 +2,12 @@
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
+	import { untrack } from 'svelte';
 
 	let { data, form }: PageProps = $props();
 
-	let headline = $state(data.headline);
-	let subtitle = $state(data.subtitle);
+	let headline = $state(untrack(() => data.headline));
+	let subtitle = $state(untrack(() => data.subtitle));
 	let deletingSlug = $state<string | null>(null);
 </script>
 
@@ -19,6 +20,7 @@
 
 <form
 	method="POST"
+	action="?/saveHeadline"
 	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
 	use:enhance={() => {
 		return async ({ update }) => {

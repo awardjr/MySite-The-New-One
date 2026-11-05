@@ -28,7 +28,7 @@ function toModeScores(value: unknown): ModeScore[] {
 
 export const actions: Actions = {
 	saveHeadline: saveHeadlineAction('pinball'),
-	default: async ({ request }) => {
+	save: async ({ request }) => {
 		const formData = await request.formData();
 		const rows = readJsonRows(formData, 'machines');
 		if (!rows) {

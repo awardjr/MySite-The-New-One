@@ -31,6 +31,7 @@
 
 <form
 	method="POST"
+	action="?/saveHeadline"
 	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
 	use:enhance={() => {
 		savingHeadline = true;
@@ -73,6 +74,7 @@
 
 <form
 	method="POST"
+	action="?/save"
 	class="mt-6 space-y-5"
 	use:enhance={() => {
 		saving = true;

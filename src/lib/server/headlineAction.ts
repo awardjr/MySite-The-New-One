@@ -8,7 +8,7 @@ import { text } from './forms';
  */
 export function saveHeadlineAction(page: string, options: { subtitle?: boolean } = {}) {
 	const { subtitle: hasSubtitle = true } = options;
-	return async ({ request }: RequestEvent) => {
+	return async ({ request }: RequestEvent): Promise<{ headlineSuccess?: boolean; headlineError?: string }> => {
 		const formData = await request.formData();
 		const headline = text(formData.get('headline'));
 		const subtitle = hasSubtitle ? text(formData.get('subtitle')) : '';

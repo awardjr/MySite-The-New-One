@@ -61,7 +61,8 @@
 		<label class="text-sm font-medium text-field-label" for="date">Date</label>
 		<input
 			bind:value={date}
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
+			class="box-border block w-full min-w-0 max-w-full appearance-none rounded-lg border border-field-border px-3 py-2 bg-field text-field-text [&::-webkit-date-and-time-value]:min-h-[1.5em] [&::-webkit-date-and-time-value]:text-left"
+			style="width: 100%; -webkit-appearance: none;"
 			id="date"
 			name="date"
 			required

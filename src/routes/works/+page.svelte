@@ -75,9 +75,10 @@
 				{/if}
 
 				<!-- Image Section -->
-				<div class="relative z-10 flex shrink-0 justify-center sm:justify-start">
+				<div class="relative z-10 flex shrink-0 justify-center max-sm:w-full max-sm:pr-5 sm:justify-start">
 					{#if work.image}
 						<button
+							class="max-sm:w-full"
 							type="button"
 							onclick={() => openLightbox(work.image, work.title)}
 							aria-label={`View larger image of ${work.title}`}
@@ -85,12 +86,12 @@
 							<img
 								src={work.image}
 								alt={work.title}
-								class="h-40 w-40 cursor-pointer rounded-lg object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
+								class="aspect-square w-full cursor-pointer rounded-lg object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
 							/>
 						</button>
 					{:else}
 						<div
-							class="flex h-40 w-40 items-center justify-center rounded-lg border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
+							class="flex aspect-square w-full items-center justify-center rounded-lg border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
 						>
 							No Image
 						</div>

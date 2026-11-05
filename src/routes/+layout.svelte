@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Header from './Header.svelte';
 	import Footer from './Footer.svelte';
-	import Lightbox from './Lightbox.svelte';
+	import Lightbox from '#lib/components/Lightbox.svelte';
 	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import './layout.css';

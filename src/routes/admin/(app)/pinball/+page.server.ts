@@ -6,7 +6,7 @@ import {
 	type PinballMachine,
 	type ModeScore
 } from '#lib/server/content.js';
-import { getPageHeadlines, setPageHeadlines } from '#lib/server/content/pageheadlines.js';
+import { saveHeadlineAction } from '#lib/server/headlineAction.js';
 import { readJsonRows, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -27,23 +27,7 @@ function toModeScores(value: unknown): ModeScore[] {
 }
 
 export const actions: Actions = {
-	saveHeadline: async ({ request }) => {
-		const formData = await request.formData();
-		const headline = text(formData.get('headline'));
-		const subtitle = text(formData.get('subtitle'));
-
-		const allHeadlines = getPageHeadlines();
-		const updatedHeadlines = { ...allHeadlines };
-		const pinballIndex = updatedHeadlines.items.findIndex((item) => item.page === 'pinball');
-		if (pinballIndex >= 0) {
-			updatedHeadlines.items[pinballIndex] = { page: 'pinball', headline, subtitle };
-		} else {
-			updatedHeadlines.items.push({ page: 'pinball', headline, subtitle });
-		}
-		setPageHeadlines(updatedHeadlines);
-
-		return { headlineSuccess: true };
-	},
+	saveHeadline: saveHeadlineAction('pinball'),
 	default: async ({ request }) => {
 		const formData = await request.formData();
 		const rows = readJsonRows(formData, 'machines');

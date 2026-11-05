@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, getHeadlineForPage, type WorkItem } from '#lib/server/content.js';
-import { getPageHeadlines, setPageHeadlines } from '#lib/server/content/pageheadlines.js';
+import { saveHeadlineAction } from '#lib/server/headlineAction.js';
 import { readJsonRows, safeUrl, text, textList } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -11,23 +11,7 @@ export const load: PageServerLoad = () => {
 };
 
 export const actions: Actions = {
-	saveHeadline: async ({ request }) => {
-		const formData = await request.formData();
-		const headline = text(formData.get('headline'));
-		const subtitle = text(formData.get('subtitle'));
-
-		const allHeadlines = getPageHeadlines();
-		const updatedHeadlines = { ...allHeadlines };
-		const worksIndex = updatedHeadlines.items.findIndex((item) => item.page === 'works');
-		if (worksIndex >= 0) {
-			updatedHeadlines.items[worksIndex] = { page: 'works', headline, subtitle };
-		} else {
-			updatedHeadlines.items.push({ page: 'works', headline, subtitle });
-		}
-		setPageHeadlines(updatedHeadlines);
-
-		return { headlineSuccess: true };
-	},
+	saveHeadline: saveHeadlineAction('works'),
 	default: async ({ request }) => {
 		const formData = await request.formData();
 		const rows = readJsonRows(formData, 'items');

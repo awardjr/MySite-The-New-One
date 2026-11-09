@@ -22,7 +22,7 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	saveHeadline: saveHeadlineAction('home', { subtitle: false }),
-	default: async ({ request }) => {
+	save: async ({ request }) => {
 		const formData = await request.formData();
 
 		const name = text(formData.get('name'));

@@ -101,11 +101,11 @@ describe('updateSection', () => {
 		]);
 	});
 
-	it('preserves insertion order for list sections', () => {
+ it('preserves insertion order for list sections', () => {
 		updateSection('press', {
 			items: [
-				{ title: 'First', summary: 'a', href: '/a' },
-				{ title: 'Second', summary: 'b', href: '/b' }
+				{ outlet: 'Venue A', title: 'First', summary: 'a', href: '/a', date: '2024-01-01' },
+				{ outlet: 'Venue B', title: 'Second', summary: 'b', href: '/b', date: '' }
 			]
 		});
 
@@ -140,18 +140,18 @@ describe('updateSection', () => {
 		});
 	});
 
-	it('replaces the previous rows for a section rather than appending to them', () => {
-		updateSection('press', { items: [{ title: 'First', summary: 'a', href: '/a' }] });
-		updateSection('press', { items: [{ title: 'Second', summary: 'b', href: '/b' }] });
+ it('replaces the previous rows for a section rather than appending to them', () => {
+		updateSection('press', { items: [{ outlet: 'A', title: 'First', summary: 'a', href: '/a', date: '' }] });
+		updateSection('press', { items: [{ outlet: 'B', title: 'Second', summary: 'b', href: '/b', date: '' }] });
 
 		const content = readContent();
 		expect(content.press.items).toHaveLength(1);
 		expect(content.press.items[0].title).toBe('Second');
 	});
 
-	it('refreshes the cache so subsequent reads see the update', () => {
+ it('refreshes the cache so subsequent reads see the update', () => {
 		const before = readContent();
-		updateSection('press', { items: [{ title: 'Changed', summary: 'a', href: '/a' }] });
+		updateSection('press', { items: [{ outlet: 'X', title: 'Changed', summary: 'a', href: '/a', date: '' }] });
 		const after = readContent();
 
 		expect(before).not.toBe(after);

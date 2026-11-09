@@ -1,9 +1,11 @@
 import { db } from '../db';
 
 export type PressItem = {
+	outlet: string;
 	title: string;
 	summary: string;
 	href: string;
+	date: string;
 };
 
 export type PressContent = {
@@ -11,20 +13,22 @@ export type PressContent = {
 };
 
 const getPressItemsStmt = db.prepare(
-	'SELECT title, summary, href FROM press ORDER BY sort_order, id'
+	'SELECT outlet, title, summary, href, date FROM press ORDER BY sort_order, id'
 );
 const deletePressItemsStmt = db.prepare('DELETE FROM press WHERE id IS NOT NULL');
 const insertPressItemStmt = db.prepare(
-	'INSERT INTO press (title, summary, href, sort_order) VALUES (?, ?, ?, ?)'
+	'INSERT INTO press (outlet, title, summary, href, date, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
 );
 
 export function getPress(): PressContent {
-	const rows = getPressItemsStmt.all() as { title: string; summary: string; href: string }[];
+	const rows = getPressItemsStmt.all() as { outlet: string; title: string; summary: string; href: string; date: string }[];
 	return {
 		items: rows.map((row) => ({
+			outlet: row.outlet ?? '',
 			title: row.title ?? '',
 			summary: row.summary ?? '',
-			href: row.href ?? ''
+			href: row.href ?? '',
+			date: row.date ?? ''
 		}))
 	};
 }
@@ -34,6 +38,6 @@ export function setPress(value: PressContent): void {
 	const items = value.items ?? [];
 	for (let i = 0; i < items.length; i++) {
 		const item = items[i];
-		insertPressItemStmt.run(item.title, item.summary, item.href, i);
+		insertPressItemStmt.run(item.outlet, item.title, item.summary, item.href, item.date, i);
 	}
 }

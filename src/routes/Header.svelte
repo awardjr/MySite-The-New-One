@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { slide } from 'svelte/transition';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
@@ -114,6 +115,26 @@
 >
 	<div class="mx-auto flex h-16 max-w-7/10 items-center justify-between px-4">
 		{#if isAdmin}
+			<!-- Burger menu - left on mobile, hidden on desktop -->
+			{#if !isAuthPage}
+				<div class="flex lg:hidden">
+					<button
+						aria-expanded={isMobileMenuOpen}
+						aria-label="Toggle admin navigation menu"
+						class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover"
+						onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
+						type="button"
+					>
+						{#if isMobileMenuOpen}
+							<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
+						{:else}
+							<Fa icon={faBars} class="h-4 w-4" />
+						{/if}
+					</button>
+				</div>
+			{/if}
+
+			<!-- Center: Dashboard link on mobile, Back to site + nav on desktop -->
 			<div class="flex items-center gap-3 lg:gap-4">
 				<a
 					href={resolve('/')}
@@ -139,6 +160,7 @@
 				{/if}
 			</div>
 
+			<!-- Theme toggle - right -->
 			<div class="flex items-center gap-2">
 				{#if !isAuthPage}
 					<form method="POST" action={resolve('admin/logout')} class="hidden sm:block">
@@ -169,25 +191,27 @@
 						<Fa icon={faSun} class="h-4 w-4" />
 					{/if}
 				</button>
-
-				{#if !isAuthPage}
-					<button
-						aria-expanded={isMobileMenuOpen}
-						aria-label="Toggle admin navigation menu"
-						class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover lg:hidden"
-						onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
-						type="button"
-					>
-						{#if isMobileMenuOpen}
-							<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
-						{:else}
-							<Fa icon={faBars} class="h-4 w-4" />
-						{/if}
-					</button>
-				{/if}
 			</div>
-		{:else}
-			<div class="flex items-center gap-6">
+ 	{:else}
+ 		<!-- Burger menu - left on mobile, hidden on desktop -->
+			<div class="flex md:hidden">
+				<button
+					aria-expanded={isMobileMenuOpen}
+					aria-label="Toggle navigation menu"
+					class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover"
+					onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
+					type="button"
+				>
+					{#if isMobileMenuOpen}
+						<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
+					{:else}
+						<Fa icon={faBars} class="h-4 w-4" />
+					{/if}
+				</button>
+			</div>
+
+			<!-- Site name - centered on mobile -->
+			<div class="flex items-center gap-6 md:gap-6">
 				<a
 					aria-label="Home"
 					class="text-base font-bold tracking-tight text-heading"
@@ -238,6 +262,7 @@
 				</nav>
 			</div>
 
+ 		<!-- Theme toggle - right on mobile -->
 			<div class="flex items-center gap-2">
 				<button
 					aria-label={theme === 'light'
@@ -257,27 +282,16 @@
 						<Fa icon={faSun} class="h-4 w-4" />
 					{/if}
 				</button>
-
-				<button
-					aria-expanded={isMobileMenuOpen}
-					aria-label="Toggle navigation menu"
-					class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover md:hidden"
-					onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
-					type="button"
-				>
-					{#if isMobileMenuOpen}
-						<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
-					{:else}
-						<Fa icon={faBars} class="h-4 w-4" />
-					{/if}
-				</button>
 			</div>
 		{/if}
 	</div>
 
 	{#if isMobileMenuOpen}
 		{#if isAdmin}
-			<nav class="border-t border-chrome-border px-4 py-3 lg:hidden">
+			<nav
+				transition:slide|global={{ duration: 150 }}
+				class="border-t border-chrome-border px-4 py-3 lg:hidden"
+			>
 				<div class="flex flex-col gap-2">
 					<a
 						href={resolve('/')}
@@ -315,7 +329,10 @@
 				</div>
 			</nav>
 		{:else}
-			<nav class="border-t border-chrome-border px-4 py-3 md:hidden">
+			<nav
+				transition:slide|global={{ duration: 150 }}
+				class="border-t border-chrome-border px-4 py-3 md:hidden"
+			>
 				<div class="flex flex-col gap-2">
 					{#each navItems as item (item.href)}
 						{@const isActive = page.url.pathname === item.href}

@@ -12,7 +12,7 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	saveHeadline: saveHeadlineAction('press'),
-	default: async ({ request }) => {
+	save: async ({ request }) => {
 		const formData = await request.formData();
 		const rows = readJsonRows(formData, 'items');
 		if (!rows) {
@@ -21,9 +21,11 @@ export const actions: Actions = {
 
 		const items: PressItem[] = rows
 			.map((item) => ({
+				outlet: text(item.outlet),
 				title: text(item.title),
 				summary: text(item.summary),
-				href: safeUrl(item.href)
+				href: safeUrl(item.href),
+				date: text(item.date)
 			}))
 			.filter((item) => item.title);
 

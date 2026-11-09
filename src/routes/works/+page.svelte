@@ -78,9 +78,10 @@
 				{/if}
 
 				<!-- Image Section -->
-				<div class="relative z-10 flex shrink-0 justify-center sm:justify-start">
+				<div class="relative z-10 flex shrink-0 justify-center max-sm:w-full max-sm:pr-5 sm:justify-start">
 					{#if work.image}
 						<button
+							class="max-sm:w-full"
 							type="button"
 							onclick={() => openLightbox(work.image, work.title)}
 							aria-label={`View larger image of ${work.title}`}

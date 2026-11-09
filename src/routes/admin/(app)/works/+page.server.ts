@@ -12,7 +12,7 @@ export const load: PageServerLoad = () => {
 
 export const actions: Actions = {
 	saveHeadline: saveHeadlineAction('works'),
-	default: async ({ request }) => {
+	save: async ({ request }) => {
 		const formData = await request.formData();
 		const rows = readJsonRows(formData, 'items');
 		if (!rows) {

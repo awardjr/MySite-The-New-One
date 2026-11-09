@@ -218,7 +218,7 @@
 
 		{#if data.twoFactorEnabled}
 			{#if form?.twoFactorRecoveryKey}
-				<div class="mt-6 rounded-xl border border-card-border bg-card p-5 shadow-sm">
+				<div class="card mt-6 p-5">
 					<div class="flex items-center justify-between">
 						<span class="text-sm font-bold uppercase tracking-wider text-card-meta">
 							Your Emergency Recovery Code
@@ -420,7 +420,7 @@
 		</p>
 
 		{#if form?.recoverySuccess && form.newRecoveryKey}
-			<div class="my-6 rounded-xl border border-card-border bg-card p-5 shadow-sm">
+			<div class="card my-6 p-5">
 				<div class="flex items-center justify-between">
 					<span class="text-sm font-bold uppercase tracking-wider text-card-meta">
 						New Emergency Recovery Code

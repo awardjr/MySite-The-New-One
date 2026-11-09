@@ -11,23 +11,30 @@
 
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-gray-800);
-	--theme-footer: var(--color-gray-950);
-	--theme-header: var(--color-gray-950);
+	--theme-footer: var(--color-gray-900);
+	--theme-header: var(--color-gray-900);
+	--theme-nav-text: var(--color-gray-300);
 	--theme-nav-decoration: var(--color-gray-600);
 	--theme-nav-hover: var(--color-gray-100);
 	--theme-menu-icon: var(--color-gray-200);
-	--theme-menu-hover: var(--color-gray-900);
-	--theme-nav-active: var(--color-gray-900);
-	--theme-nav-surface-hover: var(--color-gray-900);
+	--theme-menu-hover: var(--color-gray-800);
+	--theme-nav-active: var(--color-gray-800);
+	--theme-nav-surface-hover: var(--color-gray-800);
 	--theme-admin-nav-hover: var(--color-gray-100);
 
 	--theme-menu-border: var(--color-gray-700);
 
 	/* Cards and badges */
-	--theme-card-border: var(--color-gray-600);
-	--theme-card: var(--color-gray-800);
-	--theme-card-border-hover: color-mix(in oklab, var(--color-gray-600), var(--color-gray-500) 40%);
-	--theme-card-hover: color-mix(in oklab, var(--color-gray-800), var(--color-gray-700) 40%);
+	--theme-card-border: var(--color-gray-800);
+	--theme-card: var(--color-gray-900);
+	--theme-card-border-hover: var(--color-gray-700);
+	--theme-card-hover: color-mix(in oklab, var(--color-gray-900), var(--color-gray-800) 50%);
+	--theme-card-shadow:
+		0 1px 2px 0 rgb(0 0 0 / 0.5), 0 4px 12px -2px rgb(0 0 0 / 0.4),
+		inset 0 1px 0 0 rgb(255 255 255 / 0.05);
+	--theme-card-shadow-hover:
+		0 2px 4px 0 rgb(0 0 0 / 0.5), 0 16px 32px -8px rgb(0 0 0 / 0.7),
+		inset 0 1px 0 0 rgb(255 255 255 / 0.08);
 	--theme-card-heading: var(--color-gray-50);
 	--theme-card-copy: var(--color-gray-300);
 	--theme-card-meta: var(--color-gray-400);

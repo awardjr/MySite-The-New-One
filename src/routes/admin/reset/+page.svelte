@@ -17,7 +17,7 @@
 	<p class="mt-1 text-sm text-muted">Choose a new password for your admin account</p>
 
 	{#if !data.valid}
-		<div class="mt-6 rounded-xl border border-card-border bg-card p-6 shadow-sm">
+		<div class="card mt-6 p-6">
 			<p class="text-sm text-error">This password reset link is invalid or has expired.</p>
 			<div class="mt-4">
 				<a

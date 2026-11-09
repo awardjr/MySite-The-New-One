@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Fa from 'svelte-fa';
+	import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import { getIcon } from '#lib/icons.js';
 	import type { PageProps } from './$types';
 
@@ -36,14 +37,19 @@
 				target={link.href.startsWith('http') ? '_blank' : undefined}
 				rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
 				style:--link-color={iconColors[link.icon] ?? iconColors.link}
-				class="group flex items-center gap-3 rounded-xl border border-card-border bg-card px-4 py-3 text-card-label shadow-sm transition duration-200 hover:scale-105 hover:border-transparent hover:bg-(--link-color) hover:text-white"
+				class="group card card-interactive flex items-center gap-3 px-4 py-3 text-card-label hover:border-transparent hover:bg-(--link-color) hover:text-white"
 			>
 				<span
-					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--link-color) text-white transition-colors duration-200 group-hover:bg-white/20"
+					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--link-color) text-white ring-1 ring-white/15 transition-colors duration-200 ring-inset group-hover:bg-white/20"
 				>
 					<Fa icon={getIcon(link.icon)} class="h-4 w-4" />
 				</span>
 				<span class="font-medium">{link.label}</span>
+				<span
+					class="ml-auto opacity-40 transition duration-200 group-hover:opacity-100 motion-safe:group-hover:translate-x-0.5"
+				>
+					<Fa icon={faArrowRight} class="h-3.5 w-3.5" />
+				</span>
 			</a>
 		{/each}
 	</div>

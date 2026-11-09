@@ -2,7 +2,7 @@
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
-	import { faRss } from '@fortawesome/free-solid-svg-icons';
+	import { faArrowRight, faRss } from '@fortawesome/free-solid-svg-icons';
 
 	let { data }: PageProps = $props();
 	let { posts, siteName, headline, subtitle } = $derived(data);
@@ -35,30 +35,35 @@
 		{#each posts as post (post.slug)}
 			<a
 				href={resolve('/blog/[slug]', { slug: post.slug })}
-				class="block rounded-xl border border-card-border bg-card p-5 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
+				class="group card card-interactive block overflow-hidden"
 			>
 				{#if post.image}
-					<img
-						src={post.image}
-						alt={post.title}
-						class="mb-4 h-48 w-full rounded-lg object-cover ring-1 ring-card-ring sm:h-64"
-					/>
+					<div class="h-48 overflow-hidden border-b border-card-border sm:h-64">
+						<img
+							src={post.image}
+							alt={post.title}
+							class="h-full w-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
+						/>
+					</div>
 				{/if}
 
-				<h2 class="text-xl font-bold text-card-heading sm:text-2xl">
-					{post.title}
-				</h2>
-				<p class="mt-1 text-card-meta">{post.date}</p>
+				<div class="p-5 sm:p-6">
+					<p class="text-xs font-semibold tracking-wider text-card-meta uppercase">{post.date}</p>
+					<h2 class="mt-1 text-xl font-bold text-card-heading sm:text-2xl">
+						{post.title}
+					</h2>
 
-				<p class="mt-3 text-sm text-card-copy sm:text-lg">
-					{post.preview}
-				</p>
+					<p class="mt-3 text-sm text-card-copy sm:text-lg">
+						{post.preview}
+					</p>
 
-				<div class="mt-4 flex justify-end">
 					<span
-						class="inline-flex items-center rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:border-card-border-hover hover:bg-card-border"
+						class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-card-action transition-colors group-hover:text-card-heading"
 					>
-						Read More
+						Read more
+						<span class="transition-transform duration-200 motion-safe:group-hover:translate-x-1">
+							<Fa icon={faArrowRight} class="h-3 w-3" />
+						</span>
 					</span>
 				</div>
 			</a>

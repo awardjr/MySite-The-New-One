@@ -110,8 +110,10 @@
 
 <svelte:window onresize={updateUnderline} />
 
-<header class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header">
-	<div class="mx-auto flex h-16 items-center justify-between px-4 md:max-w-7/10 md:px-4">
+<header
+	class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header"
+>
+	<div class="mx-auto flex h-16 max-w-7/10 items-center justify-between px-4">
 		{#if isAdmin}
 			<!-- Burger menu - left on mobile, hidden on desktop -->
 			{#if !isAuthPage}
@@ -134,29 +136,12 @@
 
 			<!-- Center: Dashboard link on mobile, Back to site + nav on desktop -->
 			<div class="flex items-center gap-3 lg:gap-4">
-				{#if !isAuthPage}
-					<a
-						href={resolve('admin')}
-						onclick={closeMobileMenu}
-						class="text-base font-bold tracking-tight text-heading lg:hidden"
-					>
-						Dashboard
-					</a>
-					<a
-						href={resolve('/')}
-						onclick={closeMobileMenu}
-						class="hidden lg:inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
-						><span aria-hidden="true">←</span> Back to site</a
-					>
-				{/if}
-				{#if isAuthPage}
-					<a
-						href={resolve('/')}
-						onclick={closeMobileMenu}
-						class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
-						><span aria-hidden="true">←</span> Back to site</a
-					>
-				{/if}
+				<a
+					href={resolve('/')}
+					onclick={closeMobileMenu}
+					class="inline-flex items-center gap-1.5 rounded-lg border border-menu-border px-3 py-1.5 text-xs sm:text-sm font-medium text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
+					><span aria-hidden="true">←</span> Back to site</a
+				>
 
 				{#if !isAuthPage}
 					<nav class="hidden lg:flex lg:items-center lg:gap-1">
@@ -166,7 +151,7 @@
 								href={item.href}
 								class="rounded-lg px-2.5 py-1.5 text-xl transition-colors {isActive
 									? 'bg-nav-active font-semibold text-heading'
-									: 'text-muted hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
+									: 'text-nav-text hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
 							>
 								{item.label}
 							</a>
@@ -181,7 +166,7 @@
 					<form method="POST" action={resolve('admin/logout')} class="hidden sm:block">
 						<button
 							type="submit"
-							class="rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+							class="rounded-lg border border-menu-border px-3 py-1.5 text-xs sm:text-sm text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 						>
 							Log out
 						</button>
@@ -249,14 +234,14 @@
 							onblur={() => (hoveredIndex = null)}
 							class="pb-1 text-xl transition-colors {isActive
 								? 'font-semibold text-heading'
-								: 'text-muted hover:text-nav-hover'}"
+								: 'text-nav-text hover:text-nav-hover'}"
 						>
 							{item.label}
 						</a>
 					{/each}
 					<span
 						aria-hidden="true"
-						class="pointer-events-none absolute left-0 h-0.5 rounded bg-[var(--theme-nav-decoration-dim,color-mix(in_oklab,var(--color-nav-decoration),black_45%))] transition-opacity duration-300 motion-reduce:transition-none"
+						class="pointer-events-none absolute left-0 h-0.5 rounded bg-(--theme-nav-decoration-dim,color-mix(in_oklab,var(--color-nav-decoration),black_45%)) transition-opacity duration-300 motion-reduce:transition-none"
 						style:width="{activeBar.width}px"
 						style:top="{activeBar.top}px"
 						style:transform="translateX({activeBar.left}px)"
@@ -311,7 +296,7 @@
 					<a
 						href={resolve('/')}
 						onclick={closeMobileMenu}
-						class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+						class="inline-flex items-center gap-1.5 rounded-lg border border-menu-border px-3 py-2 text-sm font-medium text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 						><span aria-hidden="true">←</span> Back to site</a
 					>
 
@@ -323,7 +308,7 @@
 								onclick={closeMobileMenu}
 								class="rounded-lg px-3 py-2 text-sm transition-colors {isActive
 									? 'bg-nav-active font-semibold text-heading'
-									: 'text-muted hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
+									: 'text-nav-text hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
 							>
 								{item.label}
 							</a>
@@ -331,11 +316,11 @@
 						<form
 							method="POST"
 							action={resolve('admin/logout')}
-							class="pt-2 border-t border-card-border"
+							class="pt-2 border-t border-chrome-border"
 						>
 							<button
 								type="submit"
-								class="w-full rounded-lg border border-card-border px-3 py-2 text-left text-sm text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+								class="w-full rounded-lg border border-menu-border px-3 py-2 text-left text-sm text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 							>
 								Log out
 							</button>
@@ -356,7 +341,7 @@
 							onclick={closeMobileMenu}
 							class="rounded px-2 py-1.5 text-sm transition-colors {isActive
 								? 'bg-nav-active font-semibold text-heading'
-								: 'text-muted hover:bg-nav-surface-hover hover:text-nav-hover'}"
+								: 'text-nav-text hover:bg-nav-surface-hover hover:text-nav-hover'}"
 						>
 							{item.label}
 						</a>

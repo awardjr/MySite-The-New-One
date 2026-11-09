@@ -10,6 +10,7 @@
 	--color-chrome-border: var(--theme-chrome-border);
 	--color-footer: var(--theme-footer);
 	--color-header: var(--theme-header);
+	--color-nav-text: var(--theme-nav-text);
 	--color-nav-decoration: var(--theme-nav-decoration);
 	--color-nav-hover: var(--theme-nav-hover);
 	--color-menu-icon: var(--theme-menu-icon);

@@ -56,7 +56,10 @@
 		{#each works as work (work.id)}
 			<div
 				id="work-{work.id}"
-				class="relative flex scroll-mt-20 flex-col gap-5 rounded-xl border border-card-border bg-card p-5 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover target:ring-2 target:ring-photo-ring sm:flex-row sm:items-start"
+				class={[
+					'group card relative flex scroll-mt-20 flex-col gap-5 p-5 target:ring-2 target:ring-photo-ring sm:flex-row sm:items-start',
+					work.link && 'card-interactive'
+				]}
 			>
 				{#if work.link}
 					<a
@@ -64,11 +67,11 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						aria-label={`${work.title} (opens in a new tab)`}
-						class="absolute inset-0 z-0 rounded-xl"
+						class="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
 					></a>
 					<span
 						title="Opens an external site"
-						class="pointer-events-none absolute top-3 right-3 z-10 text-muted"
+						class="pointer-events-none absolute top-4 right-4 z-10 text-card-action transition-colors group-hover:text-card-heading"
 					>
 						<Fa icon={faArrowUpRightFromSquare} class="h-4 w-4" />
 					</span>
@@ -86,12 +89,12 @@
 							<img
 								src={work.image}
 								alt={work.title}
-								class="aspect-square w-full cursor-pointer rounded-lg object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
+								class="h-40 w-40 cursor-pointer rounded-xl object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
 							/>
 						</button>
 					{:else}
 						<div
-							class="flex aspect-square w-full items-center justify-center rounded-lg border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
+							class="flex h-40 w-40 items-center justify-center rounded-xl border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
 						>
 							No Image
 						</div>
@@ -100,7 +103,7 @@
 
 				<!-- Text + Platforms Section -->
 				<div class="pointer-events-none relative z-10 flex-1 space-y-3">
-					<h2 class="text-xl font-semibold text-card-heading">
+					<h2 class={['text-xl font-semibold text-card-heading', work.link && 'sm:pr-8']}>
 						{work.title}
 					</h2>
 					<p class="text-lg leading-relaxed text-card-copy">

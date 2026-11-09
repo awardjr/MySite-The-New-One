@@ -27,7 +27,7 @@
 
 <section class="mx-auto flex max-w-md flex-col justify-center py-16">
 	{#if form?.success && form.recoveryKey}
-		<div class="rounded-xl border border-card-border bg-card p-6 shadow-sm">
+		<div class="card p-6">
 			<div class="mb-4 inline-flex items-center gap-2 text-success">
 				<span class="inline-block h-2.5 w-2.5 rounded-full bg-success"></span>
 				<h1 class="text-xl font-bold tracking-tight text-heading">Admin Account Created</h1>

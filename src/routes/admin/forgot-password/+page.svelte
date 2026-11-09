@@ -42,7 +42,7 @@
 
 	<!-- Option 1: Email Reset Link -->
 	{#if activeTab === 'email'}
-		<div class="mt-6 rounded-xl border border-card-border bg-card p-6 shadow-sm">
+		<div class="card mt-6 p-6">
 			<h2 class="text-base font-semibold text-heading">Email a Reset Link</h2>
 			<p class="mt-1 text-xs text-muted">
 				Enter your admin username or email address and we will send a password reset link to your
@@ -100,7 +100,7 @@
 
 	<!-- Option 2: Emergency Code -->
 	{#if activeTab === 'code'}
-		<div class="mt-6 rounded-xl border border-card-border bg-card p-6 shadow-sm">
+		<div class="card mt-6 p-6">
 			<h2 class="text-base font-semibold text-heading">Reset with Emergency Code</h2>
 			<p class="mt-1 text-xs text-muted">
 				Enter the 16-character recovery code generated when your account was configured.

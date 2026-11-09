@@ -53,26 +53,39 @@
 	</div>
 </section>
 
+{#snippet featureCard(
+	href: string,
+	image: string | undefined,
+	title: string,
+	body: string,
+	meta?: string
+)}
+	<a {href} class="group card card-interactive flex flex-col overflow-hidden">
+		{#if image}
+			<div class="h-48 overflow-hidden border-b border-card-border">
+				<img
+					src={image}
+					alt={title}
+					class="h-full w-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
+				/>
+			</div>
+		{/if}
+		<div class="p-5">
+			{#if meta}
+				<p class="mb-1 text-xs font-semibold tracking-wider text-card-meta uppercase">{meta}</p>
+			{/if}
+			<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{title}</h3>
+			<p class="mt-2 line-clamp-3 text-base text-card-copy">{body}</p>
+		</div>
+	</a>
+{/snippet}
+
 {#if data.featuredPosts.length}
 	<section class="py-6">
 		<h2 class="text-2xl font-bold tracking-tight text-heading">Featured Posts</h2>
-		<div class="mt-4 grid gap-4 sm:grid-cols-2">
+		<div class="mt-4 grid gap-5 sm:grid-cols-2">
 			{#each data.featuredPosts as post (post.slug)}
-				<a
-					href="/blog/{post.slug}"
-					class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
-				>
-					{#if post.image}
-						<img
-							src={post.image}
-							alt={post.title}
-							class="mb-3 h-40 w-full rounded-lg object-cover"
-						/>
-					{/if}
-					<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{post.title}</h3>
-					<p class="text-sm text-card-meta">{post.date}</p>
-					<p class="mt-2 line-clamp-3 text-base text-card-copy">{post.preview}</p>
-				</a>
+				{@render featureCard(`/blog/${post.slug}`, post.image, post.title, post.preview, post.date)}
 			{/each}
 		</div>
 	</section>
@@ -81,22 +94,9 @@
 {#if data.featuredWorks.length}
 	<section class="py-6">
 		<h2 class="text-2xl font-bold tracking-tight text-heading">Featured Works</h2>
-		<div class="mt-4 grid gap-4 sm:grid-cols-2">
+		<div class="mt-4 grid gap-5 sm:grid-cols-2">
 			{#each data.featuredWorks as work (work.id)}
-				<a
-					href="/works#work-{work.id}"
-					class="block rounded-xl border border-card-border bg-card p-4 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
-				>
-					{#if work.image}
-						<img
-							src={work.image}
-							alt={work.title}
-							class="mb-3 h-40 w-full rounded-lg object-cover"
-						/>
-					{/if}
-					<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{work.title}</h3>
-					<p class="mt-1 line-clamp-3 text-base text-card-copy">{work.description}</p>
-				</a>
+				{@render featureCard(`/works#work-${work.id}`, work.image, work.title, work.description)}
 			{/each}
 		</div>
 	</section>

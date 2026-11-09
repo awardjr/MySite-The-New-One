@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+	import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
 	import type { PageProps } from './$types';
@@ -31,9 +31,7 @@
 		{#each machines as machine, i (i)}
 			{@const isExpanded = !!expanded[i]}
 			{@const hasMore = !!machine.modeScores && machine.modeScores.length > 0}
-			<div
-				class="rounded-xl border border-card-border bg-card p-5 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
-			>
+			<div class="card p-5">
 				<div class="flex flex-col gap-5 sm:flex-row sm:items-start">
 					<!-- Image Section -->
 					<div class="flex shrink-0 justify-center sm:justify-start">
@@ -46,12 +44,12 @@
 								<img
 									src={machine.image}
 									alt={machine.name}
-									class="h-40 w-40 cursor-pointer rounded-lg object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
+									class="h-40 w-40 cursor-pointer rounded-xl object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
 								/>
 							</button>
 						{:else}
 							<div
-								class="flex h-40 w-40 items-center justify-center rounded-lg border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
+								class="flex h-40 w-40 items-center justify-center rounded-xl border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
 							>
 								No Image
 							</div>
@@ -59,13 +57,18 @@
 					</div>
 
 					<!-- Text Section -->
-					<div class="flex-1 space-y-2">
+					<div class="flex-1 space-y-3">
 						<h2 class="text-lg font-semibold text-card-heading">
 							{machine.name}
 						</h2>
-						<p class="text-base text-card-copy">
-							High Score: <span class="font-semibold text-card-heading">{machine.highScore}</span>
-						</p>
+						<dl>
+							<dt class="text-xs font-semibold tracking-wider text-card-meta uppercase">
+								High Score
+							</dt>
+							<dd class="text-2xl font-bold text-card-heading lining-nums tabular-nums">
+								{machine.highScore}
+							</dd>
+						</dl>
 					</div>
 
 					<!-- Expand Toggle -->
@@ -78,7 +81,14 @@
 								class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:border-card-border-hover hover:bg-card-border"
 							>
 								{isExpanded ? 'Hide Mode High Scores' : 'Show Mode High Scores'}
-								<Fa icon={isExpanded ? faChevronUp : faChevronDown} class="h-3 w-3" />
+								<span
+									class={[
+										'transition-transform duration-200 motion-reduce:transition-none',
+										isExpanded && 'rotate-180'
+									]}
+								>
+									<Fa icon={faChevronDown} class="h-3 w-3" />
+								</span>
 							</button>
 						</div>
 					{/if}
@@ -95,7 +105,9 @@
 									class="flex items-center justify-between rounded-lg bg-badge px-3 py-2 text-sm text-score-caption"
 								>
 									<span class="text-muted">{modeScore.mode}</span>
-									<span class="font-semibold text-score-value">{modeScore.score}</span>
+									<span class="font-semibold text-score-value lining-nums tabular-nums"
+										>{modeScore.score}</span
+									>
 								</div>
 							{/each}
 						</div>

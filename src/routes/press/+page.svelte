@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Fa from 'svelte-fa';
+	import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -19,13 +21,22 @@
 	<div class="mt-8 grid grid-cols-1 gap-6">
 		{#each pressItems as item, i (i)}
 			{#if item.href}
+				{@const external = item.href.startsWith('http')}
 				<a
 					href={item.href}
-					target={item.href.startsWith('http') ? '_blank' : undefined}
-					rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-					class="block rounded-xl border border-card-border bg-card p-8 shadow-sm transition-transform duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
+					target={external ? '_blank' : undefined}
+					rel={external ? 'noopener noreferrer' : undefined}
+					class="group card card-interactive relative block p-6 sm:p-8"
 				>
-					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
+					{#if external}
+						<span
+							title="Opens an external site"
+							class="absolute top-5 right-5 text-card-action transition-colors group-hover:text-card-heading"
+						>
+							<Fa icon={faArrowUpRightFromSquare} class="h-4 w-4" />
+						</span>
+					{/if}
+					<h2 class={['text-2xl font-bold text-card-heading sm:text-3xl', external && 'pr-8']}>
 						{item.title}
 					</h2>
 					<p class="mt-3 text-lg leading-relaxed text-card-copy">
@@ -33,9 +44,7 @@
 					</p>
 				</a>
 			{:else}
-				<div
-					class="rounded-xl border border-card-border bg-card p-8 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
-				>
+				<div class="card p-6 sm:p-8">
 					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
 						{item.title}
 					</h2>

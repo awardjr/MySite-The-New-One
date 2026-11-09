@@ -29,6 +29,8 @@
 	--theme-card: var(--color-yellow-500);
 	--theme-card-border-hover: var(--color-gray-800);
 	--theme-card-hover: var(--color-yellow-400);
+	--theme-card-shadow: 0 3px 8px 0 rgb(0 0 0 / 0.25), 0 1px 2px 0 rgb(0 0 0 / 0.25);
+	--theme-card-shadow-hover: 0 8px 18px -2px rgb(0 0 0 / 0.3), 0 2px 6px -2px rgb(0 0 0 / 0.25);
 	--theme-card-heading: var(--color-black);
 	--theme-card-copy: var(--color-red-900);
 	--theme-card-meta: var(--color-red-900);

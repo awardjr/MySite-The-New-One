@@ -217,7 +217,7 @@
 					{/each}
 					<span
 						aria-hidden="true"
-						class="pointer-events-none absolute left-0 h-0.5 rounded bg-[var(--theme-nav-decoration-dim,color-mix(in_oklab,var(--color-nav-decoration),black_45%))] transition-opacity duration-300 motion-reduce:transition-none"
+						class="pointer-events-none absolute left-0 h-0.5 rounded bg-(--theme-nav-decoration-dim,color-mix(in_oklab,var(--color-nav-decoration),black_45%)) transition-opacity duration-300 motion-reduce:transition-none"
 						style:width="{activeBar.width}px"
 						style:top="{activeBar.top}px"
 						style:transform="translateX({activeBar.left}px)"

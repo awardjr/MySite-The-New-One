@@ -25,10 +25,18 @@
 					rel={item.href.startsWith('http') ? 'noopener noreferrer' : undefined}
 					class="block rounded-xl border border-card-border bg-card p-8 shadow-sm transition-transform duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 				>
-					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
+					<div class="flex items-center justify-between">
+						<p class="text-sm font-semibold uppercase tracking-widest text-card-copy">
+							{item.outlet}
+						</p>
+						{#if item.date}
+							<p class="text-sm font-semibold uppercase tracking-widest text-card-copy">{item.date}</p>
+						{/if}
+					</div>
+					<h2 class="mt-2 text-xl font-bold text-card-heading sm:text-2xl">
 						{item.title}
 					</h2>
-					<p class="mt-3 text-lg leading-relaxed text-card-copy">
+					<p class="mt-3 text-base leading-relaxed text-card-copy">
 						{item.summary}
 					</p>
 				</a>
@@ -36,10 +44,18 @@
 				<div
 					class="rounded-xl border border-card-border bg-card p-8 shadow-sm transition duration-200 hover:scale-[1.02] hover:border-card-border-hover hover:bg-card-hover"
 				>
-					<h2 class="text-2xl font-bold text-card-heading sm:text-3xl">
+					<div class="flex items-center justify-between">
+						<p class="text-sm font-semibold uppercase tracking-widest text-card-copy">
+							{item.outlet}
+						</p>
+						{#if item.date}
+							<p class="text-sm font-semibold uppercase tracking-widest text-card-copy">{item.date}</p>
+						{/if}
+					</div>
+					<h2 class="mt-2 text-xl font-bold text-card-heading sm:text-2xl">
 						{item.title}
 					</h2>
-					<p class="mt-3 text-lg leading-relaxed text-card-copy">
+					<p class="mt-3 text-base leading-relaxed text-card-copy">
 						{item.summary}
 					</p>
 				</div>

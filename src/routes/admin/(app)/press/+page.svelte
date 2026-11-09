@@ -12,9 +12,9 @@
 	let saving = $state(false);
 	let savingHeadline = $state(false);
 
-	function addItem() {
-		items.push({ title: '', summary: '', href: '' });
-	}
+  function addItem() {
+ 	 items.push({ outlet: '', title: '', summary: '', href: '', date: '' });
+ }
 
 	function removeItem(index: number) {
 		const item = items[index];
@@ -103,19 +103,30 @@
 		{#each items as item, i (i)}
 			<div class="space-y-2 rounded-lg border border-form-border p-3">
 				<input
+					bind:value={item.outlet}
+					placeholder="Outlet / Venue (e.g. The New York Times)"
+					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
+				/>
+				<input
 					bind:value={item.title}
-					placeholder="Title"
+					placeholder="Piece title"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<textarea
 					bind:value={item.summary}
-					placeholder="Summary"
+					placeholder="Description"
 					rows="3"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				></textarea>
 				<input
 					bind:value={item.href}
 					placeholder="URL (e.g. https://...)"
+					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
+				/>
+				<input
+					type="date"
+					bind:value={item.date}
+					placeholder="Date (optional)"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 

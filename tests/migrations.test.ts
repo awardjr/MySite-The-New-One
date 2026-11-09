@@ -53,7 +53,7 @@ describe('runMigrations', () => {
 		runMigrations(db);
 
 		const applied = db.prepare('SELECT name FROM migrations').all();
-		expect(applied).toHaveLength(10);
+		expect(applied).toHaveLength(12);
 	});
 
 	it('does not fail or duplicate data on repeated runs', () => {

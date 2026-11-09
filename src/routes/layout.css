@@ -9,13 +9,7 @@
 	--font-sans: 'Raleway Variable', sans-serif;
 }
 
-html {
-	scrollbar-gutter: stable;
-}
 
-/* Card surface shared by every page. Depth comes from the per-theme
-   --theme-card-shadow tokens because Tailwind's default shadows are invisible
-   on dark backgrounds. */
 @utility card {
 	border: 1px solid var(--color-card-border);
 	border-radius: var(--radius-2xl);
@@ -23,8 +17,6 @@ html {
 	box-shadow: var(--theme-card-shadow);
 }
 
-/* Add to cards that are clickable as a whole. Static cards stay still so the
-   lift only ever signals "this goes somewhere". */
 @utility card-interactive {
 	transition-property: translate, box-shadow, border-color, background-color, color;
 	transition-duration: 200ms;
@@ -58,7 +50,6 @@ html {
 	}
 }
 
-/* Non-card panels that still use Tailwind's shadow-sm get the themed depth too. */
 :root.dark .shadow-sm,
 :root.hotdog .shadow-sm {
 	box-shadow: var(--theme-card-shadow);

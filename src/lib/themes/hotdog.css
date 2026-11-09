@@ -11,8 +11,9 @@
 
 	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-yellow-400);
-	--theme-footer: var(--color-red-900);
-	--theme-header: var(--color-red-900);
+	--theme-footer: var(--color-red-950);
+	--theme-header: var(--color-red-950);
+	--theme-nav-text: var(--color-yellow-100);
 	--theme-nav-decoration: var(--color-yellow-500);
 	--theme-nav-decoration-dim: color-mix(in oklab, var(--color-yellow-400), black 15%);
 	--theme-nav-hover: var(--color-yellow-500);

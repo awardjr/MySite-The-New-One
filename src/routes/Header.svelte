@@ -109,14 +109,16 @@
 
 <svelte:window onresize={updateUnderline} />
 
-<header class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header">
+<header
+	class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header"
+>
 	<div class="mx-auto flex h-16 max-w-7/10 items-center justify-between px-4">
 		{#if isAdmin}
 			<div class="flex items-center gap-3 lg:gap-4">
 				<a
 					href={resolve('/')}
 					onclick={closeMobileMenu}
-					class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+					class="inline-flex items-center gap-1.5 rounded-lg border border-menu-border px-3 py-1.5 text-xs sm:text-sm font-medium text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 					><span aria-hidden="true">←</span> Back to site</a
 				>
 
@@ -128,7 +130,7 @@
 								href={item.href}
 								class="rounded-lg px-2.5 py-1.5 text-xl transition-colors {isActive
 									? 'bg-nav-active font-semibold text-heading'
-									: 'text-muted hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
+									: 'text-nav-text hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
 							>
 								{item.label}
 							</a>
@@ -142,7 +144,7 @@
 					<form method="POST" action={resolve('admin/logout')} class="hidden sm:block">
 						<button
 							type="submit"
-							class="rounded-lg border border-card-border px-3 py-1.5 text-xs sm:text-sm text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+							class="rounded-lg border border-menu-border px-3 py-1.5 text-xs sm:text-sm text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 						>
 							Log out
 						</button>
@@ -208,7 +210,7 @@
 							onblur={() => (hoveredIndex = null)}
 							class="pb-1 text-xl transition-colors {isActive
 								? 'font-semibold text-heading'
-								: 'text-muted hover:text-nav-hover'}"
+								: 'text-nav-text hover:text-nav-hover'}"
 						>
 							{item.label}
 						</a>
@@ -280,7 +282,7 @@
 					<a
 						href={resolve('/')}
 						onclick={closeMobileMenu}
-						class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+						class="inline-flex items-center gap-1.5 rounded-lg border border-menu-border px-3 py-2 text-sm font-medium text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 						><span aria-hidden="true">←</span> Back to site</a
 					>
 
@@ -292,7 +294,7 @@
 								onclick={closeMobileMenu}
 								class="rounded-lg px-3 py-2 text-sm transition-colors {isActive
 									? 'bg-nav-active font-semibold text-heading'
-									: 'text-muted hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
+									: 'text-nav-text hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
 							>
 								{item.label}
 							</a>
@@ -300,11 +302,11 @@
 						<form
 							method="POST"
 							action={resolve('admin/logout')}
-							class="pt-2 border-t border-card-border"
+							class="pt-2 border-t border-chrome-border"
 						>
 							<button
 								type="submit"
-								class="w-full rounded-lg border border-card-border px-3 py-2 text-left text-sm text-muted transition-colors hover:bg-nav-surface-hover hover:text-heading"
+								class="w-full rounded-lg border border-menu-border px-3 py-2 text-left text-sm text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 							>
 								Log out
 							</button>
@@ -322,7 +324,7 @@
 							onclick={closeMobileMenu}
 							class="rounded px-2 py-1.5 text-sm transition-colors {isActive
 								? 'bg-nav-active font-semibold text-heading'
-								: 'text-muted hover:bg-nav-surface-hover hover:text-nav-hover'}"
+								: 'text-nav-text hover:bg-nav-surface-hover hover:text-nav-hover'}"
 						>
 							{item.label}
 						</a>

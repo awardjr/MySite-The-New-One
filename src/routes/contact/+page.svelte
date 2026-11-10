@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { fly } from 'svelte/transition';
 	import Fa from 'svelte-fa';
 	import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import { getIcon } from '#lib/icons.js';
@@ -17,6 +18,8 @@
 		twitch: '#9146ff',
 		youtube: '#e11d48'
 	};
+
+	let hoveredIndex: number | null = $state(null);
 </script>
 
 <svelte:head>
@@ -30,13 +33,18 @@
 		<p class="text-base text-muted">{subtitle}</p>
 	</div>
 
-	<div class="mt-8 flex w-full flex-col gap-3 md:max-w-xl">
+	<div class="mt-8 flex w-full flex-col gap-3 lg:flex-row lg:items-start">
+		<div
+			class="flex w-full flex-col gap-3 lg:w-3/5"
+			onmouseleave={() => (hoveredIndex = null)}
+		>
 		{#each links as link, i (i)}
 			<a
 				href={link.href}
 				target={link.href.startsWith('http') ? '_blank' : undefined}
 				rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
 				style:--link-color={iconColors[link.icon] ?? iconColors.link}
+				onmouseenter={() => (hoveredIndex = i)}
 				class="group card card-interactive flex items-center gap-3 px-4 py-3 text-card-label hover:border-transparent hover:bg-(--link-color) hover:text-white"
 			>
 				<span
@@ -52,5 +60,21 @@
 				</span>
 			</a>
 		{/each}
+		</div>
+
+		<!-- Hover description panel - desktop only -->
+		<div class="hidden w-0 lg:block lg:w-2/5 lg:pl-8">
+			{#if hoveredIndex !== null && links[hoveredIndex]?.description}
+				<div
+					transition:fly={{ duration: 200, x: -40, y: 0 }}
+					style:--link-color={iconColors[links[hoveredIndex].icon] ?? iconColors.link}
+					class="sticky top-24 rounded-xl border border-transparent bg-(--link-color) p-6 text-white shadow-md transition-colors duration-200"
+				>
+					<p class="text-base leading-relaxed">
+						{links[hoveredIndex].description}
+					</p>
+				</div>
+			{/if}
+		</div>
 	</div>
 </section>

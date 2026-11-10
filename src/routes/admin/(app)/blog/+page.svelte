@@ -3,12 +3,21 @@
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 
 	let { data, form }: PageProps = $props();
 
 	let headline = $state(untrack(() => data.headline));
 	let subtitle = $state(untrack(() => data.subtitle));
 	let deletingSlug = $state<string | null>(null);
+
+	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
+
+
+
+	function clearSaved() {
+		showSavedHeadline = false;
+	}
 </script>
 
 <svelte:head>
@@ -34,6 +43,7 @@
 			id="headline"
 			name="headline"
 			bind:value={headline}
+			oninput={clearSaved}
 			placeholder="Blog"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -45,6 +55,7 @@
 			id="subtitle"
 			name="subtitle"
 			bind:value={subtitle}
+			oninput={clearSaved}
 			placeholder="Short description"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -64,8 +75,8 @@
 
 {#if form?.headlineError}
 	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if form?.headlineSuccess}
-	<p class="mt-2 text-sm text-success">Saved.</p>
+{:else if showSavedHeadline}
+	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
 {/if}
 
 <div class="mt-6 flex items-center justify-between">

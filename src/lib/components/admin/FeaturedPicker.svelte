@@ -1,5 +1,9 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
+
 	type Option = { id: string; title: string; image?: string; note?: string };
+
+	const dispatch = createEventDispatcher();
 
 	let {
 		label,
@@ -24,6 +28,7 @@
 
 	function toggle(id: string) {
 		selected = selected.includes(id) ? selected.filter((s) => s !== id) : [...selected, id];
+		dispatch('change');
 	}
 
 	function onWindowClick(e: MouseEvent) {

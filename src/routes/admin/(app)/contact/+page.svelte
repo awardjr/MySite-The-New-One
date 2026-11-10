@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import { iconOptions } from '#lib/icons.js';
 	import type { PageProps } from './$types';
@@ -13,8 +14,20 @@
 	let saving = $state(false);
 	let savingHeadline = $state(false);
 
+	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
+	let showSaved = $derived(!!(form && form.success));
+
+
+
+
+
+	function clearSaved() {
+		showSavedHeadline = false;
+		showSaved = false;
+	}
+
 	function addLink() {
-		links.push({ label: '', href: 'https://', icon: 'link' });
+		links.push({ label: '', href: 'https://', icon: 'link', description: '' });
 	}
 
 	function removeLink(index: number) {
@@ -49,6 +62,7 @@
 			id="headline"
 			name="headline"
 			bind:value={headline}
+			oninput={clearSaved}
 			placeholder="Contact"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -60,6 +74,7 @@
 			id="subtitle"
 			name="subtitle"
 			bind:value={subtitle}
+			oninput={clearSaved}
 			placeholder="Short description"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -80,8 +95,8 @@
 
 {#if form?.headlineError}
 	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if form?.headlineSuccess}
-	<p class="mt-2 text-sm text-success">Saved.</p>
+{:else if showSavedHeadline}
+	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
 {/if}
 
 <form
@@ -105,16 +120,19 @@
 			>
 				<input
 					bind:value={link.label}
+					oninput={clearSaved}
 					placeholder="Label (e.g. LinkedIn)"
 					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<input
 					bind:value={link.href}
+					oninput={clearSaved}
 					placeholder="URL (e.g. https://... or mailto:you@example.com)"
 					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<select
 					bind:value={link.icon}
+					onchange={clearSaved}
 					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				>
 					{#each iconOptions as iconKey (iconKey)}
@@ -128,6 +146,13 @@
 				>
 					Remove
 				</button>
+				<textarea
+					bind:value={link.description}
+					oninput={clearSaved}
+					placeholder="Description shown on hover"
+					rows="2"
+					class="col-span-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
+				></textarea>
 			</div>
 		{/each}
 	</div>
@@ -142,8 +167,8 @@
 
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
-	{:else if form?.success}
-		<p class="text-sm text-success">Saved.</p>
+	{:else if showSaved}
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
 	{/if}
 
 	<div>

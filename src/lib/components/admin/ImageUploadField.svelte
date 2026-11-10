@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher();
+
 	let {
 		value = $bindable(''),
 		label = 'Image',
@@ -16,6 +20,13 @@
 	let uploading = $state(false);
 	let error = $state('');
 	let fileInput: HTMLInputElement | undefined = $state();
+
+	$effect(() => {
+		// Re-run when value changes to dispatch change event
+		return () => {
+			dispatch('change');
+		};
+	});
 
 	async function handleFileChange(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;

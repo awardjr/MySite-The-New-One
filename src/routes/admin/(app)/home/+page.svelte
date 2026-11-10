@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import FeaturedPicker from '#lib/components/admin/FeaturedPicker.svelte';
@@ -18,6 +19,18 @@
 
 	let saving = $state(false);
 	let savingHeadline = $state(false);
+
+	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
+	let showSaved = $derived(!!(form && form.success));
+
+
+
+
+
+	function clearSaved() {
+		showSavedHeadline = false;
+		showSaved = false;
+	}
 </script>
 
 <svelte:head>
@@ -47,6 +60,7 @@
 			id="headline"
 			name="headline"
 			bind:value={headline}
+			oninput={clearSaved}
 			placeholder="Hi, I'm"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -68,8 +82,8 @@
 
 {#if form?.headlineError}
 	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if form?.headlineSuccess}
-	<p class="mt-2 text-sm text-success">Saved.</p>
+{:else if showSavedHeadline}
+	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
 {/if}
 
 <form
@@ -90,6 +104,7 @@
 			id="name"
 			name="name"
 			bind:value={name}
+			oninput={clearSaved}
 			required
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -102,6 +117,7 @@
 			id="tagline"
 			name="tagline"
 			bind:value={tagline}
+			oninput={clearSaved}
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
 	</div>
@@ -113,6 +129,7 @@
 			label="Photo"
 			placeholder="/profile.jpg (put the file in static/, or upload below) or a full URL"
 			bind:value={photoSrc}
+			on:change={clearSaved}
 		/>
 		<p class="text-xs text-form-hint">Leave empty to show the initials placeholder instead.</p>
 	</div>
@@ -125,6 +142,7 @@
 			id="introParagraphs"
 			name="introParagraphs"
 			bind:value={introParagraphs}
+			oninput={clearSaved}
 			rows="8"
 			class="w-full rounded-lg border border-field-border px-3 py-2 font-mono text-sm bg-field text-field-text"
 		></textarea>
@@ -140,6 +158,7 @@
 			note: p.draft ? ' (draft)' : ''
 		}))}
 		bind:selected={featuredPosts}
+		on:change={clearSaved}
 		emptyText="No posts yet."
 	/>
 
@@ -148,13 +167,14 @@
 		name="featuredWorks"
 		options={data.works.map((w) => ({ id: w.id, title: w.title, image: w.image }))}
 		bind:selected={featuredWorks}
+		on:change={clearSaved}
 		emptyText="No works yet."
 	/>
 
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
-	{:else if form?.success}
-		<p class="text-sm text-success">Saved.</p>
+	{:else if showSaved}
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
 	{/if}
 
 	<button

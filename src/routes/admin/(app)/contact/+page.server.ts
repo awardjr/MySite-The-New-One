@@ -23,7 +23,8 @@ export const actions: Actions = {
 			.map((item) => ({
 				label: text(item.label),
 				href: safeUrl(item.href),
-				icon: text(item.icon ?? 'link')
+				icon: text(item.icon ?? 'link'),
+				description: text(item.description ?? '')
 			}))
 			.filter((link) => link.label && link.href);
 

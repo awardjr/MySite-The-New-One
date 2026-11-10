@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import type { PageProps } from './$types';
@@ -12,6 +13,18 @@
 	let subtitle = $state(untrack(() => data.subtitle));
 	let saving = $state(false);
 	let savingHeadline = $state(false);
+
+	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
+	let showSaved = $derived(!!(form && form.success));
+
+
+
+
+
+	function clearSaved() {
+		showSavedHeadline = false;
+		showSaved = false;
+	}
 
 	function addMachine() {
 		machines.push({ name: '', image: '', highScore: '', modeScores: [] });
@@ -61,6 +74,7 @@
 			id="headline"
 			name="headline"
 			bind:value={headline}
+			oninput={clearSaved}
 			placeholder="Pinball"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -72,6 +86,7 @@
 			id="subtitle"
 			name="subtitle"
 			bind:value={subtitle}
+			oninput={clearSaved}
 			placeholder="Short description"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -92,8 +107,8 @@
 
 {#if form?.headlineError}
 	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if form?.headlineSuccess}
-	<p class="mt-2 text-sm text-success">Saved.</p>
+{:else if showSavedHeadline}
+	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
 {/if}
 
 <form
@@ -115,12 +130,14 @@
 			<div class="space-y-2 rounded-lg border border-form-border p-3">
 				<input
 					bind:value={machine.name}
+					oninput={clearSaved}
 					placeholder="Machine name"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
-				<ImageUploadField label={null} placeholder="Image URL / path" bind:value={machine.image} />
+    <ImageUploadField label={null} placeholder="Image URL / path" bind:value={machine.image} on:change={clearSaved} />
 				<input
 					bind:value={machine.highScore}
+					oninput={clearSaved}
 					placeholder="High score (e.g. 000,000,000)"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
@@ -131,11 +148,13 @@
 						<div class="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
 							<input
 								bind:value={modeScore.mode}
+								oninput={clearSaved}
 								placeholder="Mode (e.g. Mode A)"
 								class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 							/>
 							<input
 								bind:value={modeScore.score}
+								oninput={clearSaved}
 								placeholder="Score (e.g. 000,000)"
 								class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 							/>
@@ -178,8 +197,8 @@
 
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
-	{:else if form?.success}
-		<p class="text-sm text-success">Saved.</p>
+	{:else if showSaved}
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
 	{/if}
 
 	<div>

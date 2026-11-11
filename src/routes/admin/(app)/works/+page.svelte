@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import type { PageProps } from './$types';
@@ -23,6 +24,18 @@
 	let subtitle = $state(untrack(() => data.subtitle));
 	let saving = $state(false);
 	let savingHeadline = $state(false);
+
+	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
+	let showSaved = $derived(!!(form && form.success));
+
+
+
+
+
+	function clearSaved() {
+		showSavedHeadline = false;
+		showSaved = false;
+	}
 
 	function addItem() {
 		items.push({ id: '', title: '', description: '', image: '', link: '', platforms: [] });
@@ -73,6 +86,7 @@
 			id="headline"
 			name="headline"
 			bind:value={headline}
+			oninput={clearSaved}
 			placeholder="Works"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -84,6 +98,7 @@
 			id="subtitle"
 			name="subtitle"
 			bind:value={subtitle}
+			oninput={clearSaved}
 			placeholder="Short description"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -104,8 +119,8 @@
 
 {#if form?.headlineError}
 	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if form?.headlineSuccess}
-	<p class="mt-2 text-sm text-success">Saved.</p>
+{:else if showSavedHeadline}
+	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
 {/if}
 
 <form
@@ -127,22 +142,25 @@
 			<div class="space-y-2 rounded-lg border border-form-border p-3">
 				<input
 					bind:value={item.title}
+					oninput={clearSaved}
 					placeholder="Title"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<textarea
 					bind:value={item.description}
+					oninput={clearSaved}
 					placeholder="Description"
 					rows="3"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				></textarea>
 				<input
 					bind:value={item.link}
+					oninput={clearSaved}
 					placeholder="Link URL (optional)"
 					type="url"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
-				<ImageUploadField label={null} placeholder="Image URL / path" bind:value={item.image} />
+    <ImageUploadField label={null} placeholder="Image URL / path" bind:value={item.image} on:change={clearSaved} />
 
 				<div class="flex flex-wrap gap-3 pt-1">
 					{#each platformOptions as platform (platform.key)}
@@ -150,7 +168,7 @@
 							<input
 								type="checkbox"
 								checked={item.platforms.includes(platform.key)}
-								onchange={(e) => togglePlatform(item, platform.key, e.currentTarget.checked)}
+								onchange={(e) => { togglePlatform(item, platform.key, e.currentTarget.checked); clearSaved(); }}
 								class="rounded border-field-border"
 							/>
 							{platform.label}
@@ -179,8 +197,8 @@
 
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
-	{:else if form?.success}
-		<p class="text-sm text-success">Saved.</p>
+	{:else if showSaved}
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
 	{/if}
 
 	<div>

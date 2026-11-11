@@ -113,7 +113,7 @@
 <header
 	class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header"
 >
-	<div class="mx-auto flex h-16 max-w-7/10 items-center justify-between px-4">
+	<div class="mx-auto flex h-16 max-w-7/10 max-lg:max-w-none items-center justify-between px-4">
 		{#if isAdmin}
 			<!-- Burger menu - left on mobile, hidden on desktop -->
 			{#if !isAuthPage}

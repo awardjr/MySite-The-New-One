@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import type { PageProps } from './$types';
 	import type { PressItem } from '#lib/server/content.js';
@@ -11,6 +12,18 @@
 	let subtitle = $state(untrack(() => data.subtitle));
 	let saving = $state(false);
 	let savingHeadline = $state(false);
+
+	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
+	let showSaved = $derived(!!(form && form.success));
+
+
+
+
+
+	function clearSaved() {
+		showSavedHeadline = false;
+		showSaved = false;
+	}
 
   function addItem() {
  	 items.push({ outlet: '', title: '', summary: '', href: '', date: '' });
@@ -50,6 +63,7 @@
 			id="headline"
 			name="headline"
 			bind:value={headline}
+			oninput={clearSaved}
 			placeholder="Press"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -61,6 +75,7 @@
 			id="subtitle"
 			name="subtitle"
 			bind:value={subtitle}
+			oninput={clearSaved}
 			placeholder="Short description"
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
@@ -81,8 +96,8 @@
 
 {#if form?.headlineError}
 	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if form?.headlineSuccess}
-	<p class="mt-2 text-sm text-success">Saved.</p>
+{:else if showSavedHeadline}
+	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
 {/if}
 
 <form
@@ -104,28 +119,33 @@
 			<div class="space-y-2 rounded-lg border border-form-border p-3">
 				<input
 					bind:value={item.outlet}
+					oninput={clearSaved}
 					placeholder="Outlet / Venue (e.g. The New York Times)"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<input
 					bind:value={item.title}
+					oninput={clearSaved}
 					placeholder="Piece title"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<textarea
 					bind:value={item.summary}
+					oninput={clearSaved}
 					placeholder="Description"
 					rows="3"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				></textarea>
 				<input
 					bind:value={item.href}
+					oninput={clearSaved}
 					placeholder="URL (e.g. https://...)"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
 				<input
 					type="date"
 					bind:value={item.date}
+					onchange={clearSaved}
 					placeholder="Date (optional)"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
@@ -151,8 +171,8 @@
 
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
-	{:else if form?.success}
-		<p class="text-sm text-success">Saved.</p>
+	{:else if showSaved}
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
 	{/if}
 
 	<div>

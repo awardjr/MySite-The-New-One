@@ -20,22 +20,12 @@ const insertContactLinkStmt = db.prepare(
 );
 
 export function getContact(): ContactContent {
-	const rows = getContactLinksStmt.all() as { label: string; href: string; icon: string; description: string }[];
-	return {
-		links: rows.map((row) => ({
-			label: row.label ?? '',
-			href: row.href ?? '',
-			icon: row.icon ?? '',
-			description: row.description ?? ''
-		}))
-	};
+	return { links: getContactLinksStmt.all() as ContactLink[] };
 }
 
 export function setContact(value: ContactContent): void {
 	deleteContactLinksStmt.run();
-	const links = value.links ?? [];
-	for (let i = 0; i < links.length; i++) {
-		const link = links[i];
+	value.links.forEach((link, i) => {
 		insertContactLinkStmt.run(link.label, link.href, link.icon, link.description, i);
-	}
+	});
 }

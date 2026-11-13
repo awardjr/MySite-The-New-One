@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { applyAction, enhance, type SubmitFunction } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -8,10 +9,16 @@
 	let submitting = $state(false);
 	let twoFactor = $derived(form?.twoFactor ?? data.twoFactor);
 
-	const submitHandler = () => {
+	const submitHandler: SubmitFunction = () => {
 		submitting = true;
-		return async ({ update }: { update: () => Promise<void> }) => {
-			await update();
+		return async ({ result, update }) => {
+			if (result.type === 'success' && result.data?.newRecoveryKey) {
+				// Signed in with a recovery code: show its replacement instead of reloading the page,
+				// which would redirect straight to the dashboard now that a session exists.
+				await applyAction(result);
+			} else {
+				await update();
+			}
 			submitting = false;
 		};
 	};
@@ -23,7 +30,29 @@
 
 <section class="mx-auto flex max-w-sm flex-col justify-center py-16">
 	<h1 class="text-2xl font-bold tracking-tight text-heading">Admin Login</h1>
-	{#if twoFactor}
+	{#if form?.newRecoveryKey}
+		<p class="mt-1 text-sm text-muted">
+			You are signed in. The recovery code you used no longer works.
+		</p>
+
+		<RecoveryKeyCard
+			recoveryKey={form.newRecoveryKey}
+			title="New Emergency Recovery Code"
+			class="mt-6"
+		>
+			Save this code somewhere safe now. It won't be shown again, and it replaces the one you just
+			used.
+		</RecoveryKeyCard>
+
+		<!-- A full page load, so the new session is picked up. -->
+		<a
+			href={form.continueTo ?? resolve('admin')}
+			data-sveltekit-reload
+			class="mt-6 inline-block w-full rounded-lg bg-primary px-4 py-2 text-center font-medium text-primary-text transition-colors hover:bg-primary-hover"
+		>
+			Continue to Admin Dashboard
+		</a>
+	{:else if twoFactor}
 		<p class="mt-1 text-sm text-muted">
 			Enter the 6-digit code from your authenticator app, or your emergency recovery code.
 		</p>
@@ -70,6 +99,10 @@
 		</form>
 	{:else}
 		<p class="mt-1 text-sm text-muted">Sign in to edit this site</p>
+
+		{#if data.passwordReset && !form}
+			<p class="mt-4 text-sm text-success">Your password was updated. Sign in with the new one.</p>
+		{/if}
 
 		<form method="POST" class="mt-6 space-y-4" use:enhance={submitHandler}>
 			<div class="space-y-1">

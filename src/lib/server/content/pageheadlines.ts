@@ -15,7 +15,7 @@ const getPageHeadlinesStmt = db.prepare(
 );
 const upsertPageHeadlineStmt = db.prepare(`
 	INSERT INTO page_headlines (page, headline, subtitle)
-	VALUES (?, ?, ?)
+	VALUES (@page, @headline, @subtitle)
 	ON CONFLICT(page) DO UPDATE SET
 		headline = excluded.headline,
 		subtitle = excluded.subtitle
@@ -23,39 +23,17 @@ const upsertPageHeadlineStmt = db.prepare(`
 const deletePageHeadlinesStmt = db.prepare('DELETE FROM page_headlines');
 
 export function getPageHeadlines(): PageHeadlinesContent {
-	const rows = getPageHeadlinesStmt.all() as { page: string; headline: string; subtitle: string }[];
-	const items = rows.map((row) => ({
-		page: row.page,
-		headline: row.headline ?? '',
-		subtitle: row.subtitle ?? ''
-	}));
-
-	return { items };
+	return { items: getPageHeadlinesStmt.all() as PageHeadline[] };
 }
 
 export function setPageHeadlines(value: PageHeadlinesContent): void {
 	deletePageHeadlinesStmt.run();
 	for (const item of value.items) {
-		upsertPageHeadlineStmt.run(item.page, item.headline, item.subtitle);
+		upsertPageHeadlineStmt.run(item);
 	}
 }
 
-/** Insert or replace the headline/subtitle for a single page, keeping the other pages. */
-export function saveHeadlineForPage(page: string, headline: string, subtitle: string): void {
-	const all = getPageHeadlines();
-	const entry = { page, headline, subtitle };
-	const index = all.items.findIndex((item) => item.page === page);
-	if (index >= 0) {
-		all.items[index] = entry;
-	} else {
-		all.items.push(entry);
-	}
-	setPageHeadlines(all);
-}
-
-/** Convenience: get the headline/subtitle for a single page (empty if none saved). */
-export function getHeadlineForPage(page: string): { headline: string; subtitle: string } {
-	const all = getPageHeadlines();
-	const found = all.items.find((item) => item.page === page);
-	return { headline: found?.headline ?? '', subtitle: found?.subtitle ?? '' };
+/** Inserts or replaces the headline/subtitle for a single page, leaving the other pages alone. */
+export function upsertPageHeadline(item: PageHeadline): void {
+	upsertPageHeadlineStmt.run(item);
 }

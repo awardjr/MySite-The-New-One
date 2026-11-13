@@ -1,26 +1,35 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
-	createSession,
+	createAdmin,
 	generateRecoveryKey,
 	isAdminConfigured,
-	sessionCookieOptions,
-	SESSION_COOKIE_NAME,
-	setAdminCredentials
+	isValidEmail,
+	safeEqual,
+	startSession,
+	validateNewPassword
 } from '#lib/server/auth.js';
+import { raw, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
-const MIN_PASSWORD_LENGTH = 8;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/**
+ * Optional `SETUP_TOKEN` environment variable. When set, the setup form also asks for it, so
+ * whoever reaches a freshly deployed site first can't claim the admin account.
+ */
+function requiredSetupToken(): string | null {
+	return process.env.SETUP_TOKEN || null;
+}
 
-export const load: PageServerLoad = ({ locals }) => {
-	// Setup is only for a brand-new database with no admin account yet.
-	if (isAdminConfigured()) {
+export const load: PageServerLoad = ({ locals, request }) => {
+	// Setup is only for a brand-new database with no admin account yet. The exception is the
+	// form post that has just created the account: its response must render this page once more
+	// to show the recovery code, so only page views are redirected.
+	if (isAdminConfigured() && request.method !== 'POST') {
 		if (locals.isAdmin) {
 			redirect(303, '/admin');
 		}
 		redirect(303, '/admin/login');
 	}
-	return {};
+	return { setupTokenRequired: requiredSetupToken() !== null };
 };
 
 export const actions: Actions = {
@@ -30,46 +39,35 @@ export const actions: Actions = {
 		}
 
 		const formData = await request.formData();
-		const username = String(formData.get('username') ?? '').trim();
-		const email = String(formData.get('email') ?? '').trim();
-		const password = String(formData.get('password') ?? '');
-		const confirmPassword = String(formData.get('confirmPassword') ?? '');
+		const username = text(formData.get('username'));
+		const email = text(formData.get('email'));
+		const password = raw(formData, 'password');
+		const invalid = (error: string) => fail(400, { username, email, error });
+
+		const setupToken = requiredSetupToken();
+		if (setupToken !== null && !safeEqual(raw(formData, 'setupToken').trim(), setupToken)) {
+			return invalid('The setup token is incorrect.');
+		}
 
 		if (!username) {
-			return fail(400, {
-				username,
-				email,
-				error: 'Username is required.'
-			});
+			return invalid('Username is required.');
 		}
 
-		if (!email || !EMAIL_REGEX.test(email)) {
-			return fail(400, {
-				username,
-				email,
-				error: 'A valid email address is required.'
-			});
+		if (!email || !isValidEmail(email)) {
+			return invalid('A valid email address is required.');
 		}
 
-		if (password.length < MIN_PASSWORD_LENGTH) {
-			return fail(400, {
-				username,
-				email,
-				error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`
-			});
-		}
-
-		if (password !== confirmPassword) {
-			return fail(400, {
-				username,
-				email,
-				error: 'Passwords do not match.'
-			});
+		const passwordError = validateNewPassword(password, raw(formData, 'confirmPassword'));
+		if (passwordError) {
+			return invalid(passwordError);
 		}
 
 		const recoveryKey = generateRecoveryKey();
-		setAdminCredentials(username, email, password, recoveryKey);
-		cookies.set(SESSION_COOKIE_NAME, createSession(), sessionCookieOptions);
+		if (!(await createAdmin(username, email, password, recoveryKey))) {
+			// Another request finished setup first.
+			redirect(303, '/admin/login');
+		}
+		startSession(cookies);
 
 		return {
 			success: true,

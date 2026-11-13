@@ -1,23 +1,12 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
-	import { untrack } from 'svelte';
-	import { fade } from 'svelte/transition';
 
 	let { data, form }: PageProps = $props();
 
-	let headline = $state(untrack(() => data.headline));
-	let subtitle = $state(untrack(() => data.subtitle));
 	let deletingSlug = $state<string | null>(null);
-
-	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
-
-
-
-	function clearSaved() {
-		showSavedHeadline = false;
-	}
 </script>
 
 <svelte:head>
@@ -25,59 +14,16 @@
 </svelte:head>
 
 <h1 class="text-2xl font-bold tracking-tight text-heading">Blog Posts</h1>
-<p class="mt-1 text-sm text-muted">Edit the page headline, subtitle, and posts shown on the public blog.</p>
+<p class="mt-1 text-sm text-muted">
+	Edit the page headline, subtitle, and posts shown on the public blog.
+</p>
 
-<form
-	method="POST"
-	action="?/saveHeadline"
-	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
-	use:enhance={() => {
-		return async ({ update }) => {
-			await update({ reset: false });
-		};
-	}}
->
-	<div class="space-y-1">
-		<label for="headline" class="text-sm font-medium text-field-label">Page headline</label>
-		<input
-			id="headline"
-			name="headline"
-			bind:value={headline}
-			oninput={clearSaved}
-			placeholder="Blog"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
-	</div>
-
-	<div class="space-y-1">
-		<label for="subtitle" class="text-sm font-medium text-field-label">Page subtitle</label>
-		<input
-			id="subtitle"
-			name="subtitle"
-			bind:value={subtitle}
-			oninput={clearSaved}
-			placeholder="Short description"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
-	</div>
-
-	<div>
-		<button
-			type="submit"
-			name="action"
-			value="saveHeadline"
-			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
-		>
-			Save changes
-		</button>
-	</div>
-</form>
-
-{#if form?.headlineError}
-	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if showSavedHeadline}
-	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
-{/if}
+<HeadlineForm
+	headline={data.headline}
+	subtitle={data.subtitle}
+	saved={!!form?.headlineSuccess}
+	headlinePlaceholder="Blog"
+/>
 
 <div class="mt-6 flex items-center justify-between">
 	<div>

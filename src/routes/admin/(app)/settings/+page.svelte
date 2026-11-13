@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -16,19 +17,6 @@
 			savingTwoFactor = false;
 		};
 	};
-	let copied = $state(false);
-
-	async function copyRecoveryKey(key: string) {
-		try {
-			await navigator.clipboard.writeText(key);
-			copied = true;
-			setTimeout(() => {
-				copied = false;
-			}, 2000);
-		} catch {
-			// Clipboard API not available
-		}
-	}
 </script>
 
 <svelte:head>
@@ -46,6 +34,7 @@
 		<h2 class="text-xl font-bold text-heading sm:text-2xl">Account Profile</h2>
 		<p class="mt-1.5 text-base text-muted">
 			Update your admin username and email address used for notifications and password recovery.
+			Because password reset links are sent to this address, changes need your current password.
 		</p>
 
 		<form
@@ -86,6 +75,40 @@
 						class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
 					/>
 				</div>
+			</div>
+
+			<div class="grid gap-5 sm:grid-cols-2">
+				<div class="space-y-2">
+					<label for="profileCurrentPassword" class="text-base font-medium text-field-label">
+						Current password (required to change your profile)
+					</label>
+					<input
+						id="profileCurrentPassword"
+						name="currentPassword"
+						type="password"
+						required
+						autocomplete="current-password"
+						class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
+					/>
+				</div>
+
+				{#if data.twoFactorEnabled}
+					<div class="space-y-2">
+						<label for="profileTwoFactorCode" class="text-base font-medium text-field-label">
+							Authentication or recovery code
+						</label>
+						<input
+							id="profileTwoFactorCode"
+							name="code"
+							type="text"
+							required
+							autocomplete="one-time-code"
+							spellcheck="false"
+							maxlength="32"
+							class="w-full rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
+						/>
+					</div>
+				{/if}
 			</div>
 
 			{#if form?.profileError}
@@ -218,29 +241,14 @@
 
 		{#if data.twoFactorEnabled}
 			{#if form?.twoFactorRecoveryKey}
-				<div class="card mt-6 p-5">
-					<div class="flex items-center justify-between">
-						<span class="text-sm font-bold uppercase tracking-wider text-card-meta">
-							Your Emergency Recovery Code
-						</span>
-						<button
-							type="button"
-							onclick={() => copyRecoveryKey(form?.twoFactorRecoveryKey ?? '')}
-							class="text-sm font-semibold text-card-action hover:text-card-heading transition-colors"
-						>
-							{copied ? 'Copied!' : 'Copy code'}
-						</button>
-					</div>
-					<p
-						class="mt-3 font-mono text-2xl font-bold tracking-widest text-card-heading selection:bg-nav-active"
-					>
-						{form.twoFactorRecoveryKey}
-					</p>
-					<p class="mt-3 text-base text-card-copy">
-						Save this code somewhere safe now. It won't be shown again, and it replaces any previous
-						recovery code. You can use it to sign in if you lose your authenticator.
-					</p>
-				</div>
+				<RecoveryKeyCard
+					recoveryKey={form.twoFactorRecoveryKey}
+					title="Your Emergency Recovery Code"
+					class="mt-6"
+				>
+					Save this code somewhere safe now. It won't be shown again, and it replaces any previous
+					recovery code. You can use it to sign in if you lose your authenticator.
+				</RecoveryKeyCard>
 			{/if}
 			<form
 				method="POST"
@@ -420,27 +428,14 @@
 		</p>
 
 		{#if form?.recoverySuccess && form.newRecoveryKey}
-			<div class="card my-6 p-5">
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-bold uppercase tracking-wider text-card-meta">
-						New Emergency Recovery Code
-					</span>
-					<button
-						type="button"
-						onclick={() => copyRecoveryKey(form?.newRecoveryKey ?? '')}
-						class="text-sm font-semibold text-card-action hover:text-card-heading transition-colors"
-					>
-						{copied ? 'Copied!' : 'Copy code'}
-					</button>
-				</div>
-				<p
-					class="mt-3 font-mono text-2xl font-bold tracking-widest text-card-heading selection:bg-nav-active"
-				>
-					{form.newRecoveryKey}
-				</p>
-			</div>
+			<RecoveryKeyCard
+				recoveryKey={form.newRecoveryKey}
+				title="New Emergency Recovery Code"
+				class="my-6"
+			/>
 			<p class="text-base font-medium text-success">
-				New recovery code generated. Previous recovery codes are now invalidated.
+				New recovery code generated. Save it now: it won't be shown again, and previous recovery
+				codes no longer work.
 			</p>
 		{/if}
 

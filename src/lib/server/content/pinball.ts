@@ -17,6 +17,9 @@ export type PinballContent = {
 	machines: PinballMachine[];
 };
 
+/** A machine as stored: the mode scores are a JSON string. */
+type PinballMachineRow = Omit<PinballMachine, 'modeScores'> & { modeScores: string };
+
 const getPinballMachinesStmt = db.prepare(
 	'SELECT name, image, high_score AS highScore, mode_scores AS modeScores FROM pinball_machines ORDER BY sort_order, id'
 );
@@ -26,17 +29,10 @@ const insertPinballMachineStmt = db.prepare(
 );
 
 export function getPinball(): PinballContent {
-	const rows = getPinballMachinesStmt.all() as {
-		name: string;
-		image: string;
-		highScore: string;
-		modeScores: string;
-	}[];
+	const rows = getPinballMachinesStmt.all() as PinballMachineRow[];
 	return {
 		machines: rows.map((row) => ({
-			name: row.name ?? '',
-			image: row.image ?? '',
-			highScore: row.highScore ?? '',
+			...row,
 			modeScores: parseJsonArray<ModeScore>(row.modeScores)
 		}))
 	};
@@ -44,15 +40,13 @@ export function getPinball(): PinballContent {
 
 export function setPinball(value: PinballContent): void {
 	deletePinballMachinesStmt.run();
-	const machines = value.machines ?? [];
-	for (let i = 0; i < machines.length; i++) {
-		const machine = machines[i];
+	value.machines.forEach((machine, i) => {
 		insertPinballMachineStmt.run(
 			machine.name,
-			machine.image ?? '',
-			machine.highScore ?? '',
-			JSON.stringify(machine.modeScores ?? []),
+			machine.image,
+			machine.highScore,
+			JSON.stringify(machine.modeScores),
 			i
 		);
-	}
+	});
 }

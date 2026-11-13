@@ -21,23 +21,12 @@ const insertPressItemStmt = db.prepare(
 );
 
 export function getPress(): PressContent {
-	const rows = getPressItemsStmt.all() as { outlet: string; title: string; summary: string; href: string; date: string }[];
-	return {
-		items: rows.map((row) => ({
-			outlet: row.outlet ?? '',
-			title: row.title ?? '',
-			summary: row.summary ?? '',
-			href: row.href ?? '',
-			date: row.date ?? ''
-		}))
-	};
+	return { items: getPressItemsStmt.all() as PressItem[] };
 }
 
 export function setPress(value: PressContent): void {
 	deletePressItemsStmt.run();
-	const items = value.items ?? [];
-	for (let i = 0; i < items.length; i++) {
-		const item = items[i];
+	value.items.forEach((item, i) => {
 		insertPressItemStmt.run(item.outlet, item.title, item.summary, item.href, item.date, i);
-	}
+	});
 }

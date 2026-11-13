@@ -4,31 +4,23 @@
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import FeaturedPicker from '#lib/components/admin/FeaturedPicker.svelte';
+	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
- let name = $state(untrack(() => data.home.name));
- let headline = $state(untrack(() => data.headline));
- let tagline = $state(untrack(() => data.home.tagline));
- let photoSrc = $state(untrack(() => data.home.photoSrc));
- let introParagraphs = $state(untrack(() => data.home.introParagraphs.join('\n\n')));
+	let name = $state(untrack(() => data.home.name));
+	let tagline = $state(untrack(() => data.home.tagline));
+	let photoSrc = $state(untrack(() => data.home.photoSrc));
+	let introParagraphs = $state(untrack(() => data.home.introParagraphs.join('\n\n')));
 
 	let featuredPosts = $state(untrack(() => [...data.home.featuredPosts]));
 	let featuredWorks = $state(untrack(() => [...data.home.featuredWorks]));
 
 	let saving = $state(false);
-	let savingHeadline = $state(false);
-
-	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
 	let showSaved = $derived(!!(form && form.success));
 
-
-
-
-
 	function clearSaved() {
-		showSavedHeadline = false;
 		showSaved = false;
 	}
 </script>
@@ -42,49 +34,14 @@
 	Edit the headline, photo, name, tagline, and intro text shown on the homepage.
 </p>
 
-<form
-	method="POST"
-	action="?/saveHeadline"
-	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
-	use:enhance={() => {
-		savingHeadline = true;
-		return async ({ update }) => {
-			await update({ reset: false });
-			savingHeadline = false;
-		};
-	}}
->
-	<div class="space-y-1">
-		<label for="headline" class="text-sm font-medium text-field-label">Homepage Greeting</label>
-		<input
-			id="headline"
-			name="headline"
-			bind:value={headline}
-			oninput={clearSaved}
-			placeholder="Hi, I'm"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
-		<p class="text-xs text-form-hint">Shown before your name on the homepage.</p>
-	</div>
-
-	<div>
-		<button
-			type="submit"
-			name="action"
-			value="saveHeadline"
-			disabled={savingHeadline}
-			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-		>
-			{savingHeadline ? 'Saving…' : 'Save changes'}
-		</button>
-	</div>
-</form>
-
-{#if form?.headlineError}
-	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if showSavedHeadline}
-	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
-{/if}
+<HeadlineForm
+	headline={data.headline}
+	saved={!!form?.headlineSuccess}
+	headlineLabel="Homepage Greeting"
+	headlinePlaceholder="Hi, I'm"
+	hint="Shown before your name on the homepage."
+	oninput={clearSaved}
+/>
 
 <form
 	method="POST"
@@ -108,7 +65,9 @@
 			required
 			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
 		/>
-		<p class="text-xs text-form-hint">This name is used any place we require name outside of custom content (for now)</p>
+		<p class="text-xs text-form-hint">
+			This name is used any place we require name outside of custom content (for now)
+		</p>
 	</div>
 
 	<div class="space-y-1">
@@ -129,7 +88,7 @@
 			label="Photo"
 			placeholder="/profile.jpg (put the file in static/, or upload below) or a full URL"
 			bind:value={photoSrc}
-			on:change={clearSaved}
+			onchange={clearSaved}
 		/>
 		<p class="text-xs text-form-hint">Leave empty to show the initials placeholder instead.</p>
 	</div>
@@ -158,7 +117,7 @@
 			note: p.draft ? ' (draft)' : ''
 		}))}
 		bind:selected={featuredPosts}
-		on:change={clearSaved}
+		onchange={clearSaved}
 		emptyText="No posts yet."
 	/>
 
@@ -167,14 +126,16 @@
 		name="featuredWorks"
 		options={data.works.map((w) => ({ id: w.id, title: w.title, image: w.image }))}
 		bind:selected={featuredWorks}
-		on:change={clearSaved}
+		onchange={clearSaved}
 		emptyText="No works yet."
 	/>
 
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
 	{:else if showSaved}
-		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">
+			Saved.
+		</p>
 	{/if}
 
 	<button

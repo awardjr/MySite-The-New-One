@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { readContent, updateSection, getHeadlineForPage } from '#lib/server/content.js';
+import { deletePost, readContent, getHeadlineForPage } from '#lib/server/content.js';
 import { saveHeadlineAction } from '#lib/server/headlineAction.js';
 import { text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -18,8 +18,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Missing post slug.' });
 		}
 
-		const posts = readContent().blog.posts.filter((post) => post.slug !== slug);
-		updateSection('blog', { posts });
+		deletePost(slug);
 
 		return { success: true };
 	},

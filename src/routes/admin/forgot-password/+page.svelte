@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -106,7 +107,27 @@
 				Enter the 16-character recovery code generated when your account was configured.
 			</p>
 
-			{#if !data.hasRecoveryKey}
+			{#if form?.passwordReset && form.newRecoveryKey}
+				<p class="mt-4 text-sm text-success">
+					Your password was updated. The recovery code you used no longer works.
+				</p>
+
+				<RecoveryKeyCard
+					recoveryKey={form.newRecoveryKey}
+					title="New Emergency Recovery Code"
+					class="mt-4"
+				>
+					Save this code somewhere safe now. It won't be shown again. If two-factor authentication
+					is on and you can't use your authenticator, enter this code when signing in.
+				</RecoveryKeyCard>
+
+				<a
+					href={resolve('admin/login')}
+					class="mt-4 inline-block w-full rounded-lg bg-primary px-4 py-2 text-center font-medium text-primary-text transition-colors hover:bg-primary-hover"
+				>
+					Continue to Sign In
+				</a>
+			{:else if !data.hasRecoveryKey}
 				<p class="mt-4 text-sm text-error">
 					No emergency recovery code is configured for this admin account.
 				</p>
@@ -175,7 +196,7 @@
 						disabled={resettingCode}
 						class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
 					>
-						{resettingCode ? 'Resetting password…' : 'Reset Password & Sign In'}
+						{resettingCode ? 'Resetting password…' : 'Reset Password'}
 					</button>
 				</form>
 			{/if}

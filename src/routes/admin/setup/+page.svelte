@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { applyAction, enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
-	let { form }: PageProps = $props();
+	let { data, form }: PageProps = $props();
 
 	let submitting = $state(false);
 	let copied = $state(false);
@@ -87,12 +87,36 @@
 			class="mt-6 space-y-4"
 			use:enhance={() => {
 				submitting = true;
-				return async ({ update }) => {
-					await update();
+				return async ({ result, update }) => {
+					if (result.type === 'success') {
+						// Show the recovery code without reloading the page data: now that the account
+						// exists, a reload would redirect away before the code could be read.
+						await applyAction(result);
+					} else {
+						await update();
+					}
 					submitting = false;
 				};
 			}}
 		>
+			{#if data.setupTokenRequired}
+				<div class="space-y-1">
+					<label for="setupToken" class="text-sm font-medium text-copy"> Setup token </label>
+					<input
+						id="setupToken"
+						name="setupToken"
+						type="password"
+						required
+						autocomplete="off"
+						class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					/>
+					<p class="text-xs text-muted">
+						The value of <code class="rounded bg-code px-1 py-0.5 font-mono">SETUP_TOKEN</code> in the
+						server environment.
+					</p>
+				</div>
+			{/if}
+
 			<div class="space-y-1">
 				<label for="username" class="text-sm font-medium text-copy"> Username </label>
 				<input

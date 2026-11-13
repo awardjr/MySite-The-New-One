@@ -33,7 +33,8 @@
 		{ href: resolve('admin/settings'), label: 'Settings' }
 	];
 
-	let isAdmin = $derived(
+	// Which navigation to show. This is about the URL only; access is enforced in hooks.server.ts.
+	let inAdminArea = $derived(
 		page.url.pathname === resolve('admin') || page.url.pathname.startsWith(`${resolve('admin')}/`)
 	);
 	let isAuthPage = $derived(
@@ -73,7 +74,7 @@
 
 	$effect(() => {
 		void underlineIndex;
-		void isAdmin;
+		void inAdminArea;
 		updateUnderline();
 	});
 
@@ -84,13 +85,10 @@
 	}
 
 	onMount(() => {
-		if (document.documentElement.classList.contains('hotdog')) {
-			theme = 'hotdog';
-		} else if (document.documentElement.classList.contains('light')) {
-			theme = 'light';
-		} else {
-			theme = 'dark';
-		}
+		// app.html applies the stored theme before first paint by adding a `dark` or `hotdog`
+		// class to <html>; the light theme is the absence of both.
+		const classes = document.documentElement.classList;
+		theme = classes.contains('hotdog') ? 'hotdog' : classes.contains('dark') ? 'dark' : 'light';
 	});
 
 	function toggleTheme() {
@@ -110,27 +108,50 @@
 
 <svelte:window onresize={updateUnderline} />
 
-<header
-	class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header"
->
+{#snippet themeToggle()}
+	<button
+		aria-label={theme === 'light'
+			? 'Switch to dark mode'
+			: theme === 'dark'
+				? 'Switch to hotdog stand mode'
+				: 'Switch to light mode'}
+		class="inline-flex h-9 items-center text-heading"
+		onclick={toggleTheme}
+		type="button"
+	>
+		{#if theme === 'dark'}
+			<Fa icon={faMoon} class="h-4 w-4" />
+		{:else if theme === 'hotdog'}
+			<Fa icon={faHotdog} class="h-4 w-4" />
+		{:else}
+			<Fa icon={faSun} class="h-4 w-4" />
+		{/if}
+	</button>
+{/snippet}
+
+{#snippet menuButton(label: string)}
+	<button
+		aria-expanded={isMobileMenuOpen}
+		aria-label={label}
+		class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover"
+		onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
+		type="button"
+	>
+		{#if isMobileMenuOpen}
+			<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
+		{:else}
+			<Fa icon={faBars} class="h-4 w-4" />
+		{/if}
+	</button>
+{/snippet}
+
+<header class="sticky top-0 z-50 w-full border-b border-chrome-border bg-header">
 	<div class="mx-auto flex h-16 max-w-7/10 max-lg:max-w-none items-center justify-between px-4">
-		{#if isAdmin}
+		{#if inAdminArea}
 			<!-- Burger menu - left on mobile, hidden on desktop -->
 			{#if !isAuthPage}
 				<div class="flex lg:hidden">
-					<button
-						aria-expanded={isMobileMenuOpen}
-						aria-label="Toggle admin navigation menu"
-						class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover"
-						onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
-						type="button"
-					>
-						{#if isMobileMenuOpen}
-							<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
-						{:else}
-							<Fa icon={faBars} class="h-4 w-4" />
-						{/if}
-					</button>
+					{@render menuButton('Toggle admin navigation menu')}
 				</div>
 			{/if}
 
@@ -173,41 +194,12 @@
 					</form>
 				{/if}
 
-				<button
-					aria-label={theme === 'light'
-						? 'Switch to dark mode'
-						: theme === 'dark'
-							? 'Switch to hotdog stand mode'
-							: 'Switch to light mode'}
-					class="inline-flex h-9 items-center text-heading"
-					onclick={toggleTheme}
-					type="button"
-				>
-					{#if theme === 'dark'}
-						<Fa icon={faMoon} class="h-4 w-4" />
-					{:else if theme === 'hotdog'}
-						<Fa icon={faHotdog} class="h-4 w-4" />
-					{:else}
-						<Fa icon={faSun} class="h-4 w-4" />
-					{/if}
-				</button>
+				{@render themeToggle()}
 			</div>
- 	{:else}
- 		<!-- Burger menu - left on mobile, hidden on desktop -->
+		{:else}
+			<!-- Burger menu - left on mobile, hidden on desktop -->
 			<div class="flex md:hidden">
-				<button
-					aria-expanded={isMobileMenuOpen}
-					aria-label="Toggle navigation menu"
-					class="inline-flex h-9 w-9 items-center justify-center rounded border border-menu-border text-menu-icon transition-colors hover:bg-menu-hover"
-					onclick={() => (isMobileMenuOpen = !isMobileMenuOpen)}
-					type="button"
-				>
-					{#if isMobileMenuOpen}
-						<Fa icon={faBurger} rotate={90} class="h-4 w-4" />
-					{:else}
-						<Fa icon={faBars} class="h-4 w-4" />
-					{/if}
-				</button>
+				{@render menuButton('Toggle navigation menu')}
 			</div>
 
 			<!-- Site name - centered on mobile -->
@@ -262,32 +254,15 @@
 				</nav>
 			</div>
 
- 		<!-- Theme toggle - right on mobile -->
+			<!-- Theme toggle - right on mobile -->
 			<div class="flex items-center gap-2">
-				<button
-					aria-label={theme === 'light'
-						? 'Switch to dark mode'
-						: theme === 'dark'
-							? 'Switch to hotdog stand mode'
-							: 'Switch to light mode'}
-					class="inline-flex h-9 items-center text-heading"
-					onclick={toggleTheme}
-					type="button"
-				>
-					{#if theme === 'dark'}
-						<Fa icon={faMoon} class="h-4 w-4" />
-					{:else if theme === 'hotdog'}
-						<Fa icon={faHotdog} class="h-4 w-4" />
-					{:else}
-						<Fa icon={faSun} class="h-4 w-4" />
-					{/if}
-				</button>
+				{@render themeToggle()}
 			</div>
 		{/if}
 	</div>
 
 	{#if isMobileMenuOpen}
-		{#if isAdmin}
+		{#if inAdminArea}
 			<nav
 				transition:slide|global={{ duration: 150 }}
 				class="border-t border-chrome-border px-4 py-3 lg:hidden"

@@ -1,6 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
-	createSession,
+	guardReset,
 	hasRecoveryKey,
 	isAdminConfigured,
 	isResetLocked,
@@ -8,12 +8,13 @@ import {
 	recordSuccessfulReset,
 	requestEmailPasswordReset,
 	resetPasswordWithRecoveryKey,
-	sessionCookieOptions,
-	SESSION_COOKIE_NAME
+	validateNewPassword
 } from '#lib/server/auth.js';
+import { raw, text } from '#lib/server/forms.js';
+import { siteOrigin } from '#lib/server/origin.js';
 import type { Actions, PageServerLoad } from './$types';
 
-const MIN_PASSWORD_LENGTH = 8;
+const LOCKED_MESSAGE = 'Too many attempts. Please try again later.';
 
 export const load: PageServerLoad = ({ locals }) => {
 	if (locals.isAdmin) {
@@ -31,11 +32,11 @@ export const actions: Actions = {
 	requestEmailLink: async ({ request, url, getClientAddress }) => {
 		const clientAddress = getClientAddress();
 		if (isResetLocked(clientAddress)) {
-			return fail(429, { emailError: 'Too many attempts. Please try again later.' });
+			return fail(429, { emailError: LOCKED_MESSAGE });
 		}
 
 		const formData = await request.formData();
-		const identifier = String(formData.get('identifier') ?? '').trim();
+		const identifier = text(formData.get('identifier'));
 
 		if (!identifier) {
 			return fail(400, { emailError: 'Please enter your username or email address.' });
@@ -43,44 +44,43 @@ export const actions: Actions = {
 
 		// Every request counts toward the limit, so this form can't be used to flood the admin inbox.
 		recordFailedReset(clientAddress);
-		await requestEmailPasswordReset(identifier, url.origin);
+		// Not awaited: sending takes noticeably longer than not sending, and waiting for it would
+		// let response time reveal whether the identifier matched the admin account.
+		requestEmailPasswordReset(identifier, siteOrigin(url)).catch((error) => {
+			console.error('[PASSWORD RESET] Failed to send reset email:', error);
+		});
 		return { emailSent: true };
 	},
 
-	resetWithRecoveryKey: async ({ request, cookies, getClientAddress }) => {
+	resetWithRecoveryKey: async ({ request, getClientAddress }) => {
 		const clientAddress = getClientAddress();
-		if (isResetLocked(clientAddress)) {
-			return fail(429, { error: 'Too many attempts. Please try again later.' });
-		}
-
 		const formData = await request.formData();
-		const recoveryKey = String(formData.get('recoveryKey') ?? '');
-		const newPassword = String(formData.get('newPassword') ?? '');
-		const confirmPassword = String(formData.get('confirmPassword') ?? '');
+		const recoveryKey = raw(formData, 'recoveryKey');
+		const newPassword = raw(formData, 'newPassword');
 
 		if (!recoveryKey.trim()) {
 			return fail(400, { error: 'Please enter your emergency recovery code.' });
 		}
 
-		if (newPassword.length < MIN_PASSWORD_LENGTH) {
-			return fail(400, {
-				error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`
-			});
+		const passwordError = validateNewPassword(newPassword, raw(formData, 'confirmPassword'));
+		if (passwordError) {
+			return fail(400, { error: passwordError });
 		}
 
-		if (newPassword !== confirmPassword) {
-			return fail(400, { error: 'Passwords do not match.' });
+		const newRecoveryKey = await guardReset(clientAddress, () =>
+			resetPasswordWithRecoveryKey(recoveryKey, newPassword)
+		);
+		if (newRecoveryKey === 'locked') {
+			return fail(429, { error: LOCKED_MESSAGE });
 		}
-
-		const success = resetPasswordWithRecoveryKey(recoveryKey, newPassword);
-		if (!success) {
-			recordFailedReset(clientAddress);
+		if (!newRecoveryKey) {
 			return fail(400, { error: 'Invalid emergency recovery code.' });
 		}
 
 		recordSuccessfulReset(clientAddress);
-		cookies.set(SESSION_COOKIE_NAME, createSession(), sessionCookieOptions);
 
-		redirect(303, '/admin');
+		// No session is created here: signing in afterwards keeps two-factor authentication in
+		// force. The recovery code was used up, so its replacement is shown once.
+		return { passwordReset: true, newRecoveryKey };
 	}
 };

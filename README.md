@@ -12,4 +12,6 @@ New personal site
 
   ## Important
 
-  Do not make public before visiting /admin and setting up a password in the sqlite db first
+  Do not make public before visiting /admin and setting up a password in the sqlite db first.
+  To close that window entirely, set `SETUP_TOKEN` in the server environment: the setup form
+  then refuses anyone who doesn't have it.

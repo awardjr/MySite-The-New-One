@@ -79,7 +79,7 @@
 				disabled={resetting}
 				class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
 			>
-				{resetting ? 'Updating password…' : 'Update Password & Sign In'}
+				{resetting ? 'Updating password…' : 'Update Password'}
 			</button>
 		</form>
 	{/if}

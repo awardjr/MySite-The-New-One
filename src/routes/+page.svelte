@@ -65,6 +65,8 @@
 			<div class="h-48 overflow-hidden border-b border-card-border">
 				<img
 					src={image}
+					loading="lazy"
+					decoding="async"
 					alt={title}
 					class="h-full w-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
 				/>

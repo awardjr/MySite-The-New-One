@@ -53,7 +53,17 @@ describe('runMigrations', () => {
 		runMigrations(db);
 
 		const applied = db.prepare('SELECT name FROM migrations').all();
-		expect(applied).toHaveLength(13);
+		expect(applied).toHaveLength(14);
+	});
+
+	it('stores session and reset tokens under hashed column names', () => {
+		runMigrations(db);
+
+		const columns = (table: string) =>
+			(db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name);
+
+		expect(columns('sessions')).toEqual(['token_hash', 'created_at', 'expires_at']);
+		expect(columns('password_reset_tokens')).toEqual(['token_hash', 'created_at', 'expires_at']);
 	});
 
 	it('does not fail or duplicate data on repeated runs', () => {

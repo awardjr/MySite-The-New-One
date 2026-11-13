@@ -24,6 +24,9 @@ Thumbs.db
 # CMS-uploaded images (runtime data, uploaded via /admin — not shipped as source)
 /static/uploads
 
+# Local https certificate for the dev server (scripts/dev-cert.sh)
+/.certs
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

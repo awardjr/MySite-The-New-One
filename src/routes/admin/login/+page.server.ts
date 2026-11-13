@@ -3,20 +3,21 @@ import {
 	cancelTwoFactorChallenge,
 	checkCredentials,
 	completeTwoFactorChallenge,
-	createSession,
 	createTwoFactorChallenge,
+	guardLogin,
 	hasTwoFactorChallenge,
 	isAdminConfigured,
-	isLoginLocked,
 	isTotpEnabled,
-	recordFailedLogin,
 	recordSuccessfulLogin,
-	sessionCookieOptions,
-	SESSION_COOKIE_NAME,
+	startSession,
 	twoFactorCookieOptions,
-	TWO_FACTOR_COOKIE_NAME
+	TWO_FACTOR_COOKIE_NAME,
+	type SecondFactor
 } from '#lib/server/auth.js';
+import { raw } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
+
+const LOCKED_MESSAGE = 'Too many failed attempts. Please try again later.';
 
 /** Only allow redirects to admin paths on this site, so `redirectTo` can't send users off-site. */
 function safeRedirectTarget(url: URL): string {
@@ -35,8 +36,11 @@ export const load: PageServerLoad = ({ locals, url, cookies }) => {
 	if (!isAdminConfigured()) {
 		redirect(303, '/admin/setup');
 	}
-	// Keep showing the code step on reload while the password step is still valid.
-	return { twoFactor: hasTwoFactorChallenge(cookies.get(TWO_FACTOR_COOKIE_NAME)) };
+	return {
+		// Keep showing the code step on reload while the password step is still valid.
+		twoFactor: hasTwoFactorChallenge(cookies.get(TWO_FACTOR_COOKIE_NAME)),
+		passwordReset: url.searchParams.has('reset')
+	};
 };
 
 export const actions: Actions = {
@@ -58,21 +62,25 @@ export const actions: Actions = {
 
 		// Second step: the password was already accepted, now check the 2FA code.
 		if (formData.has('code')) {
-			if (isLoginLocked(clientAddress)) {
-				return fail(429, {
-					twoFactor: true,
-					error: 'Too many failed attempts. Please try again later.'
-				});
+			const factor = await guardLogin(
+				clientAddress,
+				async (): Promise<SecondFactor | 'expired' | null> =>
+					hasTwoFactorChallenge(challenge)
+						? completeTwoFactorChallenge(challenge, raw(formData, 'code'))
+						: 'expired'
+			);
+
+			if (factor === 'locked') {
+				return fail(429, { twoFactor: true, error: LOCKED_MESSAGE });
 			}
-			if (!hasTwoFactorChallenge(challenge)) {
+			if (factor === 'expired') {
 				cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
 				return fail(400, {
 					twoFactor: false,
 					error: 'Your sign-in expired. Please enter your password again.'
 				});
 			}
-			if (!completeTwoFactorChallenge(challenge, String(formData.get('code') ?? ''))) {
-				recordFailedLogin(clientAddress);
+			if (!factor) {
 				const stillPending = hasTwoFactorChallenge(challenge);
 				if (!stillPending) cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
 				return fail(401, {
@@ -85,26 +93,29 @@ export const actions: Actions = {
 
 			cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
 			recordSuccessfulLogin(clientAddress);
-			cookies.set(SESSION_COOKIE_NAME, createSession(), sessionCookieOptions);
+			startSession(cookies);
+
+			// A recovery code only works once. Show its replacement before moving on.
+			if (factor.method === 'recovery') {
+				return {
+					twoFactor: false,
+					newRecoveryKey: factor.newRecoveryKey,
+					continueTo: safeRedirectTarget(url)
+				};
+			}
 			redirect(303, safeRedirectTarget(url));
 		}
 
-		const username = String(formData.get('username') ?? '');
-		const password = String(formData.get('password') ?? '');
+		const username = raw(formData, 'username');
+		const credentialsOk = await guardLogin(clientAddress, () =>
+			checkCredentials(username, raw(formData, 'password'))
+		);
 
-		if (isLoginLocked(clientAddress)) {
-			return fail(429, {
-				username,
-				error: 'Too many failed attempts. Please try again later.'
-			});
+		if (credentialsOk === 'locked') {
+			return fail(429, { username, error: LOCKED_MESSAGE });
 		}
-
-		if (!checkCredentials(username, password)) {
-			recordFailedLogin(clientAddress);
-			return fail(401, {
-				username,
-				error: 'Incorrect username/email or password.'
-			});
+		if (!credentialsOk) {
+			return fail(401, { username, error: 'Incorrect username/email or password.' });
 		}
 
 		// With 2FA on, the password alone doesn't create a session; ask for the code next.
@@ -115,7 +126,7 @@ export const actions: Actions = {
 		}
 
 		recordSuccessfulLogin(clientAddress);
-		cookies.set(SESSION_COOKIE_NAME, createSession(), sessionCookieOptions);
+		startSession(cookies);
 
 		redirect(303, safeRedirectTarget(url));
 	}

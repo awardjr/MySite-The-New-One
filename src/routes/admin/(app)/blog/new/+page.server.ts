@@ -1,5 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
-import { readContent, updateSection, type Post } from '#lib/server/content.js';
+import { createPost } from '#lib/server/content.js';
 import { text } from '#lib/server/forms.js';
 import { readPostFields } from '../postForm';
 import type { Actions } from './$types';
@@ -29,14 +29,9 @@ export const actions: Actions = {
 			return invalid('Slug is required.');
 		}
 
-		const posts = readContent().blog.posts;
-
-		if (posts.some((post) => post.slug === slug)) {
+		if (!createPost({ slug, ...fields })) {
 			return invalid('A post with this slug already exists.');
 		}
-
-		const newPost: Post = { slug, ...fields };
-		updateSection('blog', { posts: [...posts, newPost] });
 
 		redirect(303, '/admin/blog');
 	}

@@ -1,5 +1,5 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { saveHeadlineForPage } from './content/pageheadlines';
+import { saveHeadlineForPage } from './content';
 import { text } from './forms';
 
 /**
@@ -8,7 +8,7 @@ import { text } from './forms';
  */
 export function saveHeadlineAction(page: string, options: { subtitle?: boolean } = {}) {
 	const { subtitle: hasSubtitle = true } = options;
-	return async ({ request }: RequestEvent): Promise<{ headlineSuccess?: boolean; headlineError?: string }> => {
+	return async ({ request }: RequestEvent): Promise<{ headlineSuccess: true }> => {
 		const formData = await request.formData();
 		const headline = text(formData.get('headline'));
 		const subtitle = hasSubtitle ? text(formData.get('subtitle')) : '';

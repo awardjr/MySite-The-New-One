@@ -36,30 +36,31 @@
 	<div class="mt-8 flex w-full flex-col gap-3 lg:flex-row lg:items-start">
 		<div
 			class="flex w-full flex-col gap-3 lg:w-3/5"
+			role="presentation"
 			onmouseleave={() => (hoveredIndex = null)}
 		>
-		{#each links as link, i (i)}
-			<a
-				href={link.href}
-				target={link.href.startsWith('http') ? '_blank' : undefined}
-				rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-				style:--link-color={iconColors[link.icon] ?? iconColors.link}
-				onmouseenter={() => (hoveredIndex = i)}
-				class="group card card-interactive flex items-center gap-3 px-4 py-3 text-card-label hover:border-transparent hover:bg-(--link-color) hover:text-white"
-			>
-				<span
-					class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--link-color) text-white ring-1 ring-white/15 transition-colors duration-200 ring-inset group-hover:bg-white/20"
+			{#each links as link, i (i)}
+				<a
+					href={link.href}
+					target={link.href.startsWith('http') ? '_blank' : undefined}
+					rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+					style:--link-color={iconColors[link.icon] ?? iconColors.link}
+					onmouseenter={() => (hoveredIndex = i)}
+					class="group card card-interactive flex items-center gap-3 px-4 py-3 text-card-label hover:border-transparent hover:bg-(--link-color) hover:text-white"
 				>
-					<Fa icon={getIcon(link.icon)} class="h-4 w-4" />
-				</span>
-				<span class="font-medium">{link.label}</span>
-				<span
-					class="ml-auto opacity-40 transition duration-200 group-hover:opacity-100 motion-safe:group-hover:translate-x-0.5"
-				>
-					<Fa icon={faArrowRight} class="h-3.5 w-3.5" />
-				</span>
-			</a>
-		{/each}
+					<span
+						class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--link-color) text-white ring-1 ring-white/15 transition-colors duration-200 ring-inset group-hover:bg-white/20"
+					>
+						<Fa icon={getIcon(link.icon)} class="h-4 w-4" />
+					</span>
+					<span class="font-medium">{link.label}</span>
+					<span
+						class="ml-auto opacity-40 transition duration-200 group-hover:opacity-100 motion-safe:group-hover:translate-x-0.5"
+					>
+						<Fa icon={faArrowRight} class="h-3.5 w-3.5" />
+					</span>
+				</a>
+			{/each}
 		</div>
 
 		<!-- Hover description panel - desktop only -->

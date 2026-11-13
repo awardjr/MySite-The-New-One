@@ -78,7 +78,9 @@
 				{/if}
 
 				<!-- Image Section -->
-				<div class="relative z-10 flex shrink-0 justify-center max-sm:w-full max-sm:pr-5 sm:justify-start">
+				<div
+					class="relative z-10 flex shrink-0 justify-center max-sm:w-full max-sm:pr-5 sm:justify-start"
+				>
 					{#if work.image}
 						<button
 							class="max-sm:w-full"
@@ -88,6 +90,8 @@
 						>
 							<img
 								src={work.image}
+								loading="lazy"
+								decoding="async"
 								alt={work.title}
 								class="h-40 w-40 cursor-pointer rounded-xl object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
 							/>

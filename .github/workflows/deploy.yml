@@ -30,6 +30,7 @@ jobs:
           cache: 'npm'
 
       - run: npm ci
+      - run: npm run lint
       - run: npm run check
       - run: npm test
       - run: npm run build
@@ -56,13 +57,17 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login "$REGISTRY" -u "${{ github.actor }}" --password-stdin
 
       # --format docker keeps the Containerfile HEALTHCHECK (OCI format drops it).
+      # SITE_ORIGIN is an optional repository variable (e.g. https://example.com). When set, the
+      # origin is baked into the build so the app never trusts the request's Host header.
       - name: Build image with Podman
         env:
           IMAGE: ${{ steps.image.outputs.image }}
+          SITE_ORIGIN: ${{ vars.SITE_ORIGIN }}
         run: |
           podman build \
             --format docker \
             --file ./Containerfile \
+            --build-arg "ORIGIN=$SITE_ORIGIN" \
             --tag "$IMAGE:latest" \
             --tag "$IMAGE:${GITHUB_SHA::7}" \
             --tag "$IMAGE:$GITHUB_SHA" \
@@ -91,11 +96,13 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
-          if [ -n "$VPS_KNOWN_HOSTS" ]; then
-            printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          else
-            ssh-keyscan -H "$VPS_HOST" > ~/.ssh/known_hosts
+          # The host key must be pinned. Fetching it here with ssh-keyscan would trust whatever
+          # machine answers, which defeats the check that protects the deploy key.
+          if [ -z "$VPS_KNOWN_HOSTS" ]; then
+            echo "::error::Set the VPS_KNOWN_HOSTS secret to the server's host key line(s). Get them with: ssh-keyscan -H <host>, and verify the fingerprint against the server."
+            exit 1
           fi
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
 
       - name: Pull image and restart service
         env:

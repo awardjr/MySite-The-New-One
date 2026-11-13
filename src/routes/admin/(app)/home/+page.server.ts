@@ -33,22 +33,22 @@ export const actions: Actions = {
 			.map((paragraph) => paragraph.trim())
 			.filter(Boolean);
 
-  	const featuredPosts = formData.getAll('featuredPosts').map(String);
-  	const featuredWorks = formData.getAll('featuredWorks').map(String);
+		const featuredPosts = formData.getAll('featuredPosts').map(String);
+		const featuredWorks = formData.getAll('featuredWorks').map(String);
 
-  	if (!name) {
-  		return fail(400, { error: 'Name is required.' });
-  	}
+		if (!name) {
+			return fail(400, { error: 'Name is required.' });
+		}
 
-  	updateSection('home', {
-  		name,
-  		tagline,
-  		photoSrc,
-  		introParagraphs,
-  		featuredPosts,
-  		featuredWorks
-  	});
+		updateSection('home', {
+			name,
+			tagline,
+			photoSrc,
+			introParagraphs,
+			featuredPosts,
+			featuredWorks
+		});
 
-  	return { success: true };
+		return { success: true };
 	}
 };

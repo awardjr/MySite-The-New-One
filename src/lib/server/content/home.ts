@@ -10,6 +10,11 @@ export type HomeContent = {
 	featuredWorks: string[];
 };
 
+type ListField = 'introParagraphs' | 'featuredPosts' | 'featuredWorks';
+
+/** The home row as stored: list fields are JSON strings. */
+type HomeRow = Omit<HomeContent, ListField> & Record<ListField, string>;
+
 const getHomeStmt = db.prepare(
 	'SELECT name, tagline, photo_src AS photoSrc, intro_paragraphs AS introParagraphs, featured_posts AS featuredPosts, featured_works AS featuredWorks FROM home WHERE id = 1'
 );
@@ -27,16 +32,7 @@ const upsertHomeStmt = db.prepare(`
 `);
 
 export function getHome(): HomeContent {
-	const row = getHomeStmt.get() as
-		| {
-				name: string;
-				tagline: string;
-				photoSrc: string;
-				introParagraphs: string;
-				featuredPosts: string;
-				featuredWorks: string;
-		  }
-		| undefined;
+	const row = getHomeStmt.get() as HomeRow | undefined;
 	if (!row) {
 		return {
 			name: '',
@@ -48,9 +44,7 @@ export function getHome(): HomeContent {
 		};
 	}
 	return {
-		name: row.name ?? '',
-		tagline: row.tagline ?? '',
-		photoSrc: row.photoSrc ?? '',
+		...row,
 		introParagraphs: parseJsonArray<string>(row.introParagraphs),
 		featuredPosts: parseJsonArray<string>(row.featuredPosts),
 		featuredWorks: parseJsonArray<string>(row.featuredWorks)
@@ -59,11 +53,9 @@ export function getHome(): HomeContent {
 
 export function setHome(value: HomeContent): void {
 	upsertHomeStmt.run({
-		name: value.name ?? '',
-		tagline: value.tagline ?? '',
-		photoSrc: value.photoSrc ?? '',
-		introParagraphs: JSON.stringify(value.introParagraphs ?? []),
-		featuredPosts: JSON.stringify(value.featuredPosts ?? []),
-		featuredWorks: JSON.stringify(value.featuredWorks ?? [])
-	});
+		...value,
+		introParagraphs: JSON.stringify(value.introParagraphs),
+		featuredPosts: JSON.stringify(value.featuredPosts),
+		featuredWorks: JSON.stringify(value.featuredWorks)
+	} satisfies HomeRow);
 }

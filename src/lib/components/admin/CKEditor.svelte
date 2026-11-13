@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack, onMount } from 'svelte';
 	import { browser } from '$app/env';
+	import { uploadImage } from '#lib/uploadImage.js';
 	import type {
 		ClassicEditor as ClassicEditorType,
 		EditorConfig,
@@ -36,33 +37,15 @@
 			this.loader = loader;
 		}
 
-		upload(): Promise<{ default: string }> {
-			return this.loader.file.then(
-				(file: File | null) =>
-					new Promise((resolve, reject) => {
-						if (!file) {
-							reject('No file provided.');
-							return;
-						}
-						const data = new FormData();
-						data.append('file', file);
-						fetch('/admin/upload', {
-							method: 'POST',
-							body: data
-						})
-							.then(async (res) => {
-								const json = await res.json();
-								if (!res.ok) {
-									reject(json?.error || 'Upload failed.');
-									return;
-								}
-								resolve({ default: json.path });
-							})
-							.catch((err) => {
-								reject(err?.message || 'Upload failed.');
-							});
-					})
-			);
+		async upload(): Promise<{ default: string }> {
+			const file = await this.loader.file;
+			if (!file) throw new Error('No file provided.');
+			try {
+				return { default: await uploadImage(file) };
+			} catch (err) {
+				// CKEditor shows the rejection value itself as the warning, so it must be a string.
+				throw err instanceof Error ? err.message : 'Upload failed.';
+			}
 		}
 
 		abort() {
@@ -110,7 +93,6 @@
 				LinkImage,
 				List,
 				ListProperties,
-				MediaEmbed,
 				Paragraph,
 				PasteFromOffice,
 				RemoveFormat,
@@ -124,11 +106,8 @@
 				Superscript,
 				Table,
 				TableCaption,
-				TableCellProperties,
 				TableColumnResize,
-				TableProperties,
 				TableToolbar,
-				TodoList,
 				Underline,
 				WordCount
 			} = await import('ckeditor5');
@@ -140,6 +119,8 @@
 				};
 			}
 
+			// Only features whose output survives `sanitizePostHtml` on save belong here: anything
+			// else would look fine in the editor and then silently disappear from the saved post.
 			const mobilePlugins = [
 				Autoformat,
 				Autosave,
@@ -160,40 +141,26 @@
 			];
 
 			const desktopPlugins = [
+				...mobilePlugins,
 				Alignment,
-				Autoformat,
 				AutoImage,
 				AutoLink,
-				Autosave,
 				BlockQuote,
-				Bold,
 				Code,
 				CodeBlock,
 				Emoji,
-				Essentials,
 				FindAndReplace,
-				GeneralHtmlSupport,
-				Heading,
 				Highlight,
 				HorizontalLine,
-				Image,
 				ImageCaption,
-				ImageInsert,
 				ImageResize,
 				ImageStyle,
 				ImageToolbar,
-				ImageUpload,
 				Indent,
 				IndentBlock,
-				Italic,
-				Link,
 				LinkImage,
-				List,
 				ListProperties,
-				MediaEmbed,
-				Paragraph,
 				PasteFromOffice,
-				RemoveFormat,
 				SelectAll,
 				ShowBlocks,
 				SourceEditing,
@@ -204,14 +171,9 @@
 				Superscript,
 				Table,
 				TableCaption,
-				TableCellProperties,
 				TableColumnResize,
-				TableProperties,
 				TableToolbar,
-				TodoList,
-				Underline,
-				WordCount,
-				CustomUploadAdapterPlugin
+				Underline
 			];
 
 			const config: EditorConfig = {
@@ -220,47 +182,59 @@
 				plugins: isMobile ? mobilePlugins : desktopPlugins,
 				toolbar: {
 					items: isMobile
-						? ['undo', 'redo', '|', 'heading', '|', 'bold', 'italic', '|', 'bulletedList', 'numberedList', '|', 'link', 'insertImage']
+						? [
+								'undo',
+								'redo',
+								'|',
+								'heading',
+								'|',
+								'bold',
+								'italic',
+								'|',
+								'bulletedList',
+								'numberedList',
+								'|',
+								'link',
+								'insertImage'
+							]
 						: [
-							'undo',
-							'redo',
-							'|',
-							'sourceEditing',
-							'showBlocks',
-							'findAndReplace',
-							'selectAll',
-							'|',
-							'heading',
-							'|',
-							'bold',
-							'italic',
-							'underline',
-							'strikethrough',
-							'subscript',
-							'superscript',
-							'code',
-							'removeFormat',
-							'|',
-							'alignment',
-							'|',
-							'bulletedList',
-							'numberedList',
-							'todoList',
-							'|',
-							'outdent',
-							'indent',
-							'|',
-							'link',
-							'insertImage',
-							'mediaEmbed',
-							'insertTable',
-							'blockQuote',
-							'codeBlock',
-							'horizontalLine',
-							'specialCharacters',
-							'emoji',
-							'highlight'
-						],
+								'undo',
+								'redo',
+								'|',
+								'sourceEditing',
+								'showBlocks',
+								'findAndReplace',
+								'selectAll',
+								'|',
+								'heading',
+								'|',
+								'bold',
+								'italic',
+								'underline',
+								'strikethrough',
+								'subscript',
+								'superscript',
+								'code',
+								'removeFormat',
+								'|',
+								'alignment',
+								'|',
+								'bulletedList',
+								'numberedList',
+								'|',
+								'outdent',
+								'indent',
+								'|',
+								'link',
+								'insertImage',
+								'insertTable',
+								'blockQuote',
+								'codeBlock',
+								'horizontalLine',
+								'specialCharacters',
+								'emoji',
+								'highlight'
+							],
 					shouldNotGroupWhenFull: true
 				},
 				heading: {
@@ -289,23 +263,12 @@
 					}
 				},
 				table: {
-					contentToolbar: [
-						'tableColumn',
-						'tableRow',
-						'mergeTableCells',
-						'tableProperties',
-						'tableCellProperties'
-					]
+					contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
 				},
+				// Keep class names on any element (the sanitizer does too). Arbitrary attributes and
+				// inline styles are not preserved, because the sanitizer strips them on save.
 				htmlSupport: {
-					allow: [
-						{
-							name: /.*/,
-							attributes: true,
-							classes: true,
-							styles: true
-						}
-					]
+					allow: [{ name: /.*/, classes: true }]
 				}
 			};
 

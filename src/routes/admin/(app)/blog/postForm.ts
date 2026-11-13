@@ -1,14 +1,5 @@
-import { sanitizePostHtml } from '#lib/server/content.js';
+import { sanitizePostHtml, type PostFields } from '#lib/server/content.js';
 import { text } from '#lib/server/forms.js';
-
-export type PostFields = {
-	title: string;
-	date: string;
-	image: string;
-	preview: string;
-	content: string;
-	draft: boolean;
-};
 
 /** Reads the post fields shared by the "new post" and "edit post" editors. */
 export function readPostFields(formData: FormData): PostFields {

@@ -14,6 +14,9 @@ export type WorksContent = {
 	items: WorkItem[];
 };
 
+/** A work as stored: the platforms are a JSON string. */
+type WorkItemRow = Omit<WorkItem, 'platforms'> & { platforms: string };
+
 const getWorkItemsStmt = db.prepare(
 	'SELECT CAST(id AS TEXT) AS id, title, description, image, link, platforms FROM works ORDER BY sort_order, id'
 );
@@ -23,33 +26,17 @@ const insertWorkItemStmt = db.prepare(
 );
 
 export function getWorks(): WorksContent {
-	const rows = getWorkItemsStmt.all() as {
-		id: string;
-		title: string;
-		description: string;
-		image: string;
-		link: string;
-		platforms: string;
-	}[];
+	const rows = getWorkItemsStmt.all() as WorkItemRow[];
 	return {
-		items: rows.map((row) => ({
-			id: row.id,
-			title: row.title ?? '',
-			description: row.description ?? '',
-			image: row.image ?? '',
-			link: row.link ?? '',
-			platforms: parseJsonArray<string>(row.platforms)
-		}))
+		items: rows.map((row) => ({ ...row, platforms: parseJsonArray<string>(row.platforms) }))
 	};
 }
 
 /** Saves works, re-using each submitted row id so it stays the same across saves; new or duplicate ids get a fresh one. */
 export function setWorks(value: WorksContent): void {
 	deleteWorkItemsStmt.run();
-	const items = value.items ?? [];
 	const used = new Set<number>();
-	for (let i = 0; i < items.length; i++) {
-		const item = items[i];
+	value.items.forEach((item, i) => {
 		const submitted = Number(item.id);
 		const id =
 			Number.isInteger(submitted) && submitted > 0 && !used.has(submitted) ? submitted : null;
@@ -58,10 +45,10 @@ export function setWorks(value: WorksContent): void {
 			id,
 			item.title,
 			item.description,
-			item.image ?? '',
-			item.link ?? '',
-			JSON.stringify(item.platforms ?? []),
+			item.image,
+			item.link,
+			JSON.stringify(item.platforms),
 			i
 		);
-	}
+	});
 }

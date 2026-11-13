@@ -14,6 +14,11 @@ export function readJsonRows(formData: FormData, field: string): Record<string, 
 	}
 }
 
+/** Reads a form field as a string exactly as submitted. Use for passwords and codes, which must not be trimmed. */
+export function raw(formData: FormData, field: string): string {
+	return String(formData.get(field) ?? '');
+}
+
 /** Coerces a submitted value to a trimmed string. */
 export function text(value: unknown): string {
 	return String(value ?? '').trim();

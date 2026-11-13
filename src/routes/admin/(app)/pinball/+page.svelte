@@ -3,26 +3,17 @@
 	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
+	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
 	import type { PageProps } from './$types';
 	import type { PinballMachine } from '#lib/server/content.js';
 
 	let { data, form }: PageProps = $props();
 
 	let machines = $state<PinballMachine[]>(untrack(() => structuredClone(data.machines)));
-	let headline = $state(untrack(() => data.headline));
-	let subtitle = $state(untrack(() => data.subtitle));
 	let saving = $state(false);
-	let savingHeadline = $state(false);
-
-	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
 	let showSaved = $derived(!!(form && form.success));
 
-
-
-
-
 	function clearSaved() {
-		showSavedHeadline = false;
 		showSaved = false;
 	}
 
@@ -56,60 +47,13 @@
 	Edit the headline, subtitle, and pinball machines shown on the pinball page.
 </p>
 
-<form
-	method="POST"
-	action="?/saveHeadline"
-	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
-	use:enhance={() => {
-		savingHeadline = true;
-		return async ({ update }) => {
-			await update({ reset: false });
-			savingHeadline = false;
-		};
-	}}
->
-	<div class="space-y-1">
-		<label for="headline" class="text-sm font-medium text-field-label">Page headline</label>
-		<input
-			id="headline"
-			name="headline"
-			bind:value={headline}
-			oninput={clearSaved}
-			placeholder="Pinball"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
-	</div>
-
-	<div class="space-y-1">
-		<label for="subtitle" class="text-sm font-medium text-field-label">Page subtitle</label>
-		<input
-			id="subtitle"
-			name="subtitle"
-			bind:value={subtitle}
-			oninput={clearSaved}
-			placeholder="Short description"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
-	</div>
-
-	<div>
-		<button
-			type="submit"
-			name="action"
-			value="saveHeadline"
-			disabled={savingHeadline}
-			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-		>
-			{savingHeadline ? 'Saving…' : 'Save changes'}
-		</button>
-	</div>
-</form>
-
-{#if form?.headlineError}
-	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if showSavedHeadline}
-	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
-{/if}
+<HeadlineForm
+	headline={data.headline}
+	subtitle={data.subtitle}
+	saved={!!form?.headlineSuccess}
+	headlinePlaceholder="Pinball"
+	oninput={clearSaved}
+/>
 
 <form
 	method="POST"
@@ -134,7 +78,12 @@
 					placeholder="Machine name"
 					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
 				/>
-    <ImageUploadField label={null} placeholder="Image URL / path" bind:value={machine.image} on:change={clearSaved} />
+				<ImageUploadField
+					label={null}
+					placeholder="Image URL / path"
+					bind:value={machine.image}
+					onchange={clearSaved}
+				/>
 				<input
 					bind:value={machine.highScore}
 					oninput={clearSaved}
@@ -198,7 +147,9 @@
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
 	{:else if showSaved}
-		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">
+			Saved.
+		</p>
 	{/if}
 
 	<div>

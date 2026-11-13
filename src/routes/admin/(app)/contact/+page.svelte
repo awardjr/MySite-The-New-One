@@ -3,26 +3,17 @@
 	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
 	import { iconOptions } from '#lib/icons.js';
+	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
 	import type { PageProps } from './$types';
 	import type { ContactLink } from '#lib/server/content.js';
 
 	let { data, form }: PageProps = $props();
 
 	let links = $state<ContactLink[]>(untrack(() => structuredClone(data.links)));
-	let headline = $state(untrack(() => data.headline));
-	let subtitle = $state(untrack(() => data.subtitle));
 	let saving = $state(false);
-	let savingHeadline = $state(false);
-
-	let showSavedHeadline = $derived(!!(form && form.headlineSuccess));
 	let showSaved = $derived(!!(form && form.success));
 
-
-
-
-
 	function clearSaved() {
-		showSavedHeadline = false;
 		showSaved = false;
 	}
 
@@ -42,62 +33,17 @@
 </svelte:head>
 
 <h1 class="text-2xl font-bold tracking-tight text-heading">Contact Links</h1>
-<p class="mt-1 text-sm text-muted">Edit the headline, subtitle, and links shown on the contact page.</p>
+<p class="mt-1 text-sm text-muted">
+	Edit the headline, subtitle, and links shown on the contact page.
+</p>
 
-<form
-	method="POST"
-	action="?/saveHeadline"
-	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
-	use:enhance={() => {
-		savingHeadline = true;
-		return async ({ update }) => {
-			await update({ reset: false });
-			savingHeadline = false;
-		};
-	}}
->
-	<div class="space-y-1">
-		<label for="headline" class="text-sm font-medium text-field-label">Page headline</label>
-		<input
-			id="headline"
-			name="headline"
-			bind:value={headline}
-			oninput={clearSaved}
-			placeholder="Contact"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
-	</div>
-
-	<div class="space-y-1">
-		<label for="subtitle" class="text-sm font-medium text-field-label">Page subtitle</label>
-		<input
-			id="subtitle"
-			name="subtitle"
-			bind:value={subtitle}
-			oninput={clearSaved}
-			placeholder="Short description"
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
-	</div>
-
-	<div>
-		<button
-			type="submit"
-			name="action"
-			value="saveHeadline"
-			disabled={savingHeadline}
-			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-		>
-			{savingHeadline ? 'Saving…' : 'Save changes'}
-		</button>
-	</div>
-</form>
-
-{#if form?.headlineError}
-	<p class="mt-2 text-sm text-error">{form.headlineError}</p>
-{:else if showSavedHeadline}
-	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">Saved.</p>
-{/if}
+<HeadlineForm
+	headline={data.headline}
+	subtitle={data.subtitle}
+	saved={!!form?.headlineSuccess}
+	headlinePlaceholder="Contact"
+	oninput={clearSaved}
+/>
 
 <form
 	method="POST"
@@ -168,7 +114,9 @@
 	{#if form?.error}
 		<p class="text-sm text-error">{form.error}</p>
 	{:else if showSaved}
-		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">Saved.</p>
+		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">
+			Saved.
+		</p>
 	{/if}
 
 	<div>

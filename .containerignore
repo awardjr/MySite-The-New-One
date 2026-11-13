@@ -6,6 +6,7 @@ build
 data
 static/uploads
 
+.certs
 .env
 .env.*
 !.env.example

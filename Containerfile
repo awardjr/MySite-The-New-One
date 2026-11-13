@@ -10,7 +10,11 @@ COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 COPY . .
-RUN npm run build && npm prune --omit=dev
+# Optional: bake the public origin (e.g. https://example.com) into the build, so the app never
+# trusts the request's Host header. Leave unset to build an image that works on any domain
+# served over https (including `npm run podman:up`).
+ARG ORIGIN=""
+RUN ORIGIN="$ORIGIN" npm run build && npm prune --omit=dev
 
 # ---- Runtime stage -----------------------------------------------------------
 FROM docker.io/library/node:24-bookworm-slim AS runtime

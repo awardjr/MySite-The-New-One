@@ -43,6 +43,8 @@
 							>
 								<img
 									src={machine.image}
+									loading="lazy"
+									decoding="async"
 									alt={machine.name}
 									class="h-40 w-40 cursor-pointer rounded-xl object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
 								/>

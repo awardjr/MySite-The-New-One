@@ -1,5 +1,10 @@
 import { fail } from '@sveltejs/kit';
-import { readContent, updateSection, getHeadlineForPage, type ContactLink } from '#lib/server/content.js';
+import {
+	readContent,
+	updateSection,
+	getHeadlineForPage,
+	type ContactLink
+} from '#lib/server/content.js';
 import { saveHeadlineAction } from '#lib/server/headlineAction.js';
 import { readJsonRows, safeUrl, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';

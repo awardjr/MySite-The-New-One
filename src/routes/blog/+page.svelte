@@ -41,6 +41,8 @@
 					<div class="h-48 overflow-hidden border-b border-card-border sm:h-64">
 						<img
 							src={post.image}
+							loading="lazy"
+							decoding="async"
 							alt={post.title}
 							class="h-full w-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
 						/>

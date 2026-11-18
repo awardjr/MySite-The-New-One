@@ -18,6 +18,7 @@ import {
 import * as rootLayout from '../src/routes/+layout.server';
 import * as homePage from '../src/routes/+page.server';
 import * as blogPage from '../src/routes/blog/+page.server';
+import * as pressPage from '../src/routes/press/+page.server';
 import * as postPage from '../src/routes/blog/[slug]/+page.server';
 import { GET as rss } from '../src/routes/blog/rss.xml/+server';
 import * as adminHome from '../src/routes/admin/(app)/home/+page.server';
@@ -199,12 +200,44 @@ describe('public blog', () => {
 		expect(preview.data.post.slug).toBe('secret');
 	});
 
+	it('lists posts newest first, then by most recently added', async () => {
+		createPost(post('older', { date: '2023-12-31' }));
+		createPost(post('newest', { date: '2024-03-01' }));
+		createPost(post('same-day', { date: '2024-01-02' }));
+
+		const { data } = await loadPage<{ posts: { slug: string }[] }>(blogPage.load);
+
+		expect(data.posts.map((p) => p.slug)).toEqual(['newest', 'same-day', 'published', 'older']);
+	});
+
 	it('returns 404 for an unknown post, even to the admin', async () => {
 		const result = await loadPage<PostData>(postPage.load, {
 			params: { slug: 'missing' },
 			locals: { isAdmin: true }
 		});
 		expect(result).toMatchObject({ kind: 'error', status: 404 });
+	});
+});
+
+describe('press page', () => {
+	it('lists items newest first, with undated items last', async () => {
+		const item = (title: string, date: string) => ({
+			outlet: '',
+			title,
+			summary: '',
+			href: '',
+			date
+		});
+		updateSection('press', [
+			item('Undated', ''),
+			item('Older', '2023-12-31'),
+			item('Newest', '2024-03-01')
+		]);
+
+		const { data } = await loadPage<{ items: { title: string }[] }>(pressPage.load);
+
+		expect(data.items.map((i) => i.title)).toEqual(['Newest', 'Older', 'Undated']);
+		expect(readContent().press[0].title).toBe('Undated');
 	});
 });
 
@@ -223,6 +256,15 @@ describe('RSS feed', () => {
 		expect(response.headers.get('Content-Type')).toBe('application/xml; charset=utf-8');
 		expect(xml).toContain('<link>https://request.test/blog/published</link>');
 		expect(xml).not.toContain('secret');
+	});
+
+	it('lists the newest post first', async () => {
+		createPost(post('older', { date: '2023-12-31' }));
+		createPost(post('newer', { date: '2024-03-01' }));
+
+		const { xml } = await feed();
+
+		expect(xml.indexOf('/blog/newer<')).toBeLessThan(xml.indexOf('/blog/older<'));
 	});
 
 	it('escapes markup in titles, previews and the site name', async () => {

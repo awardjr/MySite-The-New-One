@@ -61,6 +61,18 @@ export function updateSection<K extends SectionKey>(key: K, value: SiteContent[K
 	write(() => sectionSetters[key](value));
 }
 
+/** Which optional sections have something a visitor can see. Draft posts don't count. */
+export function getSectionsWithContent() {
+	const { blog, press, works, pinball, contact } = readContent();
+	return {
+		blog: blog.posts.some((post) => !post.draft),
+		press: press.items.length > 0,
+		works: works.items.length > 0,
+		pinball: pinball.machines.length > 0,
+		contact: contact.links.length > 0
+	};
+}
+
 /** Returns the headline/subtitle for a single page (empty if none saved). */
 export function getHeadlineForPage(page: string): { headline: string; subtitle: string } {
 	const found = readContent().pageHeadlines.items.find((item) => item.page === page);

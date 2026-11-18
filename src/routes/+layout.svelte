@@ -18,7 +18,7 @@
 </svelte:head>
 
 <div class="flex h-screen flex-col bg-page text-body transition-colors overflow-hidden">
-	<Header {siteName} />
+	<Header {siteName} sections={data.sections} />
 	<div class="flex flex-1 flex-col overflow-y-auto">
 		<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
 			<div class="grid">

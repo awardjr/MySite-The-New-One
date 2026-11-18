@@ -15,6 +15,7 @@ import {
 	updateSection,
 	type Post
 } from '#lib/server/content.js';
+import * as rootLayout from '../src/routes/+layout.server';
 import * as homePage from '../src/routes/+page.server';
 import * as blogPage from '../src/routes/blog/+page.server';
 import * as postPage from '../src/routes/blog/[slug]/+page.server';
@@ -71,6 +72,37 @@ beforeEach(() => {
 
 afterEach(() => {
 	vi.unstubAllEnvs();
+});
+
+describe('main menu sections', () => {
+	const sections = () =>
+		(rootLayout.load as () => { sections: Record<string, boolean> })().sections;
+
+	it('reports every section as empty when there is no content', () => {
+		expect(sections()).toEqual({
+			blog: false,
+			press: false,
+			works: false,
+			pinball: false,
+			contact: false
+		});
+	});
+
+	it('reports a section once it has content', () => {
+		updateSection('press', {
+			items: [{ outlet: 'Outlet', title: 'Title', summary: '', href: '', date: '' }]
+		});
+
+		expect(sections()).toMatchObject({ press: true, works: false });
+	});
+
+	it('does not count draft posts as blog content', () => {
+		createPost(post('hidden', { draft: true }));
+		expect(sections().blog).toBe(false);
+
+		createPost(post('visible'));
+		expect(sections().blog).toBe(true);
+	});
 });
 
 describe('home page', () => {

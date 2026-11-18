@@ -5,22 +5,26 @@
 	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
 	import { faBars, faBurger, faHotdog, faMoon, faSun } from '@fortawesome/free-solid-svg-icons';
+	import type { LayoutData } from './$types';
 
 	type Theme = 'light' | 'dark' | 'hotdog';
+	type Sections = LayoutData['sections'];
 
-	let { siteName = '' }: { siteName?: string } = $props();
+	let { siteName = '', sections }: { siteName?: string; sections: Sections } = $props();
 
 	let theme: Theme = $state('light');
 	let isMobileMenuOpen = $state(false);
 
-	const navItems = [
+	// Items naming a section are only shown while that section has content.
+	const allNavItems: { href: string; label: string; section?: keyof Sections }[] = [
 		{ href: resolve('/'), label: 'Home' },
-		{ href: resolve('blog'), label: 'Posts' },
-		{ href: resolve('press'), label: 'Press' },
-		{ href: resolve('works'), label: 'Works' },
-		{ href: resolve('pinball'), label: 'Pinball' },
-		{ href: resolve('contact'), label: 'Contact' }
+		{ href: resolve('blog'), label: 'Posts', section: 'blog' },
+		{ href: resolve('press'), label: 'Press', section: 'press' },
+		{ href: resolve('works'), label: 'Works', section: 'works' },
+		{ href: resolve('pinball'), label: 'Pinball', section: 'pinball' },
+		{ href: resolve('contact'), label: 'Contact', section: 'contact' }
 	];
+	let navItems = $derived(allNavItems.filter((item) => !item.section || sections[item.section]));
 
 	const adminNavItems = [
 		{ href: resolve('admin'), label: 'Dashboard' },
@@ -75,6 +79,7 @@
 	$effect(() => {
 		void underlineIndex;
 		void inAdminArea;
+		void navItems;
 		updateUnderline();
 	});
 

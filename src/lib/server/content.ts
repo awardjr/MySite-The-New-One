@@ -8,27 +8,25 @@ import {
 	deletePostBySlug,
 	getBlog,
 	insertPost,
-	setBlog,
 	updatePostBySlug,
 	type Post,
 	type PostFields
 } from './content/blog';
-import { getPageHeadlines, setPageHeadlines, upsertPageHeadline } from './content/pageheadlines';
+import { getPageHeadlines, upsertPageHeadline } from './content/pageheadlines';
 import type { SiteContent } from './content/types';
 
 export type * from './content/types';
 export { sanitizePostHtml } from './content/utils';
 
-type SectionKey = keyof SiteContent;
+/** Sections saved as a whole. Blog posts and page headlines are saved one at a time. */
+type SectionKey = Exclude<keyof SiteContent, 'blog' | 'pageHeadlines'>;
 
 const sectionSetters: { [K in SectionKey]: (value: SiteContent[K]) => void } = {
 	home: setHome,
 	contact: setContact,
 	works: setWorks,
 	press: setPress,
-	pinball: setPinball,
-	blog: setBlog,
-	pageHeadlines: setPageHeadlines
+	pinball: setPinball
 };
 
 // All site content, read once and kept until something is written. Treat it as read-only:
@@ -58,11 +56,9 @@ function write<T>(change: () => T): T {
 	return result;
 }
 
-/** Writes a single section to its own table and refreshes the cached site content. */
-export function updateSection<K extends SectionKey>(key: K, value: SiteContent[K]): SiteContent {
+/** Writes a single section to its own table. */
+export function updateSection<K extends SectionKey>(key: K, value: SiteContent[K]): void {
 	write(() => sectionSetters[key](value));
-	// Re-read so generated values (e.g. new item ids) are reflected in the cache.
-	return readContent();
 }
 
 /** Returns the headline/subtitle for a single page (empty if none saved). */

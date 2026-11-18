@@ -1,5 +1,0 @@
-CREATE TABLE IF NOT EXISTS page_headlines (
-	page TEXT PRIMARY KEY,
-	headline TEXT NOT NULL DEFAULT '',
-	subtitle TEXT NOT NULL DEFAULT ''
-);

@@ -1,3 +1,6 @@
+/** What the endpoint should send; checked at runtime because it arrives as untyped JSON. */
+type UploadResponse = { path?: unknown; error?: unknown };
+
 /**
  * Uploads an image through the admin upload endpoint and returns its public path.
  * Throws an Error with a message suitable for showing to the admin if the upload fails.
@@ -13,9 +16,9 @@ export async function uploadImage(file: File): Promise<string> {
 		throw new Error('Upload failed.');
 	}
 
-	const result = await response.json().catch(() => null);
+	const result = (await response.json().catch(() => null)) as UploadResponse | null;
 	if (!response.ok || typeof result?.path !== 'string') {
-		throw new Error(result?.error ?? 'Upload failed.');
+		throw new Error(typeof result?.error === 'string' ? result.error : 'Upload failed.');
 	}
 	return result.path;
 }

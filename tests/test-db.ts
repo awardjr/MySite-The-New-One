@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { runMigrations } from '../src/lib/server/migrations';
+import { runMigrations } from '#lib/server/migrations.js';
 
 let instance: Database.Database | null = null;
 

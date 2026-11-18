@@ -1,7 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
 	guardReset,
-	hasRecoveryKey,
 	isAdminConfigured,
 	isResetLocked,
 	recordFailedReset,
@@ -23,9 +22,6 @@ export const load: PageServerLoad = ({ locals }) => {
 	if (!isAdminConfigured()) {
 		redirect(303, '/admin/setup');
 	}
-	return {
-		hasRecoveryKey: hasRecoveryKey()
-	};
 };
 
 export const actions: Actions = {

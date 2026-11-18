@@ -19,8 +19,6 @@ build() {
 
 down() {
 	podman pod rm -f "$POD" >/dev/null 2>&1 || true
-	# A container left over from before the pod existed.
-	podman rm -f "$APP" >/dev/null 2>&1 || true
 }
 
 case "${1:-}" in

@@ -1,5 +1,7 @@
 <script lang="ts">
-	let { children } = $props();
+	import type { LayoutProps } from './$types';
+
+	let { children }: LayoutProps = $props();
 </script>
 
 <div class="min-h-[calc(100vh-8rem)] py-6 sm:py-10">

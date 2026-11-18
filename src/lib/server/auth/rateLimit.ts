@@ -94,16 +94,6 @@ export const guardLogin = createGuard(loginAttempts);
 /** Like `guardLogin`, for password-reset attempts. */
 export const guardReset = createGuard(resetAttempts);
 
-/** Returns true if the given identifier (e.g. client IP) is currently locked out from logging in. */
-export function isLoginLocked(identifier: string): boolean {
-	return loginAttempts.isLocked(identifier);
-}
-
-/** Records a failed login attempt, locking out the identifier after too many failures. */
-export function recordFailedLogin(identifier: string): void {
-	loginAttempts.recordFailure(identifier);
-}
-
 /** Clears any recorded failures for the identifier after a successful login. */
 export function recordSuccessfulLogin(identifier: string): void {
 	loginAttempts.clear(identifier);

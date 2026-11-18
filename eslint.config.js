@@ -38,6 +38,27 @@ export default defineConfig(
 		}
 	},
 	{
+		files: ['**/*.ts'],
+		languageOptions: {
+			parserOptions: {
+				projectService: true,
+				tsconfigRootDir: import.meta.dirname
+			}
+		}
+	},
+	{
+		// Catches `any` that is inferred (from `JSON.parse`, `response.json()`, untyped props...),
+		// which `no-explicit-any` can't see.
+		files: ['**/*.ts', '**/*.svelte'],
+		rules: {
+			'@typescript-eslint/no-unsafe-argument': 'error',
+			'@typescript-eslint/no-unsafe-assignment': 'error',
+			'@typescript-eslint/no-unsafe-call': 'error',
+			'@typescript-eslint/no-unsafe-member-access': 'error',
+			'@typescript-eslint/no-unsafe-return': 'error'
+		}
+	},
+	{
 		// Override or add rule settings here, such as:
 		// 'svelte/button-has-type': 'error'
 		rules: {

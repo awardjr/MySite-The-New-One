@@ -67,10 +67,10 @@ export async function requestEmailPasswordReset(
 	origin: string
 ): Promise<boolean> {
 	const row = getAdmin();
-	if (!row || !row.email) return false;
+	if (!row) return false;
 
 	const normId = identifierOrEmail.trim().toLowerCase();
-	if (normId !== row.email.toLowerCase() && normId !== (row.username ?? '').toLowerCase()) {
+	if (normId !== row.email.toLowerCase() && normId !== row.username.toLowerCase()) {
 		return false;
 	}
 

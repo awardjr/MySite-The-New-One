@@ -16,13 +16,6 @@ function getEnv(key: string): string | undefined {
 }
 
 /**
- * Returns true if SMTP transport credentials / host are configured in the environment.
- */
-export function isSmtpConfigured(): boolean {
-	return Boolean(getEnv('SMTP_HOST') || getEnv('SMTP_SERVICE'));
-}
-
-/**
  * Creates and returns a Nodemailer transporter instance if SMTP is configured.
  */
 export function getEmailTransporter(): Transporter | null {

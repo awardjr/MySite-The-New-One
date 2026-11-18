@@ -3,10 +3,10 @@ import { generateRecoveryKey, hashSecret, normalizeRecoveryKey, verifySecret } f
 
 /** The single admin account (row id 1) and the secrets that unlock it. */
 export interface AdminUserRow {
-	username: string | null;
-	email: string | null;
+	username: string;
+	email: string;
 	password_hash: string;
-	recovery_key_hash: string | null;
+	recovery_key_hash: string;
 	totp_secret: string | null;
 	totp_pending_secret: string | null;
 	totp_last_step: number | null;
@@ -20,17 +20,6 @@ const getAdminStmt = db.prepare(
 const insertAdminStmt = db.prepare(
 	'INSERT INTO admin_user (id, username, email, password_hash, recovery_key_hash, updated_at) ' +
 		'VALUES (1, @username, @email, @passwordHash, @recoveryKeyHash, @updatedAt)'
-);
-
-const upsertAdminCredentialsStmt = db.prepare(
-	'INSERT INTO admin_user (id, username, email, password_hash, recovery_key_hash, updated_at) ' +
-		'VALUES (1, @username, @email, @passwordHash, @recoveryKeyHash, @updatedAt) ' +
-		'ON CONFLICT(id) DO UPDATE SET ' +
-		'username = excluded.username, ' +
-		'email = excluded.email, ' +
-		'password_hash = excluded.password_hash, ' +
-		'recovery_key_hash = excluded.recovery_key_hash, ' +
-		'updated_at = excluded.updated_at'
 );
 
 const updateAdminProfileStmt = db.prepare(
@@ -58,24 +47,20 @@ export function isAdminConfigured(): boolean {
 export function getAdminProfile(): { username: string; email: string } | null {
 	const row = getAdmin();
 	if (!row) return null;
-	return {
-		username: row.username ?? '',
-		email: row.email ?? ''
-	};
+	return { username: row.username, email: row.email };
 }
 
 async function credentialParams(
 	username: string,
 	email: string,
 	password: string,
-	recoveryKey?: string
+	recoveryKey: string
 ) {
-	const normalizedRecovery = recoveryKey ? normalizeRecoveryKey(recoveryKey) : null;
 	return {
 		username: username.trim(),
 		email: email.trim().toLowerCase(),
 		passwordHash: await hashSecret(password),
-		recoveryKeyHash: normalizedRecovery ? await hashSecret(normalizedRecovery) : null,
+		recoveryKeyHash: await hashSecret(normalizeRecoveryKey(recoveryKey)),
 		updatedAt: new Date().toISOString()
 	};
 }
@@ -95,16 +80,6 @@ export async function createAdmin(
 	if (isAdminConfigured()) return false;
 	insertAdminStmt.run(params);
 	return true;
-}
-
-/** Sets or replaces the admin account credentials including username, email, password, and optional recovery key. */
-export async function setAdminCredentials(
-	username: string,
-	email: string,
-	password: string,
-	recoveryKey?: string
-): Promise<void> {
-	upsertAdminCredentialsStmt.run(await credentialParams(username, email, password, recoveryKey));
 }
 
 /** Updates the admin username and email address. */
@@ -142,25 +117,10 @@ export async function checkCredentials(
 	const row = getAdmin();
 	if (!row) return false;
 
-	const idMatches =
-		normId === (row.username ?? '').toLowerCase() || normId === (row.email ?? '').toLowerCase();
+	const idMatches = normId === row.username.toLowerCase() || normId === row.email.toLowerCase();
 	// Always hash the password, so response time doesn't reveal whether the identifier matched.
 	const passwordMatches = await verifySecret(candidatePassword, row.password_hash);
 	return idMatches && passwordMatches;
-}
-
-/** Returns true if a recovery key is configured in the database. */
-export function hasRecoveryKey(): boolean {
-	return Boolean(getAdmin()?.recovery_key_hash);
-}
-
-/** Verifies a candidate recovery key against the stored recovery key hash, without using it up. */
-export async function verifyRecoveryKey(candidate: string): Promise<boolean> {
-	const normalized = normalizeRecoveryKey(candidate);
-	if (!normalized) return false;
-	const row = getAdmin();
-	if (!row?.recovery_key_hash) return false;
-	return verifySecret(normalized, row.recovery_key_hash);
 }
 
 /** Sets (or updates) the stored recovery key for the admin user. */

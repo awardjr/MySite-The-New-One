@@ -4,11 +4,15 @@
  * value coercion before it can validate its own fields.
  */
 
-/** Reads a hidden JSON array field. Returns null when the value is missing or not an array. */
+function isRow(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Reads a hidden JSON array of objects. A missing field is an empty list; anything else invalid is null. */
 export function readJsonRows(formData: FormData, field: string): Record<string, unknown>[] | null {
 	try {
 		const parsed: unknown = JSON.parse(String(formData.get(field) ?? '[]'));
-		return Array.isArray(parsed) ? (parsed as Record<string, unknown>[]) : null;
+		return Array.isArray(parsed) && parsed.every(isRow) ? parsed : null;
 	} catch {
 		return null;
 	}

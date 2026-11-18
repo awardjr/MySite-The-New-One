@@ -33,11 +33,6 @@ export function isEncryptionKeyConfigured(): boolean {
 	return Boolean(passphrase && Buffer.byteLength(passphrase) >= KEY_LENGTH);
 }
 
-/** Returns true for secrets written in this module's authenticated ciphertext format. */
-export function isEncryptedSecret(value: string): boolean {
-	return value.startsWith(ENCRYPTION_PREFIX);
-}
-
 /** Encrypts a secret using AES-256-GCM with a fresh random nonce. */
 export function encryptSecret(plaintext: string): string {
 	const iv = crypto.randomBytes(IV_LENGTH);

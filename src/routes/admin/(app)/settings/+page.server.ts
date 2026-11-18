@@ -8,7 +8,7 @@ import {
 	getAdminProfile,
 	getPendingTotpSecret,
 	guardLogin,
-	hasRecoveryKey,
+	invalidateAllResetTokens,
 	invalidateAllSessions,
 	isTotpEnabled,
 	isValidEmail,
@@ -69,7 +69,6 @@ export const load: PageServerLoad = async ({ url }) => {
 	return {
 		username: profile?.username ?? '',
 		email: profile?.email ?? '',
-		hasRecoveryKey: hasRecoveryKey(),
 		twoFactorEnabled: isTotpEnabled(),
 		twoFactorKeyConfigured: isEncryptionKeyConfigured(),
 		twoFactorSetup: pendingSecret
@@ -107,7 +106,11 @@ export const actions: Actions = {
 			if (factor.method === 'recovery') newRecoveryKey = factor.newRecoveryKey;
 		}
 
+		const emailChanged = getAdminProfile()?.email !== email.toLowerCase();
 		updateAdminProfile(username, email);
+		// Reset links already sent went to the old address, which may no longer be trusted.
+		if (emailChanged) invalidateAllResetTokens();
+
 		return { profileSuccess: true, ...recoveryKeyReplaced(newRecoveryKey) };
 	},
 
@@ -124,6 +127,7 @@ export const actions: Actions = {
 		}
 
 		await setAdminPassword(newPassword);
+		invalidateAllResetTokens();
 
 		// Revoke every existing session then issue a fresh one so the admin stays logged in.
 		invalidateAllSessions();

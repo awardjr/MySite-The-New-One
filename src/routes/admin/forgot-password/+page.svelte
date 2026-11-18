@@ -4,7 +4,7 @@
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import type { PageProps } from './$types';
 
-	let { data, form }: PageProps = $props();
+	let { form }: PageProps = $props();
 
 	let sendingEmail = $state(false);
 	let resettingCode = $state(false);
@@ -127,10 +127,6 @@
 				>
 					Continue to Sign In
 				</a>
-			{:else if !data.hasRecoveryKey}
-				<p class="mt-4 text-sm text-error">
-					No emergency recovery code is configured for this admin account.
-				</p>
 			{:else}
 				<form
 					method="POST"

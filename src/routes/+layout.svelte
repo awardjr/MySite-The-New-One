@@ -14,6 +14,9 @@
 </script>
 
 <svelte:head>
+	{#if page.error}
+		<title>{siteName ? `${page.error.message} - ${siteName}` : page.error.message}</title>
+	{/if}
 	<link rel="alternate" type="application/rss+xml" title="{siteName} blog" href="/blog/rss.xml" />
 </svelte:head>
 

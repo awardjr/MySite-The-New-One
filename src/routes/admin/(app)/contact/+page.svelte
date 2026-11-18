@@ -1,31 +1,10 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { fade } from 'svelte/transition';
-	import { enhance } from '$app/forms';
+	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import { iconOptions } from '#lib/icons.js';
-	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
-	import type { PageProps } from './$types';
 	import type { ContactLink } from '#lib/server/content.js';
+	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
-
-	let links = $state<ContactLink[]>(untrack(() => structuredClone(data.links)));
-	let saving = $state(false);
-	let showSaved = $derived(!!(form && form.success));
-
-	function clearSaved() {
-		showSaved = false;
-	}
-
-	function addLink() {
-		links.push({ label: '', href: 'https://', icon: 'link', description: '' });
-	}
-
-	function removeLink(index: number) {
-		const link = links[index];
-		if (!confirm(`Remove "${link.label || 'this link'}"?`)) return;
-		links.splice(index, 1);
-	}
 </script>
 
 <svelte:head>
@@ -37,95 +16,38 @@
 	Edit the headline, subtitle, and links shown on the contact page.
 </p>
 
-<HeadlineForm
+<ListEditor
+	field="links"
+	items={data.links}
 	headline={data.headline}
 	subtitle={data.subtitle}
-	saved={!!form?.headlineSuccess}
 	headlinePlaceholder="Contact"
-	oninput={clearSaved}
-/>
-
-<form
-	method="POST"
-	action="?/save"
-	class="mt-6 space-y-4"
-	use:enhance={() => {
-		saving = true;
-		return async ({ update }) => {
-			await update({ reset: false });
-			saving = false;
-		};
-	}}
+	{form}
+	addLabel="+ Add Link"
+	newItem={(): ContactLink => ({ label: '', href: 'https://', icon: 'link', description: '' })}
+	itemName={(link: ContactLink) => link.label || 'this link'}
 >
-	<input type="hidden" name="links" value={JSON.stringify(links)} />
-
-	<div class="space-y-3">
-		{#each links as link, i (i)}
-			<div
-				class="grid grid-cols-1 gap-2 rounded-lg border border-form-border p-3 sm:grid-cols-[1fr_2fr_auto_auto] sm:items-center"
-			>
-				<input
-					bind:value={link.label}
-					oninput={clearSaved}
-					placeholder="Label (e.g. LinkedIn)"
-					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
-				/>
-				<input
-					bind:value={link.href}
-					oninput={clearSaved}
-					placeholder="URL (e.g. https://... or mailto:you@example.com)"
-					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
-				/>
-				<select
-					bind:value={link.icon}
-					onchange={clearSaved}
-					class="rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
-				>
-					{#each iconOptions as iconKey (iconKey)}
-						<option value={iconKey}>{iconKey}</option>
-					{/each}
-				</select>
-				<button
-					type="button"
-					onclick={() => removeLink(i)}
-					class="rounded-lg border border-field-border px-3 py-1.5 text-sm text-danger-text transition-colors hover:bg-danger-hover"
-				>
-					Remove
-				</button>
-				<textarea
-					bind:value={link.description}
-					oninput={clearSaved}
-					placeholder="Description shown on hover"
-					rows="2"
-					class="col-span-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
-				></textarea>
-			</div>
-		{/each}
-	</div>
-
-	<button
-		type="button"
-		onclick={addLink}
-		class="rounded-lg border border-dashed border-field-border px-4 py-2 text-sm text-form-muted transition-colors hover:bg-secondary-hover"
-	>
-		+ Add Link
-	</button>
-
-	{#if form?.error}
-		<p class="text-sm text-error">{form.error}</p>
-	{:else if showSaved}
-		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">
-			Saved.
-		</p>
-	{/if}
-
-	<div>
-		<button
-			type="submit"
-			disabled={saving}
-			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
+	{#snippet row(link: ContactLink, remove: () => void)}
+		<div
+			class="grid grid-cols-1 gap-2 rounded-lg border border-form-border p-3 sm:grid-cols-[1fr_2fr_auto_auto] sm:items-center"
 		>
-			{saving ? 'Saving…' : 'Save changes'}
-		</button>
-	</div>
-</form>
+			<input bind:value={link.label} placeholder="Label (e.g. LinkedIn)" class="input-compact" />
+			<input
+				bind:value={link.href}
+				placeholder="URL (e.g. https://... or mailto:you@example.com)"
+				class="input-compact"
+			/>
+			<select bind:value={link.icon} class="input-compact">
+				{#each iconOptions as iconKey (iconKey)}
+					<option value={iconKey}>{iconKey}</option>
+				{/each}
+			</select>
+			<button type="button" onclick={remove} class="btn-remove"> Remove </button>
+			<textarea
+				bind:value={link.description}
+				placeholder="Description shown on hover"
+				rows="2"
+				class="input-compact col-span-full"></textarea>
+		</div>
+	{/snippet}
+</ListEditor>

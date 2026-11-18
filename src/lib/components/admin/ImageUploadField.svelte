@@ -45,14 +45,7 @@
 	{#if label}
 		<label for={id} class="text-sm font-medium text-field-label">{label}</label>
 	{/if}
-	<input
-		{id}
-		{name}
-		bind:value
-		oninput={() => onchange?.()}
-		{placeholder}
-		class="w-full rounded-lg border border-field-border px-3 py-2 text-sm bg-field text-field-text"
-	/>
+	<input {id} {name} bind:value oninput={() => onchange?.()} {placeholder} class="input text-sm" />
 
 	<div class="flex flex-wrap items-center gap-3">
 		<input

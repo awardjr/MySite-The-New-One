@@ -1,27 +1,20 @@
 <script lang="ts">
-	import { applyAction, enhance, type SubmitFunction } from '$app/forms';
+	import { enhance } from '$app/forms';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import { resolve } from '$app/paths';
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	let submitting = $state(false);
+	const loginForm = pendingForm({
+		// Signed in with a recovery code: show its replacement instead of reloading the page,
+		// which would redirect straight to the dashboard now that a session exists.
+		refreshAll: (result) => result.type === 'success' && !result.data?.newRecoveryKey
+	});
 	let twoFactor = $derived(form?.twoFactor ?? data.twoFactor);
-
-	const submitHandler: SubmitFunction = () => {
-		submitting = true;
-		return async ({ result, update }) => {
-			if (result.type === 'success' && result.data?.newRecoveryKey) {
-				// Signed in with a recovery code: show its replacement instead of reloading the page,
-				// which would redirect straight to the dashboard now that a session exists.
-				await applyAction(result);
-			} else {
-				await update();
-			}
-			submitting = false;
-		};
-	};
 </script>
 
 <svelte:head>
@@ -48,7 +41,7 @@
 		<a
 			href={form.continueTo ?? resolve('admin')}
 			data-sveltekit-reload
-			class="mt-6 inline-block w-full rounded-lg bg-primary px-4 py-2 text-center font-medium text-primary-text transition-colors hover:bg-primary-hover"
+			class="btn-primary mt-6 inline-block w-full text-center"
 		>
 			Continue to Admin Dashboard
 		</a>
@@ -57,7 +50,7 @@
 			Enter the 6-digit code from your authenticator app, or your emergency recovery code.
 		</p>
 
-		<form method="POST" class="mt-6 space-y-4" use:enhance={submitHandler}>
+		<form method="POST" class="mt-6 space-y-4" use:enhance={loginForm.submit}>
 			<div class="space-y-1">
 				<label for="code" class="text-sm font-medium text-copy"> Authentication code </label>
 				<!-- svelte-ignore a11y_autofocus -->
@@ -71,24 +64,21 @@
 					autocapitalize="characters"
 					spellcheck="false"
 					maxlength="32"
-					class="w-full rounded-lg border border-field-border px-3 py-2 font-mono tracking-widest text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth font-mono tracking-widest"
 				/>
 			</div>
 
-			{#if form?.error}
-				<p class="text-sm text-error">{form.error}</p>
-			{/if}
+			<FormStatus error={form?.error} />
 
-			<button
-				type="submit"
-				disabled={submitting}
-				class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-			>
-				{submitting ? 'Verifying…' : 'Verify'}
-			</button>
+			<SubmitButton
+				pending={loginForm.pending}
+				label="Verify"
+				pendingLabel="Verifying…"
+				class="btn-primary w-full"
+			/>
 		</form>
 
-		<form method="POST" class="mt-3 text-center" use:enhance={submitHandler}>
+		<form method="POST" class="mt-3 text-center" use:enhance={loginForm.submit}>
 			<input type="hidden" name="cancel" value="1" />
 			<button
 				type="submit"
@@ -104,7 +94,7 @@
 			<p class="mt-4 text-sm text-success">Your password was updated. Sign in with the new one.</p>
 		{/if}
 
-		<form method="POST" class="mt-6 space-y-4" use:enhance={submitHandler}>
+		<form method="POST" class="mt-6 space-y-4" use:enhance={loginForm.submit}>
 			<div class="space-y-1">
 				<label for="username" class="text-sm font-medium text-copy"> Username or Email </label>
 				<input
@@ -114,7 +104,7 @@
 					required
 					autocomplete="username"
 					value={form?.username ?? ''}
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
@@ -134,21 +124,18 @@
 					type="password"
 					required
 					autocomplete="current-password"
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
-			{#if form?.error}
-				<p class="text-sm text-error">{form.error}</p>
-			{/if}
+			<FormStatus error={form?.error} />
 
-			<button
-				type="submit"
-				disabled={submitting}
-				class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-			>
-				{submitting ? 'Signing in…' : 'Sign in'}
-			</button>
+			<SubmitButton
+				pending={loginForm.pending}
+				label="Sign in"
+				pendingLabel="Signing in…"
+				class="btn-primary w-full"
+			/>
 		</form>
 	{/if}
 </section>

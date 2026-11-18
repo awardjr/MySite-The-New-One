@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import FeaturedPicker from '#lib/components/admin/FeaturedPicker.svelte';
 	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
@@ -17,7 +19,7 @@
 	let featuredPosts = $state(untrack(() => [...data.home.featuredPosts]));
 	let featuredWorks = $state(untrack(() => [...data.home.featuredWorks]));
 
-	let saving = $state(false);
+	const saveForm = pendingForm({ reset: false });
 	let showSaved = $derived(!!(form && form.success));
 
 	function clearSaved() {
@@ -43,28 +45,10 @@
 	oninput={clearSaved}
 />
 
-<form
-	method="POST"
-	action="?/save"
-	class="mt-6 space-y-5"
-	use:enhance={() => {
-		saving = true;
-		return async ({ update }) => {
-			await update({ reset: false });
-			saving = false;
-		};
-	}}
->
+<form method="POST" action="?/save" class="mt-6 space-y-5" use:enhance={saveForm.submit}>
 	<div class="space-y-1">
 		<label for="name" class="text-sm font-medium text-field-label">Name</label>
-		<input
-			id="name"
-			name="name"
-			bind:value={name}
-			oninput={clearSaved}
-			required
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
+		<input id="name" name="name" bind:value={name} oninput={clearSaved} required class="input" />
 		<p class="text-xs text-form-hint">
 			This name is used any place we require name outside of custom content (for now)
 		</p>
@@ -72,13 +56,7 @@
 
 	<div class="space-y-1">
 		<label for="tagline" class="text-sm font-medium text-field-label">Tagline</label>
-		<input
-			id="tagline"
-			name="tagline"
-			bind:value={tagline}
-			oninput={clearSaved}
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
-		/>
+		<input id="tagline" name="tagline" bind:value={tagline} oninput={clearSaved} class="input" />
 	</div>
 
 	<div class="space-y-1">
@@ -90,7 +68,7 @@
 			bind:value={photoSrc}
 			onchange={clearSaved}
 		/>
-		<p class="text-xs text-form-hint">Leave empty to show the initials placeholder instead.</p>
+		<p class="text-xs text-form-hint">Leave empty to show no photo.</p>
 	</div>
 
 	<div class="space-y-1">
@@ -103,8 +81,7 @@
 			bind:value={introParagraphs}
 			oninput={clearSaved}
 			rows="8"
-			class="w-full rounded-lg border border-field-border px-3 py-2 font-mono text-sm bg-field text-field-text"
-		></textarea>
+			class="input font-mono text-sm"></textarea>
 	</div>
 
 	<FeaturedPicker
@@ -130,19 +107,7 @@
 		emptyText="No works yet."
 	/>
 
-	{#if form?.error}
-		<p class="text-sm text-error">{form.error}</p>
-	{:else if showSaved}
-		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">
-			Saved.
-		</p>
-	{/if}
+	<FormStatus error={form?.error} saved={showSaved} />
 
-	<button
-		type="submit"
-		disabled={saving}
-		class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-	>
-		{saving ? 'Saving…' : 'Save changes'}
-	</button>
+	<SubmitButton pending={saveForm.pending} />
 </form>

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { fade } from 'svelte/transition';
 	import { enhance } from '$app/forms';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 
 	/**
 	 * The "page headline" editor shared by the admin pages. It posts to the page's
@@ -32,7 +34,7 @@
 	const hasSubtitle = untrack(() => savedSubtitle !== undefined);
 	let headline = $state(untrack(() => savedHeadline));
 	let subtitle = $state(untrack(() => savedSubtitle ?? ''));
-	let saving = $state(false);
+	const saveForm = pendingForm({ reset: false });
 	// Follows `saved`, but hides again as soon as the fields are edited.
 	let showSaved = $derived(saved);
 
@@ -46,13 +48,7 @@
 	method="POST"
 	action="?/saveHeadline"
 	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
-	use:enhance={() => {
-		saving = true;
-		return async ({ update }) => {
-			await update({ reset: false });
-			saving = false;
-		};
-	}}
+	use:enhance={saveForm.submit}
 >
 	<div class="space-y-1">
 		<label for="headline" class="text-sm font-medium text-field-label">{headlineLabel}</label>
@@ -62,7 +58,7 @@
 			bind:value={headline}
 			oninput={handleInput}
 			placeholder={headlinePlaceholder}
-			class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
+			class="input"
 		/>
 		{#if hint}
 			<p class="text-xs text-form-hint">{hint}</p>
@@ -78,24 +74,14 @@
 				bind:value={subtitle}
 				oninput={handleInput}
 				placeholder="Short description"
-				class="w-full rounded-lg border border-field-border px-3 py-2 bg-field text-field-text"
+				class="input"
 			/>
 		</div>
 	{/if}
 
 	<div>
-		<button
-			type="submit"
-			disabled={saving}
-			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-		>
-			{saving ? 'Saving…' : 'Save changes'}
-		</button>
+		<SubmitButton pending={saveForm.pending} />
 	</div>
 </form>
 
-{#if showSaved}
-	<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="mt-2 text-sm text-success">
-		Saved.
-	</p>
-{/if}
+<FormStatus saved={showSaved} class="mt-2" />

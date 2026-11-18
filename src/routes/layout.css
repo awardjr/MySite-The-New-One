@@ -52,6 +52,49 @@
 	}
 }
 
+/* Form controls. `input` suits most forms; the others match the denser list editors and the
+   sign-in pages. */
+@utility input {
+	@apply w-full rounded-lg border border-field-border bg-field px-3 py-2 text-field-text;
+}
+
+@utility input-date {
+	@apply input box-border block min-w-0 max-w-full appearance-none [&::-webkit-date-and-time-value]:min-h-[1.5em] [&::-webkit-date-and-time-value]:text-left;
+	-webkit-appearance: none;
+}
+
+@utility input-compact {
+	@apply rounded-lg border border-field-border bg-field px-2 py-1.5 text-sm text-field-text;
+}
+
+@utility input-auth {
+	@apply w-full rounded-lg border border-field-border bg-field px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none;
+}
+
+@utility btn-primary {
+	@apply rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60;
+}
+
+@utility btn-primary-lg {
+	@apply rounded-lg bg-primary px-5 py-2.5 text-base font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60;
+}
+
+@utility btn-secondary-lg {
+	@apply rounded-lg border border-field-border bg-field px-5 py-2.5 text-base font-semibold text-field-label transition-colors hover:bg-secondary-hover hover:text-heading disabled:opacity-60;
+}
+
+@utility btn-secondary {
+	@apply rounded-lg border border-field-border px-4 py-2 text-sm transition-colors hover:bg-secondary-hover;
+}
+
+@utility btn-remove {
+	@apply rounded-lg border border-field-border px-3 py-1.5 text-sm text-danger-text transition-colors hover:bg-danger-hover disabled:opacity-60;
+}
+
+@utility btn-add {
+	@apply rounded-lg border border-dashed border-field-border px-4 py-2 text-sm text-form-muted transition-colors hover:bg-secondary-hover;
+}
+
 :root.dark .shadow-sm,
 :root.hotdog .shadow-sm {
 	box-shadow: var(--theme-card-shadow);

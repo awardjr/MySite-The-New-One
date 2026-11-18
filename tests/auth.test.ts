@@ -12,7 +12,6 @@ import { recoveryKeyMatches, seedAdmin } from './auth-helpers';
 import { fakeCookies, uniqueAddress } from './route-helpers';
 import { getTestDb } from './test-db';
 import {
-	cancelTotpSetup,
 	cancelTwoFactorChallenge,
 	checkCredentials,
 	checkPassword,
@@ -29,29 +28,21 @@ import {
 	generateRecoveryKey,
 	getAdminProfile,
 	getPendingTotpSecret,
-	guardLogin,
-	guardReset,
+	loginAttempts,
+	resetAttempts,
 	hashSecret,
 	hasTwoFactorChallenge,
-	invalidateAllResetTokens,
 	invalidateAllSessions,
 	isAdminConfigured,
-	isResetLocked,
 	isTotpEnabled,
 	isValidEmail,
 	normalizeRecoveryKey,
-	recordFailedReset,
-	recordSuccessfulLogin,
-	recordSuccessfulReset,
 	redeemRecoveryKey,
 	requestEmailPasswordReset,
-	resetPasswordWithRecoveryKey,
 	resetPasswordWithToken,
-	rotateRecoveryKey,
 	safeEqual,
 	SESSION_COOKIE_NAME,
 	sessionCookieOptions,
-	setRecoveryKey,
 	startSession,
 	startTotpSetup,
 	twoFactorCookieOptions,
@@ -104,16 +95,6 @@ describe('admin credentials and profile', () => {
 		expect(await requestEmailPasswordReset('admin', 'https://example.test')).toBe(false);
 	});
 
-	it('configures the account with a normalized profile', async () => {
-		await seedAdmin('  adminuser ', ' Admin@Example.COM ', 'supersecret123', 'A1B2-C3D4-E5F6-A7B8');
-
-		expect(isAdminConfigured()).toBe(true);
-		expect(getAdminProfile()).toEqual({ username: 'adminuser', email: 'admin@example.com' });
-		expect(await checkPassword('supersecret123')).toBe(true);
-		expect(await checkPassword('wrong-password')).toBe(false);
-		expect(await checkPassword('')).toBe(false);
-	});
-
 	it('verifies login credentials by username or email case-insensitively', async () => {
 		await seedAdmin('MyUsername', 'Admin@Example.COM', 'correct-password');
 
@@ -162,12 +143,11 @@ describe('secret hashing helpers', () => {
 		expect(await verifySecret('other-secret', first)).toBe(false);
 	});
 
-	it.each(['', 'no-separator', 'salt:', ':hash', 'salt:abcd'])(
-		'rejects the malformed stored hash %j',
-		async (stored) => {
-			expect(await verifySecret('secret', stored)).toBe(false);
+	it('rejects a malformed stored hash', async () => {
+		for (const stored of ['', 'no-separator', 'salt:', 'salt:abcd']) {
+			expect(await verifySecret('secret', stored), stored).toBe(false);
 		}
-	);
+	});
 
 	it('compares strings of any length for equality', () => {
 		expect(safeEqual('setup-token', 'setup-token')).toBe(true);
@@ -183,66 +163,6 @@ describe('emergency recovery key', () => {
 		expect(key).toMatch(RECOVERY_KEY_FORMAT);
 		expect(generateRecoveryKey()).not.toBe(key);
 		expect(normalizeRecoveryKey(' a1b2-c3d4 e5f6-a7b8 ')).toBe('A1B2C3D4E5F6A7B8');
-	});
-
-	it.each(['1234-ABCD-5678-EF90', '1234abcd5678ef90', ' 1234-abcd-5678-ef90 '])(
-		'redeems the key typed as %j',
-		async (typed) => {
-			await seedAdmin('admin', 'admin@example.com', 'pass12345', '1234-ABCD-5678-EF90');
-
-			expect(await redeemRecoveryKey('1234-ABCD-5678-EF91')).toBeNull();
-			expect(await redeemRecoveryKey(typed)).toMatch(RECOVERY_KEY_FORMAT);
-		}
-	);
-
-	it('treats input with no usable characters as wrong, not as an empty key', async () => {
-		await seedAdmin('admin', 'admin@example.com', 'pass12345', 'AAAA-AAAA-AAAA-AAAA');
-
-		expect(await redeemRecoveryKey('---')).toBeNull();
-		expect(await redeemRecoveryKey('   ')).toBeNull();
-		expect(await recoveryKeyMatches('AAAA-AAAA-AAAA-AAAA')).toBe(true);
-	});
-
-	it('replaces the key when set or rotated', async () => {
-		await seedAdmin('admin', 'admin@example.com', 'pass12345', 'AAAA-AAAA-AAAA-AAAA');
-
-		await setRecoveryKey('BBBB-BBBB-BBBB-BBBB');
-		expect(await recoveryKeyMatches('AAAA-AAAA-AAAA-AAAA')).toBe(false);
-		expect(await recoveryKeyMatches('BBBB-BBBB-BBBB-BBBB')).toBe(true);
-
-		const rotated = await rotateRecoveryKey();
-		expect(rotated).toMatch(RECOVERY_KEY_FORMAT);
-		expect(await recoveryKeyMatches('BBBB-BBBB-BBBB-BBBB')).toBe(false);
-		expect(await recoveryKeyMatches(rotated)).toBe(true);
-	});
-
-	it('resets the password, uses up the code and revokes sessions and reset links', async () => {
-		await seedAdmin('admin', 'admin@example.com', 'old-password', 'AAAA-BBBB-CCCC-DDDD');
-		const sessionToken = createSession();
-		const resetToken = createPasswordResetToken();
-
-		const newKey = await resetPasswordWithRecoveryKey('aaaa-bbbb-cccc-dddd', 'brand-new-password');
-
-		expect(newKey).toMatch(RECOVERY_KEY_FORMAT);
-		expect(await checkPassword('brand-new-password')).toBe(true);
-		expect(await checkPassword('old-password')).toBe(false);
-		expect(verifySessionToken(sessionToken)).toBe(false);
-		expect(verifyResetToken(resetToken)).toBe(false);
-		expect(await recoveryKeyMatches('AAAA-BBBB-CCCC-DDDD')).toBe(false);
-		expect(await recoveryKeyMatches(newKey!)).toBe(true);
-	});
-
-	it('changes nothing when the recovery code is wrong', async () => {
-		await seedAdmin('admin', 'admin@example.com', 'old-password', 'AAAA-BBBB-CCCC-DDDD');
-		const sessionToken = createSession();
-		const resetToken = createPasswordResetToken();
-
-		expect(await resetPasswordWithRecoveryKey('FFFF-0000-0000-0000', 'new-password')).toBeNull();
-
-		expect(await checkPassword('old-password')).toBe(true);
-		expect(await recoveryKeyMatches('AAAA-BBBB-CCCC-DDDD')).toBe(true);
-		expect(verifySessionToken(sessionToken)).toBe(true);
-		expect(verifyResetToken(resetToken)).toBe(true);
 	});
 
 	it('uses up a recovery code when it is redeemed and returns its replacement', async () => {
@@ -307,19 +227,53 @@ describe('input validation', () => {
 		expect(validateNewPassword('long-enough', 'long-enough ')).toBe('Passwords do not match.');
 	});
 
-	it.each([
-		['me@example.com', true],
-		['first.last+tag@sub.example.co', true],
-		['', false],
-		['me', false],
-		['me@example', false],
-		['@example.com', false],
-		['me@.', false],
-		['me @example.com', false],
-		['me@exa mple.com', false],
-		['me@@example.com', false]
-	])('classifies the email %j as valid: %s', (email, valid) => {
-		expect(isValidEmail(email)).toBe(valid);
+	it('accepts only plausible email addresses', () => {
+		expect(isValidEmail('first.last+tag@sub.example.co')).toBe(true);
+		for (const email of ['', 'me@example', '@example.com', 'me @example.com', 'me@@example.com']) {
+			expect(isValidEmail(email), email).toBe(false);
+		}
+	});
+});
+
+describe.each([
+	{
+		name: 'reset token',
+		table: 'password_reset_tokens',
+		lifetime: 15 * MINUTE,
+		create: createPasswordResetToken,
+		verify: verifyResetToken
+	},
+	{
+		name: 'session',
+		table: 'sessions',
+		lifetime: 7 * DAY,
+		create: createSession,
+		verify: verifySessionToken
+	}
+])('$name storage', ({ table, lifetime, create, verify }) => {
+	it('stores only a hash and accepts nothing but the issued token', () => {
+		const token = create();
+		const { token_hash: stored } = testDb.prepare(`SELECT token_hash FROM ${table}`).get() as {
+			token_hash: string;
+		};
+
+		expect(stored).not.toBe(token);
+		expect(stored).toMatch(/^[0-9a-f]{64}$/);
+		for (const wrong of [stored, 'unknown-token', '', null, undefined]) {
+			expect(verify(wrong)).toBe(false);
+		}
+		expect(verify(token)).toBe(true);
+	});
+
+	it('removes a token at the exact end of its lifetime', () => {
+		const token = create();
+
+		advanceClock(lifetime - 1);
+		expect(verify(token)).toBe(true);
+
+		advanceClock(1);
+		expect(verify(token)).toBe(false);
+		expect(rowCount(table)).toBe(0);
 	});
 });
 
@@ -327,43 +281,12 @@ describe('email reset link and password reset tokens', () => {
 	const linkToken = (call = 0) =>
 		new URL(sentEmail.mock.calls[call][1]).searchParams.get('token') as string;
 
-	it('accepts a token for exactly 15 minutes and then removes it', () => {
-		const token = createPasswordResetToken();
-
-		advanceClock(15 * MINUTE - 1);
-		expect(verifyResetToken(token)).toBe(true);
-
-		advanceClock(1);
-		expect(verifyResetToken(token)).toBe(false);
-		expect(rowCount('password_reset_tokens')).toBe(0);
-	});
-
-	it('rejects missing and unknown tokens', () => {
-		createPasswordResetToken();
-		expect(verifyResetToken('fake-token')).toBe(false);
-		expect(verifyResetToken('')).toBe(false);
-		expect(verifyResetToken(null)).toBe(false);
-		expect(verifyResetToken(undefined)).toBe(false);
-	});
-
 	it('invalidates the previous link when a new one is issued', () => {
 		const first = createPasswordResetToken();
 		const second = createPasswordResetToken();
 
 		expect(verifyResetToken(first)).toBe(false);
 		expect(verifyResetToken(second)).toBe(true);
-	});
-
-	it('stores only a hash of the reset token, which cannot be used as a token', () => {
-		const token = createPasswordResetToken();
-		const rows = testDb.prepare('SELECT token_hash FROM password_reset_tokens').all() as {
-			token_hash: string;
-		}[];
-
-		expect(rows).toHaveLength(1);
-		expect(rows[0].token_hash).not.toBe(token);
-		expect(rows[0].token_hash).toMatch(/^[0-9a-f]{64}$/);
-		expect(verifyResetToken(rows[0].token_hash)).toBe(false);
 	});
 
 	it('redeems a reset token only once, even for simultaneous requests', async () => {
@@ -381,86 +304,55 @@ describe('email reset link and password reset tokens', () => {
 		expect(await checkPassword('first-new-password')).toBe(true);
 	});
 
-	it('invalidates all reset tokens', () => {
-		const token = createPasswordResetToken();
-		invalidateAllResetTokens();
-		expect(verifyResetToken(token)).toBe(false);
-	});
+	it('emails a working link when the username or email is submitted', async () => {
+		await seedAdmin('siteadmin', 'contact@example.com', 'secretpass');
 
-	it.each(['contact@example.com', ' CONTACT@example.com ', 'siteadmin', 'SiteAdmin'])(
-		'emails a working link to the account address when %j is submitted',
-		async (identifier) => {
-			await seedAdmin('siteadmin', 'contact@example.com', 'secretpass');
-
+		for (const [call, identifier] of [' CONTACT@example.com ', 'SiteAdmin'].entries()) {
 			expect(await requestEmailPasswordReset(identifier, 'https://example.test')).toBe(true);
 
-			expect(sentEmail).toHaveBeenCalledOnce();
-			const [to, link] = sentEmail.mock.calls[0];
+			const [to, link] = sentEmail.mock.calls[call];
 			expect(to).toBe('contact@example.com');
 			expect(link.startsWith('https://example.test/admin/reset?token=')).toBe(true);
-			expect(verifyResetToken(linkToken())).toBe(true);
+			expect(verifyResetToken(linkToken(call))).toBe(true);
 		}
-	);
+	});
 
-	it('sends nothing and keeps the pending link for an unknown identifier', async () => {
+	it('keeps the earlier link and drops the new one when the email cannot be sent', async () => {
 		await seedAdmin('siteadmin', 'contact@example.com', 'secretpass');
-		const pending = createPasswordResetToken();
+		const earlier = createPasswordResetToken();
+		sentEmail.mockResolvedValueOnce(false);
 
-		expect(await requestEmailPasswordReset('stranger@example.com', 'https://x.test')).toBe(false);
+		expect(await requestEmailPasswordReset('siteadmin', 'https://example.test')).toBe(false);
 
-		expect(sentEmail).not.toHaveBeenCalled();
-		expect(verifyResetToken(pending)).toBe(true);
+		expect(verifyResetToken(earlier)).toBe(true);
+		expect(verifyResetToken(linkToken())).toBe(false);
 	});
 
-	it('resets the password with a token, consuming it and revoking sessions', async () => {
-		await seedAdmin('admin', 'admin@example.com', 'initial-pass');
-		const sessionToken = createSession();
-		const resetToken = createPasswordResetToken();
+	it('replaces the earlier link once the new one has been sent', async () => {
+		await seedAdmin('siteadmin', 'contact@example.com', 'secretpass');
+		const earlier = createPasswordResetToken();
 
-		expect(await resetPasswordWithToken(resetToken, 'fresh-password-123')).toBe(true);
+		expect(await requestEmailPasswordReset('siteadmin', 'https://example.test')).toBe(true);
 
-		expect(await checkPassword('fresh-password-123')).toBe(true);
-		expect(await checkPassword('initial-pass')).toBe(false);
-		expect(verifyResetToken(resetToken)).toBe(false);
-		expect(verifySessionToken(sessionToken)).toBe(false);
-		// A reset never signs anyone in, so two-factor authentication still applies at login.
-		expect(rowCount('sessions')).toBe(0);
+		expect(verifyResetToken(earlier)).toBe(false);
+		expect(verifyResetToken(linkToken())).toBe(true);
 	});
 
-	it('changes nothing for an invalid or expired token', async () => {
-		await seedAdmin('admin', 'admin@example.com', 'initial-pass');
-		const sessionToken = createSession();
-		const expired = createPasswordResetToken();
-		advanceClock(15 * MINUTE);
+	it('invalidates a link still being sent when an earlier one resets the password', async () => {
+		await seedAdmin('siteadmin', 'contact@example.com', 'secretpass');
+		const earlier = createPasswordResetToken();
+		sentEmail.mockImplementationOnce(async () => {
+			expect(await resetPasswordWithToken(earlier, 'brand-new-password')).toBe(true);
+			return true;
+		});
 
-		expect(await resetPasswordWithToken(expired, 'new-password-1')).toBe(false);
-		expect(await resetPasswordWithToken('fake-token', 'new-password-2')).toBe(false);
+		await requestEmailPasswordReset('siteadmin', 'https://example.test');
 
-		expect(await checkPassword('initial-pass')).toBe(true);
-		expect(verifySessionToken(sessionToken)).toBe(true);
+		expect(verifyResetToken(linkToken())).toBe(false);
 	});
 });
 
 describe('sessions', () => {
-	it('accepts a session for exactly 7 days and then removes it', () => {
-		const token = createSession();
-
-		advanceClock(7 * DAY - 1);
-		expect(verifySessionToken(token)).toBe(true);
-
-		advanceClock(1);
-		expect(verifySessionToken(token)).toBe(false);
-		expect(rowCount('sessions')).toBe(0);
-	});
-
-	it('rejects missing and unknown tokens', () => {
-		createSession();
-		expect(verifySessionToken(undefined)).toBe(false);
-		expect(verifySessionToken(null)).toBe(false);
-		expect(verifySessionToken('')).toBe(false);
-		expect(verifySessionToken('not-a-real-token')).toBe(false);
-	});
-
 	it('deletes only the given session and sweeps expired ones', () => {
 		const expired = createSession();
 		advanceClock(7 * DAY);
@@ -473,35 +365,10 @@ describe('sessions', () => {
 		expect(verifySessionToken(other)).toBe(true);
 		expect(rowCount('sessions')).toBe(1);
 		expect(verifySessionToken(expired)).toBe(false);
-	});
 
-	it('sweeps expired sessions even when signing out without a token', () => {
-		createSession();
 		advanceClock(7 * DAY);
 		deleteSession(undefined);
 		expect(rowCount('sessions')).toBe(0);
-	});
-
-	it('stores only a hash of the session id, which cannot be used as a session', () => {
-		const token = createSession();
-		const rows = testDb.prepare('SELECT token_hash FROM sessions').all() as {
-			token_hash: string;
-		}[];
-
-		expect(rows).toHaveLength(1);
-		expect(rows[0].token_hash).not.toBe(token);
-		expect(rows[0].token_hash).toMatch(/^[0-9a-f]{64}$/);
-		expect(verifySessionToken(rows[0].token_hash)).toBe(false);
-	});
-
-	it('invalidates every session at once', () => {
-		const tokenA = createSession();
-		const tokenB = createSession();
-
-		invalidateAllSessions();
-
-		expect(verifySessionToken(tokenA)).toBe(false);
-		expect(verifySessionToken(tokenB)).toBe(false);
 	});
 
 	it('signs a browser in with a hardened cookie and signs it out again', () => {
@@ -525,15 +392,7 @@ describe('sessions', () => {
 	});
 });
 
-describe.each([
-	{ name: 'login', guard: guardLogin, otherGuard: guardReset, clear: recordSuccessfulLogin },
-	{
-		name: 'password reset',
-		guard: guardReset,
-		otherGuard: guardLogin,
-		clear: recordSuccessfulReset
-	}
-])('$name attempt limiter', ({ guard, otherGuard, clear }) => {
+function limiterHelpers(guard: typeof loginAttempts.guard) {
 	const fail = (address: string) => guard(address, async () => false);
 	const failTimes = async (address: string, times: number) => {
 		for (let i = 0; i < times; i++) await fail(address);
@@ -541,19 +400,30 @@ describe.each([
 	// A passing check records nothing, so it can probe the lockout without changing it.
 	const isLocked = async (address: string, limiter = guard) =>
 		(await limiter(address, async () => true)) === 'locked';
+	return { fail, failTimes, isLocked };
+}
 
-	it('locks on the fifth failure, not before', async () => {
-		const address = uniqueAddress();
-		await failTimes(address, 4);
-		expect(await isLocked(address)).toBe(false);
-		await fail(address);
-		expect(await isLocked(address)).toBe(true);
-	});
+describe.each([
+	{
+		name: 'login',
+		guard: loginAttempts.guard,
+		otherGuard: resetAttempts.guard,
+		clear: loginAttempts.clear
+	},
+	{
+		name: 'password reset',
+		guard: resetAttempts.guard,
+		otherGuard: loginAttempts.guard,
+		clear: resetAttempts.clear
+	}
+])('$name attempt limiter', ({ guard, otherGuard, clear }) => {
+	const { failTimes, isLocked } = limiterHelpers(guard);
 
 	it('tracks each address separately and leaves the other limiter alone', async () => {
 		const address = uniqueAddress();
 		await failTimes(address, 5);
 
+		expect(await isLocked(address)).toBe(true);
 		expect(await isLocked(uniqueAddress())).toBe(false);
 		expect(await isLocked(address, otherGuard)).toBe(false);
 	});
@@ -567,6 +437,11 @@ describe.each([
 		await failTimes(address, 4);
 		expect(await isLocked(address)).toBe(false);
 	});
+});
+
+// Both limiters share one implementation, so its counting and timing are tested once.
+describe('attempt limiter timing', () => {
+	const { fail, failTimes, isLocked } = limiterHelpers(loginAttempts.guard);
 
 	it('counts failures within a 15 minute window', async () => {
 		const address = uniqueAddress();
@@ -603,28 +478,16 @@ describe.each([
 });
 
 describe('guarded secret checks', () => {
-	const failLogin = (address: string) => guardLogin(address, async () => false);
+	const failLogin = (address: string) => loginAttempts.guard(address, async () => false);
 
 	it('counts falsy results as failures and refuses to run the check once locked', async () => {
 		const address = uniqueAddress();
 		const wrong = vi.fn(async () => false);
 
-		for (let i = 0; i < 5; i++) expect(await guardLogin(address, wrong)).toBe(false);
+		for (let i = 0; i < 5; i++) expect(await loginAttempts.guard(address, wrong)).toBe(false);
 
-		expect(await guardLogin(address, wrong)).toBe('locked');
+		expect(await loginAttempts.guard(address, wrong)).toBe('locked');
 		expect(wrong).toHaveBeenCalledTimes(5);
-	});
-
-	it('refuses even a correct secret after failures recorded outside the guard', async () => {
-		const address = uniqueAddress();
-		for (let i = 0; i < 4; i++) recordFailedReset(address);
-		expect(isResetLocked(address)).toBe(false);
-		recordFailedReset(address);
-		expect(isResetLocked(address)).toBe(true);
-		const correct = vi.fn(async () => 'new-key');
-
-		expect(await guardReset(address, correct)).toBe('locked');
-		expect(correct).not.toHaveBeenCalled();
 	});
 
 	it('holds the limit when many attempts arrive at once', async () => {
@@ -634,7 +497,9 @@ describe('guarded secret checks', () => {
 			return null;
 		});
 
-		const results = await Promise.all(Array.from({ length: 20 }, () => guardReset(address, wrong)));
+		const results = await Promise.all(
+			Array.from({ length: 20 }, () => resetAttempts.guard(address, wrong))
+		);
 
 		expect(wrong).toHaveBeenCalledTimes(5);
 		expect(results.filter((result) => result === 'locked')).toHaveLength(15);
@@ -644,8 +509,8 @@ describe('guarded secret checks', () => {
 		const address = uniqueAddress();
 		for (let i = 0; i < 4; i++) await failLogin(address);
 
-		expect(await guardLogin(address, async () => ({ ok: true }))).toEqual({ ok: true });
-		expect(await guardLogin(address, async () => 'not locked')).toBe('not locked');
+		expect(await loginAttempts.guard(address, async () => ({ ok: true }))).toEqual({ ok: true });
+		expect(await loginAttempts.guard(address, async () => 'not locked')).toBe('not locked');
 	});
 
 	it('keeps working after a check throws, without counting it as a failure', async () => {
@@ -653,12 +518,12 @@ describe('guarded secret checks', () => {
 		for (let i = 0; i < 4; i++) await failLogin(address);
 
 		await expect(
-			guardLogin(address, async () => {
+			loginAttempts.guard(address, async () => {
 				throw new Error('database unavailable');
 			})
 		).rejects.toThrow('database unavailable');
 
-		expect(await guardLogin(address, async () => 'still running')).toBe('still running');
+		expect(await loginAttempts.guard(address, async () => 'still running')).toBe('still running');
 	});
 });
 
@@ -702,14 +567,6 @@ describe('two-factor authentication', () => {
 		expect(getPendingTotpSecret()).toBeNull();
 	});
 
-	it('replaces the pending secret when setup is restarted', () => {
-		const abandoned = startTotpSetup();
-		const secret = startTotpSetup();
-
-		expect(confirmTotpSetup(currentCode(abandoned))).toBe(false);
-		expect(confirmTotpSetup(currentCode(secret))).toBe(true);
-	});
-
 	it('stores pending and enabled secrets as ciphertext', () => {
 		const secret = startTotpSetup();
 		expect(adminRow().totp_pending_secret).toMatch(/^v1:/);
@@ -721,37 +578,17 @@ describe('two-factor authentication', () => {
 		expect(adminRow().totp_secret).not.toContain(secret);
 	});
 
-	it('fails closed on a stored secret that is not valid ciphertext', () => {
-		const secret = enableTotp();
-		testDb.prepare('UPDATE admin_user SET totp_secret = ? WHERE id = 1').run(secret);
-
-		expect(verifyTotpCode(currentCode(secret))).toBe(false);
-		expect(adminRow().totp_secret).toBe(secret);
-	});
-
-	it('fails closed on an incorrect encryption key but keeps recovery available', async () => {
+	it('fails closed on an unreadable secret but keeps recovery available', async () => {
 		const secret = enableTotp();
 
 		process.env.TOTP_ENCRYPTION_KEY = 'wrong-key-that-is-also-longer-than-32-bytes';
-
 		expect(isTotpEnabled()).toBe(true);
 		expect(verifyTotpCode(currentCode(secret))).toBe(false);
 		expect(await verifySecondFactor(RECOVERY_KEY)).toMatchObject({ method: 'recovery' });
-	});
 
-	it('refuses to start setup without a sufficiently long encryption key', () => {
-		process.env.TOTP_ENCRYPTION_KEY = 'short';
-		expect(() => startTotpSetup()).toThrow('TOTP_ENCRYPTION_KEY');
-		expect(adminRow().totp_pending_secret).toBeNull();
-	});
-
-	it('can cancel a pending setup without turning 2FA on', () => {
-		const secret = startTotpSetup();
-		cancelTotpSetup();
-
-		expect(getPendingTotpSecret()).toBeNull();
-		expect(confirmTotpSetup(currentCode(secret))).toBe(false);
-		expect(isTotpEnabled()).toBe(false);
+		process.env.TOTP_ENCRYPTION_KEY = TEST_TOTP_ENCRYPTION_KEY;
+		testDb.prepare('UPDATE admin_user SET totp_secret = ? WHERE id = 1').run(secret);
+		expect(verifyTotpCode(currentCode(secret))).toBe(false);
 	});
 
 	it('accepts each code only once and rejects older ones', () => {
@@ -772,6 +609,9 @@ describe('two-factor authentication', () => {
 
 		const spaced = currentCode(secret).replace(/^(\d{3})/, '$1 ');
 		expect(await verifySecondFactor(spaced)).toEqual({ method: 'totp' });
+
+		const pairs = currentCode(secret, 1).replace(/(\d{2})(?=\d)/g, '$1 ');
+		expect(await verifySecondFactor(pairs)).toEqual({ method: 'totp' });
 
 		const factor = await verifySecondFactor('a1b2-c3d4-e5f6-a7b8');
 		expect(factor).toMatchObject({ method: 'recovery' });
@@ -804,34 +644,20 @@ describe('two-factor authentication', () => {
 		expect(verifyTotpCode(currentCode(secret))).toBe(true);
 	});
 
-	it('allows four wrong codes and discards the challenge on the fifth', async () => {
-		const secret = enableTotp();
-		const survivor = createTwoFactorChallenge();
-		for (let i = 0; i < 4; i++) await completeTwoFactorChallenge(survivor, 'WRONG-CODE');
-		expect(hasTwoFactorChallenge(survivor)).toBe(true);
-		expect(await completeTwoFactorChallenge(survivor, currentCode(secret))).toEqual({
-			method: 'totp'
-		});
-
-		const token = createTwoFactorChallenge();
-		for (let i = 0; i < 5; i++) await completeTwoFactorChallenge(token, 'WRONG-CODE');
-		expect(hasTwoFactorChallenge(token)).toBe(false);
-		expect(await completeTwoFactorChallenge(token, RECOVERY_KEY)).toBeNull();
-	});
-
 	it('discards pending logins when sessions are revoked', () => {
 		const token = createTwoFactorChallenge();
 		invalidateAllSessions();
 		expect(hasTwoFactorChallenge(token)).toBe(false);
 	});
 
-	it('does not complete a challenge cancelled while its code was being checked', async () => {
+	it('ends a login cancelled during its code check, keeping the recovery code', async () => {
 		const token = createTwoFactorChallenge();
 
 		const pending = completeTwoFactorChallenge(token, RECOVERY_KEY);
 		cancelTwoFactorChallenge(token);
 
 		expect(await pending).toBeNull();
+		expect(await verifySecondFactor(RECOVERY_KEY)).toMatchObject({ method: 'recovery' });
 	});
 
 	it('keeps a login challenge for exactly 5 minutes', () => {

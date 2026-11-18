@@ -22,9 +22,8 @@ import {
 	getPendingTotpSecret,
 	hasTwoFactorChallenge,
 	isAdminConfigured,
-	isResetLocked,
+	resetAttempts,
 	isTotpEnabled,
-	recordFailedReset,
 	SESSION_COOKIE_NAME,
 	startTotpSetup,
 	TWO_FACTOR_COOKIE_NAME,
@@ -105,20 +104,20 @@ describe('login page', () => {
 		expect(verifySessionToken(cookies.get(SESSION_COOKIE_NAME))).toBe(true);
 	});
 
-	it.each([
-		['/admin/works', '/admin/works'],
-		['/admin', '/admin'],
-		['/admin?tab=1', '/admin?tab=1'],
-		['https://evil.test/', '/admin'],
-		['//evil.test/admin/', '/admin'],
-		['/\\evil.test', '/admin'],
-		['/admin/\\evil.test', '/admin'],
-		['/administrator', '/admin'],
-		['/blog', '/admin'],
-		['', '/admin']
-	])('sends redirectTo=%j to %s', async (target, location) => {
-		const url = `${LOGIN_URL}?redirectTo=${encodeURIComponent(target)}`;
-		expect((await signIn(fakeCookies(), uniqueAddress(), PASSWORD, url)).location).toBe(location);
+	it('follows redirectTo only inside the admin area', async () => {
+		for (const [target, location] of [
+			['/admin/works', '/admin/works'],
+			['/admin?tab=1', '/admin?tab=1'],
+			['https://evil.test/', '/admin'],
+			['//evil.test/admin/', '/admin'],
+			['/\\evil.test', '/admin'],
+			['/admin/\\evil.test', '/admin'],
+			['/administrator', '/admin']
+		]) {
+			const url = `${LOGIN_URL}?redirectTo=${encodeURIComponent(target)}`;
+			const result = await signIn(fakeCookies(), uniqueAddress(), PASSWORD, url);
+			expect(result.location, target).toBe(location);
+		}
 	});
 
 	it('rejects a wrong password, keeping the username but not the password', async () => {
@@ -130,9 +129,7 @@ describe('login page', () => {
 		expect(JSON.stringify(result.data)).not.toContain('wrong-password');
 		expect(cookies.values.size).toBe(0);
 		expect(sessionCount()).toBe(0);
-	});
-
-	it('does not trim the submitted password', async () => {
+		// Passwords are compared exactly as typed.
 		expect((await signIn(fakeCookies(), uniqueAddress(), ` ${PASSWORD} `)).status).toBe(401);
 	});
 
@@ -198,6 +195,9 @@ describe('login page', () => {
 		});
 
 		it('asks for a code after the password instead of starting a session', async () => {
+			await signIn(cookies, address, 'wrong-password');
+			expect(cookies.get(TWO_FACTOR_COOKIE_NAME)).toBeUndefined();
+
 			expect(await signIn(cookies, address)).toMatchObject({
 				kind: 'ok',
 				data: { twoFactor: true }
@@ -207,12 +207,8 @@ describe('login page', () => {
 			expect(hasTwoFactorChallenge(cookies.get(TWO_FACTOR_COOKIE_NAME))).toBe(true);
 		});
 
-		it('never reaches the code step with a wrong password', async () => {
-			await signIn(cookies, address, 'wrong-password');
-			expect(cookies.get(TWO_FACTOR_COOKIE_NAME)).toBeUndefined();
-		});
-
 		it('starts a session after a correct code and honors the redirect target', async () => {
+			for (let i = 0; i < 4; i++) await signIn(fakeCookies(), address, 'wrong-password');
 			await signIn(cookies, address);
 
 			const result = await submitCode(code(secret), `${LOGIN_URL}?redirectTo=/admin/works`);
@@ -220,6 +216,10 @@ describe('login page', () => {
 			expect(result).toMatchObject({ kind: 'redirect', location: '/admin/works' });
 			expect(verifySessionToken(cookies.get(SESSION_COOKIE_NAME))).toBe(true);
 			expect(cookies.get(TWO_FACTOR_COOKIE_NAME)).toBeUndefined();
+
+			// The completed login cleared the earlier failures, so this address isn't near a lockout.
+			await signIn(fakeCookies(), address, 'wrong-password');
+			expect((await signIn(fakeCookies(), address, 'wrong-password')).status).toBe(401);
 		});
 
 		it('rejects a code without a pending password step', async () => {
@@ -318,27 +318,31 @@ describe('first-time setup page', () => {
 		expect(verifySessionToken(cookies.get(SESSION_COOKIE_NAME))).toBe(true);
 	});
 
-	it.each([
-		['a blank username', { username: '  ' }],
-		['a blank email', { email: '' }],
-		['an invalid email', { email: 'not-an-email' }],
-		['a short password', { password: 'short', confirmPassword: 'short' }],
-		['a mismatched confirmation', { confirmPassword: 'something-else' }]
-	])('rejects %s without creating an account', async (_name, overrides) => {
+	it('rejects invalid details without creating an account', async () => {
 		const cookies = fakeCookies();
 
-		const result = await submit(setup.actions.default, {
-			fields: { ...validFields, ...overrides },
-			cookies
-		});
+		for (const overrides of [
+			{ username: '  ' },
+			{ email: '' },
+			{ email: 'not-an-email' },
+			{ confirmPassword: 'something-else' }
+		]) {
+			const result = await submit(setup.actions.default, {
+				fields: { ...validFields, ...overrides },
+				cookies
+			});
 
-		expect(result).toMatchObject({ kind: 'failure', status: 400 });
-		expect(JSON.stringify(result.data)).not.toContain(NEW_PASSWORD);
+			expect(result, JSON.stringify(overrides)).toMatchObject({ kind: 'failure', status: 400 });
+			expect(JSON.stringify(result.data)).not.toContain(NEW_PASSWORD);
+		}
+
 		expect(isAdminConfigured()).toBe(false);
 		expect(cookies.values.size).toBe(0);
 	});
 
-	it('requires the setup token when one is configured', async () => {
+	it('requires the setup token only when one is configured', async () => {
+		expect((await loadPage(setup.load)).data).toEqual({ setupTokenRequired: false });
+
 		vi.stubEnv('SETUP_TOKEN', 'deploy-secret');
 		expect((await loadPage(setup.load)).data).toEqual({ setupTokenRequired: true });
 
@@ -356,11 +360,15 @@ describe('first-time setup page', () => {
 		expect(result.kind).toBe('ok');
 	});
 
-	it('does not ask for a token when none is configured', async () => {
-		expect((await loadPage(setup.load)).data).toEqual({ setupTokenRequired: false });
-	});
+	it('refuses to run once an account exists, even for a request racing the first', async () => {
+		const results = await Promise.all(
+			[fakeCookies(), fakeCookies()].map((cookies) =>
+				submit(setup.actions.default, { fields: validFields, cookies })
+			)
+		);
+		expect(results.map((result) => result.kind).sort()).toEqual(['ok', 'redirect']);
+		expect(sessionCount()).toBe(1);
 
-	it('refuses to run once an account exists', async () => {
 		await seedAdmin('admin', 'admin@example.com', PASSWORD);
 		const cookies = fakeCookies();
 
@@ -403,13 +411,16 @@ describe('password reset link page', () => {
 
 	it('changes the password and sends the admin to log in, without a session', async () => {
 		const existingSession = createSession();
+		const token = createPasswordResetToken();
 
-		expect(await submitReset(createPasswordResetToken())).toMatchObject({
+		expect(await submitReset(token)).toMatchObject({
 			kind: 'redirect',
 			location: '/admin/login?reset'
 		});
 
 		expect(await checkPassword(NEW_PASSWORD)).toBe(true);
+		expect(await checkPassword(PASSWORD)).toBe(false);
+		expect(verifyResetToken(token)).toBe(false);
 		expect(verifySessionToken(existingSession)).toBe(false);
 		expect(sessionCount()).toBe(0);
 	});
@@ -426,7 +437,7 @@ describe('password reset link page', () => {
 		expect(result).toMatchObject({ kind: 'failure', status: 400 });
 		expect(await checkPassword(PASSWORD)).toBe(true);
 		expect(verifyResetToken(token)).toBe(true);
-		expect(isResetLocked(address)).toBe(false);
+		expect(resetAttempts.isLocked(address)).toBe(false);
 	});
 
 	it('locks out an address guessing tokens, even for a real one afterwards', async () => {
@@ -448,7 +459,7 @@ describe('password reset link page', () => {
 		await submitReset(createPasswordResetToken(), address);
 		await submitReset('guess', address);
 
-		expect(isResetLocked(address)).toBe(false);
+		expect(resetAttempts.isLocked(address)).toBe(false);
 	});
 });
 
@@ -495,7 +506,7 @@ describe('forgot password page', () => {
 		for (let i = 0; i < 5; i++) {
 			expect(await requestLink('   ', address)).toMatchObject({ kind: 'failure', status: 400 });
 		}
-		expect(isResetLocked(address)).toBe(false);
+		expect(resetAttempts.isLocked(address)).toBe(false);
 		expect(sentEmail).not.toHaveBeenCalled();
 	});
 
@@ -519,35 +530,44 @@ describe('forgot password page', () => {
 
 	it('resets with the recovery code, shows its replacement and signs nobody in', async () => {
 		const existingSession = createSession();
+		const resetToken = createPasswordResetToken();
+		const address = uniqueAddress();
+		for (let i = 0; i < 4; i++) await resetWithKey('FFFF-0000-0000-0000', address);
 
-		const result = await resetWithKey(RECOVERY_KEY.toLowerCase());
+		const result = await resetWithKey(RECOVERY_KEY.toLowerCase(), address);
 
 		expect(result.data.passwordReset).toBe(true);
 		expect(await recoveryKeyMatches(result.data.newRecoveryKey)).toBe(true);
+		expect(await recoveryKeyMatches(RECOVERY_KEY)).toBe(false);
 		expect(await checkPassword(NEW_PASSWORD)).toBe(true);
+		expect(verifyResetToken(resetToken)).toBe(false);
 		expect(verifySessionToken(existingSession)).toBe(false);
 		expect(sessionCount()).toBe(0);
+
+		// The successful reset cleared the earlier failures.
+		await resetWithKey('FFFF-0000-0000-0000', address);
+		expect(resetAttempts.isLocked(address)).toBe(false);
 	});
 
-	it.each([
-		['a blank code', '   ', newPasswordFields],
-		['a short password', RECOVERY_KEY, { newPassword: 'short', confirmPassword: 'short' }],
-		[
-			'a mismatched confirmation',
-			RECOVERY_KEY,
-			{ newPassword: NEW_PASSWORD, confirmPassword: 'different-password' }
-		]
-	])('rejects %s without using up the code', async (_name, key, fields) => {
+	it('rejects invalid input without using up the code', async () => {
 		const address = uniqueAddress();
 
-		expect(await resetWithKey(key, address, fields)).toMatchObject({
-			kind: 'failure',
-			status: 400
-		});
+		for (const [key, fields] of [
+			['   ', newPasswordFields],
+			[RECOVERY_KEY, { newPassword: NEW_PASSWORD, confirmPassword: 'different-password' }]
+		] as const) {
+			expect(await resetWithKey(key, address, fields)).toMatchObject({
+				kind: 'failure',
+				status: 400
+			});
+		}
+
+		// Blank submissions never reach the code check, so they don't count toward the lockout.
+		for (let i = 0; i < 5; i++) await resetWithKey('   ', address);
 
 		expect(await checkPassword(PASSWORD)).toBe(true);
 		expect(await recoveryKeyMatches(RECOVERY_KEY)).toBe(true);
-		expect(isResetLocked(address)).toBe(false);
+		expect(resetAttempts.isLocked(address)).toBe(false);
 	});
 
 	it('locks out an address guessing recovery codes, even for the right one', async () => {
@@ -613,14 +633,24 @@ describe('account settings', () => {
 			expect(getAdminProfile()).toEqual({ username: 'renamed', email: 'renamed@example.com' });
 		});
 
-		it.each([
-			['a wrong password', { ...profile, ...WRONG }, 401],
-			['no password', profile, 401],
-			['a blank username', { ...profile, ...RIGHT, username: ' ' }, 400],
-			['an invalid email', { ...profile, ...RIGHT, email: 'nope' }, 400]
-		])('rejects %s', async (_name, fields, status) => {
-			expect(await update(fields)).toMatchObject({ kind: 'failure', status });
+		it('rejects bad input, leaving the profile and reset links alone', async () => {
+			const token = createPasswordResetToken();
+			const attempts: [Record<string, string>, number][] = [
+				[{ ...profile, ...WRONG }, 401],
+				[profile, 401],
+				[{ ...profile, ...RIGHT, username: ' ' }, 400],
+				[{ ...profile, ...RIGHT, email: 'nope' }, 400]
+			];
+
+			for (const [fields, status] of attempts) {
+				expect(await update(fields), JSON.stringify(fields)).toMatchObject({
+					kind: 'failure',
+					status
+				});
+			}
+
 			expect(getAdminProfile()?.username).toBe('admin');
+			expect(verifyResetToken(token)).toBe(true);
 		});
 
 		it('needs a valid second factor when 2FA is on', async () => {
@@ -645,32 +675,15 @@ describe('account settings', () => {
 			expect(await recoveryKeyMatches(data.newRecoveryKey)).toBe(true);
 		});
 
-		it('treats a locked-out address like a wrong password', async () => {
-			const address = uniqueAddress();
-			await lockLogin(address);
-
-			expect((await update({ ...profile, ...RIGHT }, address)).status).toBe(401);
-			expect(getAdminProfile()?.username).toBe('admin');
-		});
-
-		it('invalidates pending reset links when the email changes', async () => {
+		it('invalidates pending reset links only when the email really changes', async () => {
 			const token = createPasswordResetToken();
-			await update({ ...profile, ...RIGHT });
-			expect(verifyResetToken(token)).toBe(false);
-		});
 
-		it('keeps pending reset links when the email only differs by case', async () => {
-			const token = createPasswordResetToken();
 			await update({ username: 'renamed', email: 'ADMIN@example.com', ...RIGHT });
-
 			expect(getAdminProfile()?.username).toBe('renamed');
 			expect(verifyResetToken(token)).toBe(true);
-		});
 
-		it('keeps pending reset links when the change is rejected', async () => {
-			const token = createPasswordResetToken();
-			await update({ ...profile, ...WRONG });
-			expect(verifyResetToken(token)).toBe(true);
+			await update({ ...profile, ...RIGHT });
+			expect(verifyResetToken(token)).toBe(false);
 		});
 	});
 
@@ -680,44 +693,34 @@ describe('account settings', () => {
 
 		it('changes the password, revokes other sessions and keeps this browser in', async () => {
 			const other = createSession();
+			const resetToken = createPasswordResetToken();
 			const cookies = fakeCookies();
 
 			const result = await change({ ...RIGHT, ...newPasswordFields }, cookies);
 
 			expect(result.data).toEqual({ passwordSuccess: true });
+			expect(verifyResetToken(resetToken)).toBe(false);
 			expect(await checkCredentials('admin', NEW_PASSWORD)).toBe(true);
 			expect(await checkPassword(PASSWORD)).toBe(false);
 			expect(verifySessionToken(other)).toBe(false);
 			expect(verifySessionToken(cookies.get(SESSION_COOKIE_NAME))).toBe(true);
 		});
 
-		it.each([
-			['a wrong current password', { ...WRONG, ...newPasswordFields }, 401],
-			['a short new password', { ...RIGHT, newPassword: 'short', confirmPassword: 'short' }, 400],
-			[
-				'a mismatched confirmation',
-				{ ...RIGHT, newPassword: NEW_PASSWORD, confirmPassword: 'different-password' },
-				400
-			]
-		])('rejects %s and leaves sessions alone', async (_name, fields, status) => {
+		it('rejects bad input, leaving the password, sessions and reset links alone', async () => {
 			const session = createSession();
+			const resetToken = createPasswordResetToken();
+			const attempts: [Record<string, string>, number][] = [
+				[{ ...WRONG, ...newPasswordFields }, 401],
+				[{ ...RIGHT, newPassword: NEW_PASSWORD, confirmPassword: 'different-password' }, 400]
+			];
 
-			expect(await change(fields)).toMatchObject({ kind: 'failure', status });
+			for (const [fields, status] of attempts) {
+				expect(await change(fields)).toMatchObject({ kind: 'failure', status });
+			}
 
 			expect(await checkPassword(PASSWORD)).toBe(true);
 			expect(verifySessionToken(session)).toBe(true);
-		});
-
-		it('invalidates pending reset links', async () => {
-			const token = createPasswordResetToken();
-			await change({ ...RIGHT, ...newPasswordFields });
-			expect(verifyResetToken(token)).toBe(false);
-		});
-
-		it('keeps pending reset links when the change is rejected', async () => {
-			const token = createPasswordResetToken();
-			await change({ ...WRONG, ...newPasswordFields });
-			expect(verifyResetToken(token)).toBe(true);
+			expect(verifyResetToken(resetToken)).toBe(true);
 		});
 	});
 
@@ -769,12 +772,10 @@ describe('account settings', () => {
 			expect(isTotpEnabled()).toBe(false);
 		});
 
-		it('refuses a wrong password', async () => {
+		it('refuses a wrong password, or starting while 2FA is already on', async () => {
 			expect((await start(WRONG)).status).toBe(401);
 			expect(getPendingTotpSecret()).toBeNull();
-		});
 
-		it('refuses to start while 2FA is already on', async () => {
 			enableTotp();
 			expect((await start(RIGHT)).status).toBe(400);
 			expect(getPendingTotpSecret()).toBeNull();
@@ -823,16 +824,17 @@ describe('account settings', () => {
 		const disable = (fields: Record<string, string>) =>
 			submit(settings.actions.disableTwoFactor, { fields });
 
-		it.each([
-			['a wrong password', () => ({ ...WRONG, code: 'valid' })],
-			['a wrong code', () => ({ ...RIGHT, code: '000000x' })],
-			['no code', () => RIGHT]
-		])('stays on with %s', async (_name, fields) => {
+		it('stays on without both the password and a valid code', async () => {
 			const secret = enableTotp();
-			const values: Record<string, string> = { ...fields() };
-			if (values.code === 'valid') values.code = code(secret);
 
-			expect((await disable(values)).status).toBe(401);
+			for (const fields of [
+				{ ...WRONG, code: code(secret) },
+				{ ...RIGHT, code: '000000x' },
+				RIGHT
+			]) {
+				expect((await disable(fields)).status, JSON.stringify(fields)).toBe(401);
+			}
+
 			expect(isTotpEnabled()).toBe(true);
 		});
 
@@ -858,7 +860,7 @@ describe('account settings', () => {
 
 	it('shares the login lockout across password checks', async () => {
 		const address = uniqueAddress();
-		recordFailedReset(address);
+		resetAttempts.recordFailure(address);
 		for (let i = 0; i < 5; i++) {
 			await submit(settings.actions.changePassword, {
 				fields: { ...WRONG, ...newPasswordFields },

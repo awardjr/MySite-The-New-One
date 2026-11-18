@@ -1,11 +1,14 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	let resetting = $state(false);
+	const resetForm = pendingForm();
 </script>
 
 <svelte:head>
@@ -22,24 +25,14 @@
 			<div class="mt-4">
 				<a
 					href={resolve('admin/forgot-password')}
-					class="inline-block w-full text-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
+					class="btn-primary inline-block w-full text-center"
 				>
 					Request New Reset Link
 				</a>
 			</div>
 		</div>
 	{:else}
-		<form
-			method="POST"
-			class="mt-6 space-y-4"
-			use:enhance={() => {
-				resetting = true;
-				return async ({ update }) => {
-					await update();
-					resetting = false;
-				};
-			}}
-		>
+		<form method="POST" class="mt-6 space-y-4" use:enhance={resetForm.submit}>
 			<input type="hidden" name="token" value={data.token} />
 
 			<div class="space-y-1">
@@ -51,7 +44,7 @@
 					required
 					minlength="8"
 					autocomplete="new-password"
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
@@ -66,21 +59,18 @@
 					required
 					minlength="8"
 					autocomplete="new-password"
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
-			{#if form?.error}
-				<p class="text-sm text-error">{form.error}</p>
-			{/if}
+			<FormStatus error={form?.error} />
 
-			<button
-				type="submit"
-				disabled={resetting}
-				class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-			>
-				{resetting ? 'Updating password…' : 'Update Password'}
-			</button>
+			<SubmitButton
+				pending={resetForm.pending}
+				label="Update Password"
+				pendingLabel="Updating password…"
+				class="btn-primary w-full"
+			/>
 		</form>
 	{/if}
 

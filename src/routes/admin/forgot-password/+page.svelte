@@ -1,13 +1,16 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import { resolve } from '$app/paths';
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { form }: PageProps = $props();
 
-	let sendingEmail = $state(false);
-	let resettingCode = $state(false);
+	const emailForm = pendingForm();
+	const codeForm = pendingForm();
 	let activeTab = $state<'email' | 'code'>('email');
 </script>
 
@@ -60,13 +63,7 @@
 					method="POST"
 					action="?/requestEmailLink"
 					class="mt-4 space-y-4"
-					use:enhance={() => {
-						sendingEmail = true;
-						return async ({ update }) => {
-							await update();
-							sendingEmail = false;
-						};
-					}}
+					use:enhance={emailForm.submit}
 				>
 					<div class="space-y-1">
 						<label for="identifier" class="text-sm font-medium text-copy">
@@ -79,21 +76,18 @@
 							required
 							autocomplete="username"
 							placeholder="admin or admin@example.com"
-							class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+							class="input-auth"
 						/>
 					</div>
 
-					{#if form?.emailError}
-						<p class="text-sm text-error">{form.emailError}</p>
-					{/if}
+					<FormStatus error={form?.emailError} />
 
-					<button
-						type="submit"
-						disabled={sendingEmail}
-						class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-					>
-						{sendingEmail ? 'Sending link…' : 'Send Reset Link'}
-					</button>
+					<SubmitButton
+						pending={emailForm.pending}
+						label="Send Reset Link"
+						pendingLabel="Sending link…"
+						class="btn-primary w-full"
+					/>
 				</form>
 			{/if}
 		</div>
@@ -121,10 +115,7 @@
 					is on and you can't use your authenticator, enter this code when signing in.
 				</RecoveryKeyCard>
 
-				<a
-					href={resolve('admin/login')}
-					class="mt-4 inline-block w-full rounded-lg bg-primary px-4 py-2 text-center font-medium text-primary-text transition-colors hover:bg-primary-hover"
-				>
+				<a href={resolve('admin/login')} class="btn-primary mt-4 inline-block w-full text-center">
 					Continue to Sign In
 				</a>
 			{:else}
@@ -132,13 +123,7 @@
 					method="POST"
 					action="?/resetWithRecoveryKey"
 					class="mt-4 space-y-4"
-					use:enhance={() => {
-						resettingCode = true;
-						return async ({ update }) => {
-							await update();
-							resettingCode = false;
-						};
-					}}
+					use:enhance={codeForm.submit}
 				>
 					<div class="space-y-1">
 						<label for="recoveryKey" class="text-sm font-medium text-copy">
@@ -151,7 +136,7 @@
 							required
 							placeholder="XXXX-XXXX-XXXX-XXXX"
 							autocomplete="off"
-							class="w-full rounded-lg border border-field-border px-3 py-2 font-mono uppercase text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+							class="input-auth font-mono uppercase"
 						/>
 					</div>
 
@@ -164,7 +149,7 @@
 							required
 							minlength="8"
 							autocomplete="new-password"
-							class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+							class="input-auth"
 						/>
 					</div>
 
@@ -179,21 +164,18 @@
 							required
 							minlength="8"
 							autocomplete="new-password"
-							class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+							class="input-auth"
 						/>
 					</div>
 
-					{#if form?.error}
-						<p class="text-sm text-error">{form.error}</p>
-					{/if}
+					<FormStatus error={form?.error} />
 
-					<button
-						type="submit"
-						disabled={resettingCode}
-						class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-					>
-						{resettingCode ? 'Resetting password…' : 'Reset Password'}
-					</button>
+					<SubmitButton
+						pending={codeForm.pending}
+						label="Reset Password"
+						pendingLabel="Resetting password…"
+						class="btn-primary w-full"
+					/>
 				</form>
 			{/if}
 		</div>

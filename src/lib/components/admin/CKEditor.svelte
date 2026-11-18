@@ -1,16 +1,8 @@
 <script lang="ts">
-	import { untrack, onMount } from 'svelte';
-	import { browser } from '$app/env';
-	import { uploadImage } from '#lib/uploadImage.js';
-	import type {
-		ClassicEditor as ClassicEditorType,
-		Editor,
-		EditorConfig,
-		FileLoader,
-		UploadAdapter,
-		WordCountUpdateEvent
-	} from 'ckeditor5';
+	import { onMount } from 'svelte';
+	import type { ClassicEditor, WordCountUpdateEvent } from 'ckeditor5';
 	import 'ckeditor5/ckeditor5.css';
+	import { buildEditorConfig } from './ckeditorConfig';
 
 	let {
 		value = $bindable(''),
@@ -27,309 +19,51 @@
 	} = $props();
 
 	let hostElement: HTMLDivElement | undefined = $state();
-	let editorInstance: ClassicEditorType | null = $state(null);
-	let isReady = $state(false);
 	let words = $state(0);
 	let characters = $state(0);
 
-	class CustomUploadAdapter implements UploadAdapter {
-		private loader: FileLoader;
-
-		constructor(loader: FileLoader) {
-			this.loader = loader;
-		}
-
-		async upload(): Promise<{ default: string }> {
-			const file = await this.loader.file;
-			if (!file) throw new Error('No file provided.');
-			try {
-				return { default: await uploadImage(file) };
-			} catch (err) {
-				// CKEditor shows the rejection value itself as the warning, so it must be a string.
-				throw err instanceof Error ? err.message : 'Upload failed.';
-			}
-		}
-
-		abort() {
-			// Abort handling if required
-		}
-	}
-
 	onMount(() => {
-		let isMounted = true;
+		let editor: ClassicEditor | undefined;
+		let unmounted = false;
 
-		async function initCKEditor() {
-			if (!hostElement || !browser) return;
-
-			const isMobile = window.innerWidth < 768;
-
-			const {
-				ClassicEditor,
-				Alignment,
-				Autoformat,
-				AutoImage,
-				AutoLink,
-				Autosave,
-				BlockQuote,
-				Bold,
-				Code,
-				CodeBlock,
-				Emoji,
-				Essentials,
-				FindAndReplace,
-				GeneralHtmlSupport,
-				Heading,
-				Highlight,
-				HorizontalLine,
-				Image,
-				ImageCaption,
-				ImageInsert,
-				ImageResize,
-				ImageStyle,
-				ImageToolbar,
-				ImageUpload,
-				Indent,
-				IndentBlock,
-				Italic,
-				Link,
-				LinkImage,
-				List,
-				ListProperties,
-				Paragraph,
-				PasteFromOffice,
-				RemoveFormat,
-				SelectAll,
-				ShowBlocks,
-				SourceEditing,
-				SpecialCharacters,
-				SpecialCharactersEssentials,
-				Strikethrough,
-				Subscript,
-				Superscript,
-				Table,
-				TableCaption,
-				TableColumnResize,
-				TableToolbar,
-				Underline,
-				WordCount
-			} = await import('ckeditor5');
-
-			function CustomUploadAdapterPlugin(editor: Editor) {
-				editor.plugins.get('FileRepository').createUploadAdapter = (loader: FileLoader) => {
-					return new CustomUploadAdapter(loader);
-				};
+		async function startEditor(host: HTMLElement) {
+			// The editor is large and needs a browser, so it only loads with this component.
+			const ck = await import('ckeditor5');
+			const created = await ck.ClassicEditor.create(
+				buildEditorConfig(ck, { host, placeholder, compact: window.innerWidth < 768 })
+			);
+			if (unmounted) {
+				await created.destroy();
+				return;
 			}
 
-			// Only features whose output survives `sanitizePostHtml` on save belong here: anything
-			// else would look fine in the editor and then silently disappear from the saved post.
-			const mobilePlugins = [
-				Autoformat,
-				Autosave,
-				Bold,
-				Essentials,
-				GeneralHtmlSupport,
-				Heading,
-				Image,
-				ImageInsert,
-				ImageUpload,
-				Italic,
-				Link,
-				List,
-				Paragraph,
-				RemoveFormat,
-				WordCount,
-				CustomUploadAdapterPlugin
-			];
+			editor = created;
+			if (value) created.setData(value);
+			created.model.document.on('change:data', () => {
+				value = created.getData();
+			});
 
-			const desktopPlugins = [
-				...mobilePlugins,
-				Alignment,
-				AutoImage,
-				AutoLink,
-				BlockQuote,
-				Code,
-				CodeBlock,
-				Emoji,
-				FindAndReplace,
-				Highlight,
-				HorizontalLine,
-				ImageCaption,
-				ImageResize,
-				ImageStyle,
-				ImageToolbar,
-				Indent,
-				IndentBlock,
-				LinkImage,
-				ListProperties,
-				PasteFromOffice,
-				SelectAll,
-				ShowBlocks,
-				SourceEditing,
-				SpecialCharacters,
-				SpecialCharactersEssentials,
-				Strikethrough,
-				Subscript,
-				Superscript,
-				Table,
-				TableCaption,
-				TableColumnResize,
-				TableToolbar,
-				Underline
-			];
-
-			const config: EditorConfig = {
-				licenseKey: 'GPL',
-				attachTo: hostElement,
-				root: { placeholder },
-				plugins: isMobile ? mobilePlugins : desktopPlugins,
-				toolbar: {
-					items: isMobile
-						? [
-								'undo',
-								'redo',
-								'|',
-								'heading',
-								'|',
-								'bold',
-								'italic',
-								'|',
-								'bulletedList',
-								'numberedList',
-								'|',
-								'link',
-								'insertImage'
-							]
-						: [
-								'undo',
-								'redo',
-								'|',
-								'sourceEditing',
-								'showBlocks',
-								'findAndReplace',
-								'selectAll',
-								'|',
-								'heading',
-								'|',
-								'bold',
-								'italic',
-								'underline',
-								'strikethrough',
-								'subscript',
-								'superscript',
-								'code',
-								'removeFormat',
-								'|',
-								'alignment',
-								'|',
-								'bulletedList',
-								'numberedList',
-								'|',
-								'outdent',
-								'indent',
-								'|',
-								'link',
-								'insertImage',
-								'insertTable',
-								'blockQuote',
-								'codeBlock',
-								'horizontalLine',
-								'specialCharacters',
-								'emoji',
-								'highlight'
-							],
-					shouldNotGroupWhenFull: true
-				},
-				heading: {
-					options: [
-						{ model: 'paragraph', title: 'Paragraph', class: 'ck-heading_paragraph' },
-						{ model: 'heading2', view: 'h2', title: 'Heading 2', class: 'ck-heading_heading2' },
-						{ model: 'heading3', view: 'h3', title: 'Heading 3', class: 'ck-heading_heading3' },
-						{ model: 'heading4', view: 'h4', title: 'Heading 4', class: 'ck-heading_heading4' }
-					]
-				},
-				image: {
-					toolbar: [
-						'imageTextAlternative',
-						'toggleImageCaption',
-						'|',
-						'imageStyle:inline',
-						'imageStyle:wrapText',
-						'imageStyle:breakText',
-						'|',
-						'resizeImage',
-						'|',
-						'linkImage'
-					],
-					insert: {
-						integrations: ['upload', 'url']
-					}
-				},
-				table: {
-					contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']
-				},
-				// Keep class names on any element (the sanitizer does too). Arbitrary attributes and
-				// inline styles are not preserved, because the sanitizer strips them on save.
-				htmlSupport: {
-					allow: [{ name: /.*/, classes: true }]
-				}
-			};
-
-			try {
-				const editor = await ClassicEditor.create(config);
-				if (!isMounted) {
-					await editor.destroy();
-					return;
-				}
-
-				editorInstance = editor;
-				isReady = true;
-
-				if (value) {
-					editor.setData(value);
-				}
-
-				editor.model.document.on('change:data', () => {
-					const data = editor.getData();
-					if (value !== data) {
-						value = data;
-					}
-				});
-
-				const wordCountPlugin = editor.plugins.get('WordCount');
-				if (wordCountPlugin) {
-					words = wordCountPlugin.words;
-					characters = wordCountPlugin.characters;
-					wordCountPlugin.on<WordCountUpdateEvent>('update', (_evt, data) => {
-						words = data.words;
-						characters = data.characters;
-					});
-				}
-			} catch (err) {
-				console.error('Failed to initialize CKEditor 5:', err);
-			}
+			const wordCount = created.plugins.get('WordCount');
+			words = wordCount.words;
+			characters = wordCount.characters;
+			wordCount.on<WordCountUpdateEvent>('update', (_event, data) => {
+				words = data.words;
+				characters = data.characters;
+			});
 		}
 
-		initCKEditor();
+		if (hostElement) {
+			startEditor(hostElement).catch((err) => {
+				console.error('Failed to initialize CKEditor 5:', err);
+			});
+		}
 
 		return () => {
-			isMounted = false;
-			if (editorInstance) {
-				editorInstance.destroy().catch((err) => {
-					console.error('Error destroying CKEditor 5:', err);
-				});
-				editorInstance = null;
-			}
+			unmounted = true;
+			editor?.destroy().catch((err) => {
+				console.error('Error destroying CKEditor 5:', err);
+			});
 		};
-	});
-
-	$effect(() => {
-		if (editorInstance && isReady) {
-			const currentData = editorInstance.getData();
-			const targetData = untrack(() => value) || '';
-			if (currentData !== targetData) {
-				editorInstance.setData(targetData);
-			}
-		}
 	});
 </script>
 
@@ -348,7 +82,7 @@
 		</div>
 	</div>
 
-	<input type="hidden" {id} {name} value={value ?? ''} />
+	<input type="hidden" {id} {name} {value} />
 </div>
 
 <style>

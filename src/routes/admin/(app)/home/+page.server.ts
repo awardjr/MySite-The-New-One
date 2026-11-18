@@ -10,13 +10,13 @@ export const load: PageServerLoad = () => {
 	return {
 		home,
 		headline,
-		posts: blog.posts.map((p) => ({
+		posts: blog.map((p) => ({
 			slug: p.slug,
 			title: p.title,
 			draft: p.draft,
 			image: p.image
 		})),
-		works: works.items.map((w) => ({ id: w.id, title: w.title, image: w.image }))
+		works: works.map((w) => ({ id: w.id, title: w.title, image: w.image }))
 	};
 };
 

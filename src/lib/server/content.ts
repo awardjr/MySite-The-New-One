@@ -13,6 +13,7 @@ import {
 	type PostFields
 } from './content/blog';
 import { getPageHeadlines, upsertPageHeadline } from './content/pageheadlines';
+import type { PressItem } from './content/press';
 import type { SiteContent } from './content/types';
 
 export type * from './content/types';
@@ -61,21 +62,40 @@ export function updateSection<K extends SectionKey>(key: K, value: SiteContent[K
 	write(() => sectionSetters[key](value));
 }
 
+/** Newest first; items without a date go last and otherwise keep their order. */
+function newestFirst<T extends { date: string }>(items: T[]): T[] {
+	return [...items].sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/** Posts a visitor can see, newest first. Of posts on the same day, the last one added leads. */
+export function getPublishedPosts(): Post[] {
+	return newestFirst(
+		readContent()
+			.blog.filter((post) => !post.draft)
+			.reverse()
+	);
+}
+
+/** Press items for the public page, newest first. */
+export function getPressByDate(): PressItem[] {
+	return newestFirst(readContent().press);
+}
+
 /** Which optional sections have something a visitor can see. Draft posts don't count. */
 export function getSectionsWithContent() {
 	const { blog, press, works, pinball, contact } = readContent();
 	return {
-		blog: blog.posts.some((post) => !post.draft),
-		press: press.items.length > 0,
-		works: works.items.length > 0,
-		pinball: pinball.machines.length > 0,
-		contact: contact.links.length > 0
+		blog: blog.some((post) => !post.draft),
+		press: press.length > 0,
+		works: works.length > 0,
+		pinball: pinball.length > 0,
+		contact: contact.length > 0
 	};
 }
 
 /** Returns the headline/subtitle for a single page (empty if none saved). */
 export function getHeadlineForPage(page: string): { headline: string; subtitle: string } {
-	const found = readContent().pageHeadlines.items.find((item) => item.page === page);
+	const found = readContent().pageHeadlines.find((item) => item.page === page);
 	return { headline: found?.headline ?? '', subtitle: found?.subtitle ?? '' };
 }
 
@@ -86,7 +106,7 @@ export function saveHeadlineForPage(page: string, headline: string, subtitle: st
 
 /** Adds a blog post after the existing ones. Returns false if the slug is already taken. */
 export function createPost(post: Post): boolean {
-	if (readContent().blog.posts.some((existing) => existing.slug === post.slug)) return false;
+	if (readContent().blog.some((existing) => existing.slug === post.slug)) return false;
 	write(() => insertPost(post));
 	return true;
 }

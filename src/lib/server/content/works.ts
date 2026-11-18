@@ -10,10 +10,6 @@ export type WorkItem = {
 	platforms: string[];
 };
 
-export type WorksContent = {
-	items: WorkItem[];
-};
-
 /** A work as stored: the platforms are a JSON string. */
 type WorkItemRow = Omit<WorkItem, 'platforms'> & { platforms: string };
 
@@ -25,18 +21,16 @@ const insertWorkItemStmt = db.prepare(
 	'INSERT INTO works (id, title, description, image, link, platforms, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?)'
 );
 
-export function getWorks(): WorksContent {
+export function getWorks(): WorkItem[] {
 	const rows = getWorkItemsStmt.all() as WorkItemRow[];
-	return {
-		items: rows.map((row) => ({ ...row, platforms: parseJsonArray<string>(row.platforms) }))
-	};
+	return rows.map((row) => ({ ...row, platforms: parseJsonArray<string>(row.platforms) }));
 }
 
 /** Saves works, re-using each submitted row id so it stays the same across saves; new or duplicate ids get a fresh one. */
-export function setWorks(value: WorksContent): void {
+export function setWorks(items: WorkItem[]): void {
 	deleteWorkItemsStmt.run();
 	const used = new Set<number>();
-	value.items.forEach((item, i) => {
+	items.forEach((item, i) => {
 		const submitted = Number(item.id);
 		const id =
 			Number.isInteger(submitted) && submitted > 0 && !used.has(submitted) ? submitted : null;

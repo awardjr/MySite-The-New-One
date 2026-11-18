@@ -13,10 +13,6 @@ export type Post = {
 /** The editable fields of a post; the slug is fixed once the post exists. */
 export type PostFields = Omit<Post, 'slug'>;
 
-export type BlogContent = {
-	posts: Post[];
-};
-
 /** A post as stored: the draft flag is 0 or 1. */
 type PostRow = Omit<Post, 'draft'> & { draft: number };
 
@@ -37,9 +33,9 @@ const updateBlogPostStmt = db.prepare(`
 `);
 const deleteBlogPostStmt = db.prepare('DELETE FROM posts WHERE slug = ?');
 
-export function getBlog(): BlogContent {
+export function getBlog(): Post[] {
 	const rows = getBlogPostsStmt.all() as PostRow[];
-	return { posts: rows.map((row) => ({ ...row, draft: Boolean(row.draft) })) };
+	return rows.map((row) => ({ ...row, draft: Boolean(row.draft) }));
 }
 
 /** Adds a post after the existing ones. The slug must not be in use. */

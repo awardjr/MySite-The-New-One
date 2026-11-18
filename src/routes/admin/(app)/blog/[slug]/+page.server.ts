@@ -4,7 +4,7 @@ import { readPostFields } from '../postForm';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params }) => {
-	const post = readContent().blog.posts.find((p) => p.slug === params.slug);
+	const post = readContent().blog.find((p) => p.slug === params.slug);
 
 	if (!post) {
 		error(404, 'Post not found');

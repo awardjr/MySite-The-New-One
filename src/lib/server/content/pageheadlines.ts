@@ -6,10 +6,6 @@ export type PageHeadline = {
 	subtitle: string;
 };
 
-export type PageHeadlinesContent = {
-	items: PageHeadline[];
-};
-
 const getPageHeadlinesStmt = db.prepare(
 	'SELECT page, headline, subtitle FROM page_headlines ORDER BY page'
 );
@@ -21,8 +17,8 @@ const upsertPageHeadlineStmt = db.prepare(`
 		subtitle = excluded.subtitle
 `);
 
-export function getPageHeadlines(): PageHeadlinesContent {
-	return { items: getPageHeadlinesStmt.all() as PageHeadline[] };
+export function getPageHeadlines(): PageHeadline[] {
+	return getPageHeadlinesStmt.all() as PageHeadline[];
 }
 
 /** Inserts or replaces the headline/subtitle for a single page, leaving the other pages alone. */

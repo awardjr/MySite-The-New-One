@@ -1,14 +1,13 @@
-import { fail, redirect } from '@sveltejs/kit';
+import { fail, redirect, type Cookies, type RequestEvent } from '@sveltejs/kit';
 import {
 	cancelTwoFactorChallenge,
 	checkCredentials,
 	completeTwoFactorChallenge,
 	createTwoFactorChallenge,
-	guardLogin,
+	loginAttempts,
 	hasTwoFactorChallenge,
 	isAdminConfigured,
 	isTotpEnabled,
-	recordSuccessfulLogin,
 	startSession,
 	twoFactorCookieOptions,
 	TWO_FACTOR_COOKIE_NAME,
@@ -43,91 +42,107 @@ export const load: PageServerLoad = ({ locals, url, cookies }) => {
 	};
 };
 
+/** What the login page shows next. One shared type keeps every field visible to the page. */
+type LoginStep = { twoFactor: boolean; newRecoveryKey?: string; continueTo?: string };
+
+function forgetChallengeCookie(cookies: Cookies): void {
+	cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
+}
+
+function signIn({ cookies, getClientAddress }: RequestEvent): void {
+	loginAttempts.clear(getClientAddress());
+	startSession(cookies);
+}
+
+/** "Back" from the code step: forgets the pending login and shows the password form again. */
+function cancelCodeStep({ cookies }: RequestEvent): LoginStep {
+	cancelTwoFactorChallenge(cookies.get(TWO_FACTOR_COOKIE_NAME));
+	forgetChallengeCookie(cookies);
+	return { twoFactor: false };
+}
+
+/** The second step: the password was already accepted, so this checks the 2FA code. */
+async function submitCode(event: RequestEvent, code: string) {
+	const { cookies, url, getClientAddress } = event;
+	const challenge = cookies.get(TWO_FACTOR_COOKIE_NAME);
+	const factor = await loginAttempts.guard(
+		getClientAddress(),
+		async (): Promise<SecondFactor | 'expired' | null> =>
+			hasTwoFactorChallenge(challenge) ? completeTwoFactorChallenge(challenge, code) : 'expired'
+	);
+
+	if (factor === 'locked') {
+		return fail(429, { twoFactor: true, error: LOCKED_MESSAGE });
+	}
+	if (factor === 'expired') {
+		forgetChallengeCookie(cookies);
+		return fail(400, {
+			twoFactor: false,
+			error: 'Your sign-in expired. Please enter your password again.'
+		});
+	}
+	if (!factor) {
+		const stillPending = hasTwoFactorChallenge(challenge);
+		if (!stillPending) forgetChallengeCookie(cookies);
+		return fail(401, {
+			twoFactor: stillPending,
+			error: stillPending
+				? 'Incorrect code. Please try again.'
+				: 'Too many incorrect codes. Please enter your password again.'
+		});
+	}
+
+	forgetChallengeCookie(cookies);
+	signIn(event);
+
+	// A recovery code only works once. Show its replacement before moving on.
+	if (factor.method === 'recovery') {
+		const showReplacement: LoginStep = {
+			twoFactor: false,
+			newRecoveryKey: factor.newRecoveryKey,
+			continueTo: safeRedirectTarget(url)
+		};
+		return showReplacement;
+	}
+	redirect(303, safeRedirectTarget(url));
+}
+
+/** The first step: checks the username and password. */
+async function submitPassword(event: RequestEvent, username: string, password: string) {
+	const { cookies, url, getClientAddress } = event;
+	const credentialsOk = await loginAttempts.guard(getClientAddress(), () =>
+		checkCredentials(username, password)
+	);
+
+	if (credentialsOk === 'locked') {
+		return fail(429, { username, error: LOCKED_MESSAGE });
+	}
+	if (!credentialsOk) {
+		return fail(401, { username, error: 'Incorrect username/email or password.' });
+	}
+
+	// With 2FA on, the password alone doesn't create a session; ask for the code next.
+	if (isTotpEnabled()) {
+		cancelTwoFactorChallenge(cookies.get(TWO_FACTOR_COOKIE_NAME));
+		cookies.set(TWO_FACTOR_COOKIE_NAME, createTwoFactorChallenge(), twoFactorCookieOptions);
+		const askForCode: LoginStep = { twoFactor: true };
+		return askForCode;
+	}
+
+	signIn(event);
+	redirect(303, safeRedirectTarget(url));
+}
+
 export const actions: Actions = {
-	default: async ({ request, cookies, url, getClientAddress }) => {
+	// One action, not several named ones: a named action's `?/name` URL would drop `redirectTo`.
+	default: async (event) => {
 		if (!isAdminConfigured()) {
 			redirect(303, '/admin/setup');
 		}
 
-		const formData = await request.formData();
-		const clientAddress = getClientAddress();
-		const challenge = cookies.get(TWO_FACTOR_COOKIE_NAME);
-
-		// "Back" from the code step: forget the pending login and show the password form again.
-		if (formData.has('cancel')) {
-			cancelTwoFactorChallenge(challenge);
-			cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
-			return { twoFactor: false };
-		}
-
-		// Second step: the password was already accepted, now check the 2FA code.
-		if (formData.has('code')) {
-			const factor = await guardLogin(
-				clientAddress,
-				async (): Promise<SecondFactor | 'expired' | null> =>
-					hasTwoFactorChallenge(challenge)
-						? completeTwoFactorChallenge(challenge, raw(formData, 'code'))
-						: 'expired'
-			);
-
-			if (factor === 'locked') {
-				return fail(429, { twoFactor: true, error: LOCKED_MESSAGE });
-			}
-			if (factor === 'expired') {
-				cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
-				return fail(400, {
-					twoFactor: false,
-					error: 'Your sign-in expired. Please enter your password again.'
-				});
-			}
-			if (!factor) {
-				const stillPending = hasTwoFactorChallenge(challenge);
-				if (!stillPending) cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
-				return fail(401, {
-					twoFactor: stillPending,
-					error: stillPending
-						? 'Incorrect code. Please try again.'
-						: 'Too many incorrect codes. Please enter your password again.'
-				});
-			}
-
-			cookies.delete(TWO_FACTOR_COOKIE_NAME, twoFactorCookieOptions);
-			recordSuccessfulLogin(clientAddress);
-			startSession(cookies);
-
-			// A recovery code only works once. Show its replacement before moving on.
-			if (factor.method === 'recovery') {
-				return {
-					twoFactor: false,
-					newRecoveryKey: factor.newRecoveryKey,
-					continueTo: safeRedirectTarget(url)
-				};
-			}
-			redirect(303, safeRedirectTarget(url));
-		}
-
-		const username = raw(formData, 'username');
-		const credentialsOk = await guardLogin(clientAddress, () =>
-			checkCredentials(username, raw(formData, 'password'))
-		);
-
-		if (credentialsOk === 'locked') {
-			return fail(429, { username, error: LOCKED_MESSAGE });
-		}
-		if (!credentialsOk) {
-			return fail(401, { username, error: 'Incorrect username/email or password.' });
-		}
-
-		// With 2FA on, the password alone doesn't create a session; ask for the code next.
-		if (isTotpEnabled()) {
-			cancelTwoFactorChallenge(challenge);
-			cookies.set(TWO_FACTOR_COOKIE_NAME, createTwoFactorChallenge(), twoFactorCookieOptions);
-			return { twoFactor: true };
-		}
-
-		recordSuccessfulLogin(clientAddress);
-		startSession(cookies);
-
-		redirect(303, safeRedirectTarget(url));
+		const formData = await event.request.formData();
+		if (formData.has('cancel')) return cancelCodeStep(event);
+		if (formData.has('code')) return submitCode(event, raw(formData, 'code'));
+		return submitPassword(event, raw(formData, 'username'), raw(formData, 'password'));
 	}
 };

@@ -11,8 +11,8 @@ export const load: PageServerLoad = () => {
 	const { home, blog, works } = readContent();
 	const { name, tagline, photoSrc, introParagraphs } = home;
 
-	const postsBySlug = new Map(blog.posts.filter((p) => !p.draft).map((p) => [p.slug, p]));
-	const worksById = new Map(works.items.map((w) => [w.id, w]));
+	const postsBySlug = new Map(blog.filter((p) => !p.draft).map((p) => [p.slug, p]));
+	const worksById = new Map(works.map((w) => [w.id, w]));
 
 	const featuredPosts = home.featuredPosts
 		.map((slug) => postsBySlug.get(slug))

@@ -7,7 +7,7 @@ import {
 	disableTotp,
 	getAdminProfile,
 	getPendingTotpSecret,
-	guardLogin,
+	loginAttempts,
 	invalidateAllResetTokens,
 	invalidateAllSessions,
 	isTotpEnabled,
@@ -26,21 +26,40 @@ import { isEncryptionKeyConfigured } from '#lib/server/secretbox.js';
 import { totpUri } from '#lib/server/totp.js';
 import type { Actions, PageServerLoad } from './$types';
 
-/**
- * Checks the current password, sharing the login lockout so a stolen session can't brute-force
- * it. A locked-out address is reported the same way as a wrong password.
- */
-async function verifyCurrentPassword(password: string, clientAddress: string): Promise<boolean> {
-	return (await guardLogin(clientAddress, () => checkPassword(password))) === true;
-}
+type IdentityCheck = { ok: true; newRecoveryKey?: string } | { ok: false; error: string };
 
 /**
- * Checks a 2FA code (or recovery code), sharing the login lockout like the password checks.
- * Returns how the factor was satisfied, or null if it wasn't.
+ * Confirms the current password and, when asked, a 2FA or recovery code. Both checks share the
+ * login lockout so a stolen session can't brute-force them; a locked-out address is reported the
+ * same way as a wrong answer.
  */
-async function verifyCurrentSecondFactor(code: string, clientAddress: string) {
-	const factor = await guardLogin(clientAddress, () => verifySecondFactor(code));
-	return factor === 'locked' ? null : factor;
+async function confirmIdentity(
+	formData: FormData,
+	clientAddress: string,
+	{ secondFactor }: { secondFactor: boolean }
+): Promise<IdentityCheck> {
+	const password = raw(formData, 'currentPassword');
+	if ((await loginAttempts.guard(clientAddress, () => checkPassword(password))) !== true) {
+		return { ok: false, error: 'Current password is incorrect.' };
+	}
+	if (!secondFactor) return { ok: true };
+
+	const factor = await loginAttempts.guard(clientAddress, () =>
+		verifySecondFactor(raw(formData, 'code'))
+	);
+	if (!factor || factor === 'locked') {
+		return { ok: false, error: 'Authentication code is incorrect.' };
+	}
+	return {
+		ok: true,
+		newRecoveryKey: factor.method === 'recovery' ? factor.newRecoveryKey : undefined
+	};
+}
+
+function missingEncryptionKey(step: string) {
+	return fail(503, {
+		twoFactorError: `Set TOTP_ENCRYPTION_KEY in the server environment before ${step} two-factor authentication.`
+	});
 }
 
 /** Builds what the setup step shows: a QR code for the app, and the secret for manual entry. */
@@ -82,7 +101,6 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const username = text(formData.get('username'));
 		const email = text(formData.get('email'));
-		const clientAddress = getClientAddress();
 
 		if (!username) {
 			return fail(400, { profileError: 'Username cannot be blank.' });
@@ -94,16 +112,11 @@ export const actions: Actions = {
 
 		// The email address receives password reset links, so changing it needs the same proof of
 		// identity as changing the password: a hijacked session alone must not be enough.
-		if (!(await verifyCurrentPassword(raw(formData, 'currentPassword'), clientAddress))) {
-			return fail(401, { profileError: 'Current password is incorrect.' });
-		}
-		let newRecoveryKey: string | undefined;
-		if (isTotpEnabled()) {
-			const factor = await verifyCurrentSecondFactor(raw(formData, 'code'), clientAddress);
-			if (!factor) {
-				return fail(401, { profileError: 'Authentication code is incorrect.' });
-			}
-			if (factor.method === 'recovery') newRecoveryKey = factor.newRecoveryKey;
+		const identity = await confirmIdentity(formData, getClientAddress(), {
+			secondFactor: isTotpEnabled()
+		});
+		if (!identity.ok) {
+			return fail(401, { profileError: identity.error });
 		}
 
 		const emailChanged = getAdminProfile()?.email !== email.toLowerCase();
@@ -111,15 +124,16 @@ export const actions: Actions = {
 		// Reset links already sent went to the old address, which may no longer be trusted.
 		if (emailChanged) invalidateAllResetTokens();
 
-		return { profileSuccess: true, ...recoveryKeyReplaced(newRecoveryKey) };
+		return { profileSuccess: true, ...recoveryKeyReplaced(identity.newRecoveryKey) };
 	},
 
 	changePassword: async ({ request, cookies, getClientAddress }) => {
 		const formData = await request.formData();
 		const newPassword = raw(formData, 'newPassword');
 
-		if (!(await verifyCurrentPassword(raw(formData, 'currentPassword'), getClientAddress()))) {
-			return fail(401, { passwordError: 'Current password is incorrect.' });
+		const identity = await confirmIdentity(formData, getClientAddress(), { secondFactor: false });
+		if (!identity.ok) {
+			return fail(401, { passwordError: identity.error });
 		}
 		const passwordError = validateNewPassword(newPassword, raw(formData, 'confirmPassword'));
 		if (passwordError) {
@@ -137,17 +151,11 @@ export const actions: Actions = {
 	},
 
 	rotateRecoveryKey: async ({ request, getClientAddress }) => {
-		const formData = await request.formData();
-		const clientAddress = getClientAddress();
-
-		if (!(await verifyCurrentPassword(raw(formData, 'currentPassword'), clientAddress))) {
-			return fail(401, { recoveryError: 'Current password is incorrect.' });
-		}
-		if (
-			isTotpEnabled() &&
-			!(await verifyCurrentSecondFactor(raw(formData, 'code'), clientAddress))
-		) {
-			return fail(401, { recoveryError: 'Authentication code is incorrect.' });
+		const identity = await confirmIdentity(await request.formData(), getClientAddress(), {
+			secondFactor: isTotpEnabled()
+		});
+		if (!identity.ok) {
+			return fail(401, { recoveryError: identity.error });
 		}
 
 		return recoveryKeyReplaced(await rotateRecoveryKey());
@@ -160,13 +168,11 @@ export const actions: Actions = {
 			return fail(400, { twoFactorError: 'Two-factor authentication is already on.' });
 		}
 		if (!isEncryptionKeyConfigured()) {
-			return fail(503, {
-				twoFactorError:
-					'Set TOTP_ENCRYPTION_KEY in the server environment before setting up two-factor authentication.'
-			});
+			return missingEncryptionKey('setting up');
 		}
-		if (!(await verifyCurrentPassword(raw(formData, 'currentPassword'), getClientAddress()))) {
-			return fail(401, { twoFactorError: 'Current password is incorrect.' });
+		const identity = await confirmIdentity(formData, getClientAddress(), { secondFactor: false });
+		if (!identity.ok) {
+			return fail(401, { twoFactorError: identity.error });
 		}
 
 		startTotpSetup();
@@ -177,12 +183,9 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		if (!isEncryptionKeyConfigured()) {
-			return fail(503, {
-				twoFactorError:
-					'Set TOTP_ENCRYPTION_KEY in the server environment before confirming two-factor authentication.'
-			});
+			return missingEncryptionKey('confirming');
 		}
-		const confirmed = await guardLogin(getClientAddress(), () =>
+		const confirmed = await loginAttempts.guard(getClientAddress(), () =>
 			confirmTotpSetup(raw(formData, 'code'))
 		);
 		if (confirmed === 'locked') {
@@ -211,21 +214,17 @@ export const actions: Actions = {
 	},
 
 	disableTwoFactor: async ({ request, getClientAddress }) => {
-		const formData = await request.formData();
-		const clientAddress = getClientAddress();
-
-		if (!(await verifyCurrentPassword(raw(formData, 'currentPassword'), clientAddress))) {
-			return fail(401, { twoFactorError: 'Current password is incorrect.' });
-		}
-		const factor = await verifyCurrentSecondFactor(raw(formData, 'code'), clientAddress);
-		if (!factor) {
-			return fail(401, { twoFactorError: 'Authentication code is incorrect.' });
+		const identity = await confirmIdentity(await request.formData(), getClientAddress(), {
+			secondFactor: true
+		});
+		if (!identity.ok) {
+			return fail(401, { twoFactorError: identity.error });
 		}
 
 		disableTotp();
 		return {
 			twoFactorSuccess: 'Two-factor authentication is now off.',
-			...recoveryKeyReplaced(factor.method === 'recovery' ? factor.newRecoveryKey : undefined)
+			...recoveryKeyReplaced(identity.newRecoveryKey)
 		};
 	}
 };

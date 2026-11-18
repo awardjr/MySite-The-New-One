@@ -1,5 +1,10 @@
 import { getTestDb } from './test-db';
-import { createAdmin, guardLogin, normalizeRecoveryKey, verifySecret } from '#lib/server/auth.js';
+import {
+	createAdmin,
+	loginAttempts,
+	normalizeRecoveryKey,
+	verifySecret
+} from '#lib/server/auth.js';
 
 const DEFAULT_RECOVERY_KEY = 'FFFF-EEEE-DDDD-CCCC';
 
@@ -25,5 +30,5 @@ export async function recoveryKeyMatches(candidate: unknown): Promise<boolean> {
 
 /** Uses up an address's login attempts. */
 export async function lockLogin(address: string): Promise<void> {
-	for (let i = 0; i < 5; i++) await guardLogin(address, async () => false);
+	for (let i = 0; i < 5; i++) await loginAttempts.guard(address, async () => false);
 }

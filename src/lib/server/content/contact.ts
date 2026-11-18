@@ -7,10 +7,6 @@ export type ContactLink = {
 	description: string;
 };
 
-export type ContactContent = {
-	links: ContactLink[];
-};
-
 const getContactLinksStmt = db.prepare(
 	'SELECT label, href, icon, description FROM links ORDER BY sort_order, id'
 );
@@ -19,13 +15,13 @@ const insertContactLinkStmt = db.prepare(
 	'INSERT INTO links (label, href, icon, description, sort_order) VALUES (?, ?, ?, ?, ?)'
 );
 
-export function getContact(): ContactContent {
-	return { links: getContactLinksStmt.all() as ContactLink[] };
+export function getContact(): ContactLink[] {
+	return getContactLinksStmt.all() as ContactLink[];
 }
 
-export function setContact(value: ContactContent): void {
+export function setContact(links: ContactLink[]): void {
 	deleteContactLinksStmt.run();
-	value.links.forEach((link, i) => {
+	links.forEach((link, i) => {
 		insertContactLinkStmt.run(link.label, link.href, link.icon, link.description, i);
 	});
 }

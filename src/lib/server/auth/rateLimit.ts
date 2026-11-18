@@ -1,59 +1,13 @@
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
+// Above this many tracked addresses, expired records are swept to limit memory use.
+const MAX_TRACKED_ADDRESSES = 1000;
 
 interface AttemptState {
 	failures: number;
 	/** When this record stops counting: end of the lockout, or end of the failure window. */
 	expiresAt: number;
-	locked: boolean;
 }
-
-// Above this many tracked addresses, expired records are swept so memory stays bounded.
-const MAX_TRACKED_ADDRESSES = 1000;
-
-/** In-memory brute-force guard keyed by client address. Failures older than LOCKOUT_MS are forgotten. */
-function createAttemptLimiter() {
-	const attempts = new Map<string, AttemptState>();
-
-	function current(identifier: string, now: number): AttemptState | undefined {
-		const state = attempts.get(identifier);
-		if (state && state.expiresAt <= now) {
-			attempts.delete(identifier);
-			return undefined;
-		}
-		return state;
-	}
-
-	return {
-		isLocked(identifier: string): boolean {
-			return current(identifier, Date.now())?.locked ?? false;
-		},
-		recordFailure(identifier: string): void {
-			const now = Date.now();
-			if (attempts.size >= MAX_TRACKED_ADDRESSES) {
-				for (const [key, state] of attempts) {
-					if (state.expiresAt <= now) attempts.delete(key);
-				}
-			}
-			const state = current(identifier, now) ?? {
-				failures: 0,
-				expiresAt: now + LOCKOUT_MS,
-				locked: false
-			};
-			state.failures += 1;
-			if (state.failures >= MAX_ATTEMPTS && !state.locked) {
-				state.locked = true;
-				state.expiresAt = now + LOCKOUT_MS;
-			}
-			attempts.set(identifier, state);
-		},
-		clear(identifier: string): void {
-			attempts.delete(identifier);
-		}
-	};
-}
-
-type AttemptLimiter = ReturnType<typeof createAttemptLimiter>;
 
 // Secret checks hash off the event loop, so several could otherwise be in flight at once and all
 // pass the lockout check before any of them records its failure. Running them one at a time keeps
@@ -66,50 +20,60 @@ function runInTurn<T>(task: () => Promise<T>): Promise<T> {
 	return run;
 }
 
-/**
- * Builds a guard that runs a secret check under a limiter: it refuses with `'locked'` while the
- * address is locked out, and counts a falsy result as a failed attempt.
- */
-function createGuard(limiter: AttemptLimiter) {
-	return function guard<T>(identifier: string, check: () => T | Promise<T>): Promise<T | 'locked'> {
-		return runInTurn(async () => {
-			if (limiter.isLocked(identifier)) return 'locked' as const;
-			const result = await check();
-			if (!result) limiter.recordFailure(identifier);
-			return result;
-		});
+/** In-memory brute-force guard keyed by client address. Failures older than LOCKOUT_MS are forgotten. */
+function createAttemptLimiter() {
+	const attempts = new Map<string, AttemptState>();
+
+	function current(address: string, now: number): AttemptState | undefined {
+		const state = attempts.get(address);
+		if (state && state.expiresAt <= now) {
+			attempts.delete(address);
+			return undefined;
+		}
+		return state;
+	}
+
+	function isLocked(address: string): boolean {
+		return (current(address, Date.now())?.failures ?? 0) >= MAX_ATTEMPTS;
+	}
+
+	function recordFailure(address: string): void {
+		const now = Date.now();
+		if (attempts.size >= MAX_TRACKED_ADDRESSES) {
+			for (const [key, state] of attempts) {
+				if (state.expiresAt <= now) attempts.delete(key);
+			}
+		}
+		const state = current(address, now) ?? { failures: 0, expiresAt: now + LOCKOUT_MS };
+		state.failures += 1;
+		// The lockout runs for its full length from the failure that started it.
+		if (state.failures === MAX_ATTEMPTS) state.expiresAt = now + LOCKOUT_MS;
+		attempts.set(address, state);
+	}
+
+	return {
+		isLocked,
+		recordFailure,
+		clear(address: string): void {
+			attempts.delete(address);
+		},
+		/**
+		 * Runs a secret check for an address. Resolves to `'locked'` without running it while the
+		 * address is locked out; any falsy result counts as a failed attempt.
+		 */
+		guard<T>(address: string, check: () => T | Promise<T>): Promise<T | 'locked'> {
+			return runInTurn(async () => {
+				if (isLocked(address)) return 'locked' as const;
+				const result = await check();
+				if (!result) recordFailure(address);
+				return result;
+			});
+		}
 	};
 }
 
-const loginAttempts = createAttemptLimiter();
-const resetAttempts = createAttemptLimiter();
+/** Password and second-factor checks, at login and when confirming sensitive changes. */
+export const loginAttempts = createAttemptLimiter();
 
-/**
- * Runs a password or second-factor check for the given client address, sharing the login lockout.
- * Resolves to `'locked'` without running the check when the address is locked out; any falsy
- * result counts toward the lockout.
- */
-export const guardLogin = createGuard(loginAttempts);
-
-/** Like `guardLogin`, for password-reset attempts. */
-export const guardReset = createGuard(resetAttempts);
-
-/** Clears any recorded failures for the identifier after a successful login. */
-export function recordSuccessfulLogin(identifier: string): void {
-	loginAttempts.clear(identifier);
-}
-
-/** Returns true if the given identifier is currently locked out from requesting/performing resets. */
-export function isResetLocked(identifier: string): boolean {
-	return resetAttempts.isLocked(identifier);
-}
-
-/** Records a failed (or rate-limited) reset attempt, locking out the identifier after too many. */
-export function recordFailedReset(identifier: string): void {
-	resetAttempts.recordFailure(identifier);
-}
-
-/** Clears any recorded reset failures for the identifier after a successful reset. */
-export function recordSuccessfulReset(identifier: string): void {
-	resetAttempts.clear(identifier);
-}
+/** Password reset requests and attempts. */
+export const resetAttempts = createAttemptLimiter();

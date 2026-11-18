@@ -1,4 +1,4 @@
-import { readContent } from '#lib/server/content.js';
+import { getPublishedPosts, readContent } from '#lib/server/content.js';
 import { siteOrigin } from '#lib/server/origin.js';
 import type { RequestHandler } from './$types';
 
@@ -12,9 +12,8 @@ function esc(text: string): string {
 
 export const GET: RequestHandler = ({ url }) => {
 	const origin = siteOrigin(url);
-	const { blog, home } = readContent();
-	const posts = blog.posts.filter((p) => !p.draft);
-	const items = posts
+	const { home } = readContent();
+	const items = getPublishedPosts()
 		.map((p) => {
 			const link = `${origin}/blog/${encodeURIComponent(p.slug)}`;
 			const time = Date.parse(p.date);

@@ -8,10 +8,6 @@ export type PressItem = {
 	date: string;
 };
 
-export type PressContent = {
-	items: PressItem[];
-};
-
 const getPressItemsStmt = db.prepare(
 	'SELECT outlet, title, summary, href, date FROM press ORDER BY sort_order, id'
 );
@@ -20,13 +16,13 @@ const insertPressItemStmt = db.prepare(
 	'INSERT INTO press (outlet, title, summary, href, date, sort_order) VALUES (?, ?, ?, ?, ?, ?)'
 );
 
-export function getPress(): PressContent {
-	return { items: getPressItemsStmt.all() as PressItem[] };
+export function getPress(): PressItem[] {
+	return getPressItemsStmt.all() as PressItem[];
 }
 
-export function setPress(value: PressContent): void {
+export function setPress(items: PressItem[]): void {
 	deletePressItemsStmt.run();
-	value.items.forEach((item, i) => {
+	items.forEach((item, i) => {
 		insertPressItemStmt.run(item.outlet, item.title, item.summary, item.href, item.date, i);
 	});
 }

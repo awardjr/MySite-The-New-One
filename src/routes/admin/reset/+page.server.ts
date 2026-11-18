@@ -1,8 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
-	isResetLocked,
-	recordFailedReset,
-	recordSuccessfulReset,
+	resetAttempts,
 	resetPasswordWithToken,
 	validateNewPassword,
 	verifyResetToken
@@ -30,7 +28,7 @@ export const load: PageServerLoad = ({ url, locals }) => {
 export const actions: Actions = {
 	default: async ({ request, getClientAddress }) => {
 		const clientAddress = getClientAddress();
-		if (isResetLocked(clientAddress)) {
+		if (resetAttempts.isLocked(clientAddress)) {
 			return fail(429, { error: 'Too many attempts. Please try again later.' });
 		}
 
@@ -39,7 +37,7 @@ export const actions: Actions = {
 		const newPassword = raw(formData, 'newPassword');
 
 		if (!verifyResetToken(token)) {
-			recordFailedReset(clientAddress);
+			resetAttempts.recordFailure(clientAddress);
 			return fail(400, { error: INVALID_LINK_MESSAGE });
 		}
 
@@ -49,11 +47,11 @@ export const actions: Actions = {
 		}
 
 		if (!(await resetPasswordWithToken(token, newPassword))) {
-			recordFailedReset(clientAddress);
+			resetAttempts.recordFailure(clientAddress);
 			return fail(400, { error: INVALID_LINK_MESSAGE });
 		}
 
-		recordSuccessfulReset(clientAddress);
+		resetAttempts.clear(clientAddress);
 
 		// The reset link proves access to the admin mailbox, not the second factor, so it doesn't
 		// sign anyone in. Logging in normally keeps two-factor authentication in force.

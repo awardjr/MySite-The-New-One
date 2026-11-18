@@ -44,7 +44,7 @@ const fields = (title: string) => ({
 	draft: false
 });
 const post = (slug: string, title = slug) => ({ slug, ...fields(title) });
-const slugs = () => readContent().blog.posts.map((p) => p.slug);
+const slugs = () => readContent().blog.map((p) => p.slug);
 const postId = (slug: string) =>
 	(testDb.prepare('SELECT id FROM posts WHERE slug = ?').get(slug) as { id: number }).id;
 
@@ -60,28 +60,26 @@ beforeEach(() => {
 	`);
 	// The content controller caches the site content in module state; a write forces a fresh
 	// read from the (now-empty) tables for every test.
-	updateSection('contact', { links: [] });
+	updateSection('contact', []);
 });
 
 describe('readContent', () => {
 	it('returns defaults for every section when the database is empty', () => {
 		expect(readContent()).toEqual({
 			home: emptyHome,
-			contact: { links: [] },
-			works: { items: [] },
-			press: { items: [] },
-			pinball: { machines: [] },
-			blog: { posts: [] },
-			pageHeadlines: { items: [] }
+			contact: [],
+			works: [],
+			press: [],
+			pinball: [],
+			blog: [],
+			pageHeadlines: []
 		});
 	});
 
 	it('falls back to empty lists when stored JSON is corrupt', () => {
 		updateSection('home', { ...emptyHome, introParagraphs: ['Hello'] });
-		updateSection('works', { items: [work('W')] });
-		updateSection('pinball', {
-			machines: [{ name: 'M', image: '', highScore: '', modeScores: [] }]
-		});
+		updateSection('works', [work('W')]);
+		updateSection('pinball', [{ name: 'M', image: '', highScore: '', modeScores: [] }]);
 		testDb.exec(`
 			UPDATE home SET intro_paragraphs = 'corrupt', featured_posts = '{}';
 			UPDATE works SET platforms = 'corrupt';
@@ -92,8 +90,8 @@ describe('readContent', () => {
 		const content = readContent();
 		expect(content.home.introParagraphs).toEqual([]);
 		expect(content.home.featuredPosts).toEqual([]);
-		expect(content.works.items[0].platforms).toEqual([]);
-		expect(content.pinball.machines[0].modeScores).toEqual([]);
+		expect(content.works[0].platforms).toEqual([]);
+		expect(content.pinball[0].modeScores).toEqual([]);
 	});
 });
 
@@ -104,23 +102,25 @@ describe('content cache', () => {
 	it('keeps serving the cached content until something is written', () => {
 		readContent();
 		insertBehindTheCache();
-		expect(readContent().press.items).toEqual([]);
+		expect(readContent().press).toEqual([]);
 	});
 
-	it.each([
-		['updateSection', () => updateSection('contact', { links: [] })],
-		['saveHeadlineForPage', () => saveHeadlineForPage('blog', 'Blog', '')],
-		['createPost', () => createPost(post('new'))],
-		['updatePost', () => updatePost('existing', fields('Changed'))],
-		['deletePost', () => deletePost('existing')]
-	])('is refreshed by %s', (_name, write) => {
+	it('is refreshed by every kind of write', () => {
 		createPost(post('existing'));
-		readContent();
-		insertBehindTheCache();
+		const writes: [string, () => unknown][] = [
+			['updateSection', () => updateSection('contact', [])],
+			['saveHeadlineForPage', () => saveHeadlineForPage('blog', 'Blog', '')],
+			['createPost', () => createPost(post('new'))],
+			['updatePost', () => updatePost('existing', fields('Changed'))],
+			['deletePost', () => deletePost('existing')]
+		];
 
-		write();
-
-		expect(readContent().press.items).toHaveLength(1);
+		for (const [index, [name, write]] of writes.entries()) {
+			readContent();
+			insertBehindTheCache();
+			write();
+			expect(readContent().press, name).toHaveLength(index + 1);
+		}
 	});
 });
 
@@ -157,23 +157,23 @@ describe('updateSection', () => {
 		};
 
 		updateSection('home', home);
-		updateSection('contact', { links });
-		updateSection('press', { items });
-		updateSection('pinball', { machines });
+		updateSection('contact', links);
+		updateSection('press', items);
+		updateSection('pinball', machines);
 		for (const blogPost of posts) createPost(blogPost);
-		updateSection('works', { items: [{ id: '', ...workItem }] });
+		updateSection('works', [{ id: '', ...workItem }]);
 
 		const content = readContent();
 		expect(content.home).toEqual(home);
-		expect(content.contact.links).toEqual(links);
-		expect(content.press.items).toEqual(items);
-		expect(content.pinball.machines).toEqual(machines);
-		expect(content.blog.posts).toEqual(posts);
-		expect(content.works.items[0]).toMatchObject(workItem);
+		expect(content.contact).toEqual(links);
+		expect(content.press).toEqual(items);
+		expect(content.pinball).toEqual(machines);
+		expect(content.blog).toEqual(posts);
+		expect(content.works[0]).toMatchObject(workItem);
 	});
 
 	it('only changes the target section', () => {
-		updateSection('press', { items: [press('Kept')] });
+		updateSection('press', [press('Kept')]);
 		createPost(post('kept'));
 		saveHeadlineForPage('blog', 'Kept', '');
 
@@ -181,44 +181,47 @@ describe('updateSection', () => {
 
 		const content = readContent();
 		expect(content.home.name).toBe('Ada');
-		expect(content.press.items.map((item) => item.title)).toEqual(['Kept']);
+		expect(content.press.map((item) => item.title)).toEqual(['Kept']);
 		expect(slugs()).toEqual(['kept']);
 		expect(getHeadlineForPage('blog').headline).toBe('Kept');
 	});
 
 	it('replaces a section with the submitted rows, in the submitted order', () => {
-		updateSection('press', { items: [press('Old'), press('Older')] });
-		updateSection('press', { items: [press('B'), press('A')] });
+		updateSection('press', [press('Old'), press('Older')]);
+		updateSection('press', [press('B'), press('A')]);
 
-		expect(readContent().press.items.map((item) => item.title)).toEqual(['B', 'A']);
+		expect(readContent().press.map((item) => item.title)).toEqual(['B', 'A']);
 	});
 
 	it('can empty a section', () => {
-		updateSection('press', { items: [press('Old')] });
-		updateSection('press', { items: [] });
-		expect(readContent().press.items).toEqual([]);
+		updateSection('press', [press('Old')]);
+		updateSection('press', []);
+		expect(readContent().press).toEqual([]);
 	});
 
 	it('keeps the previous rows when saving fails partway through', () => {
-		updateSection('press', { items: [press('Kept')] });
+		updateSection('press', [press('Kept')]);
 		const invalid = { ...press('Bad'), title: null } as unknown as ReturnType<typeof press>;
 
-		expect(() => updateSection('press', { items: [press('New'), invalid] })).toThrow();
+		expect(() => updateSection('press', [press('New'), invalid])).toThrow();
 
 		// Another write drops the cache, so this reads what the failed save left in the table.
 		saveHeadlineForPage('any', '', '');
-		expect(readContent().press.items.map((item) => item.title)).toEqual(['Kept']);
+		expect(readContent().press.map((item) => item.title)).toEqual(['Kept']);
 	});
 
 	it('keeps work ids stable across saves and assigns new ids to new or duplicate rows', () => {
-		updateSection('works', { items: [work('A'), work('B')] });
-		const [a, b] = readContent().works.items;
+		updateSection('works', [work('A'), work('B')]);
+		const [a, b] = readContent().works;
 
-		updateSection('works', {
-			items: [work('B renamed', b.id), work('A', a.id), work('New'), work('Dup', a.id)]
-		});
+		updateSection('works', [
+			work('B renamed', b.id),
+			work('A', a.id),
+			work('New'),
+			work('Dup', a.id)
+		]);
 
-		const items = readContent().works.items;
+		const items = readContent().works;
 		expect(items.map((item) => item.title)).toEqual(['B renamed', 'A', 'New', 'Dup']);
 		expect(items[0].id).toBe(b.id);
 		expect(items[1].id).toBe(a.id);
@@ -226,22 +229,27 @@ describe('updateSection', () => {
 	});
 
 	it('does not let a new work take the id of an existing one listed after it', () => {
-		updateSection('works', { items: [work('A')] });
-		const [a] = readContent().works.items;
+		updateSection('works', [work('A')]);
+		const [a] = readContent().works;
 
-		updateSection('works', { items: [work('New'), work('A', a.id)] });
+		updateSection('works', [work('New'), work('A', a.id)]);
 
-		const [created, kept] = readContent().works.items;
+		const [created, kept] = readContent().works;
 		expect(kept.id).toBe(a.id);
 		expect(created.id).not.toBe(a.id);
 	});
 
-	it.each(['abc', '0', '-3', '1.5', 'Infinity'])('ignores the invalid work id %j', (id) => {
-		updateSection('works', { items: [work('W', id)] });
+	it('assigns a fresh id in place of an invalid one', () => {
+		const invalid = ['abc', '0', '-3', '1.5', 'Infinity'];
+		updateSection(
+			'works',
+			invalid.map((id) => work('W', id))
+		);
 
-		const saved = Number(readContent().works.items[0].id);
-		expect(Number.isInteger(saved)).toBe(true);
-		expect(saved).toBeGreaterThan(0);
+		for (const { id } of readContent().works) {
+			expect(Number.isInteger(Number(id)), id).toBe(true);
+			expect(Number(id)).toBeGreaterThan(0);
+		}
 	});
 });
 
@@ -268,12 +276,12 @@ describe('blog posts', () => {
 		expect(createPost(post('first', 'Imposter'))).toBe(false);
 
 		expect(slugs()).toEqual(['first', 'second']);
-		expect(readContent().blog.posts[0].title).toBe('first');
+		expect(readContent().blog[0].title).toBe('first');
 	});
 
 	it('keeps the draft flag of a new post', () => {
 		createPost({ ...post('hidden'), draft: true });
-		expect(readContent().blog.posts[0].draft).toBe(true);
+		expect(readContent().blog[0].draft).toBe(true);
 	});
 
 	it('updates one post in place, keeping its id, position and the other posts', () => {
@@ -283,7 +291,7 @@ describe('blog posts', () => {
 
 		expect(updatePost('first', { ...fields('Renamed'), draft: true })).toBe(true);
 
-		const [first, second] = readContent().blog.posts;
+		const [first, second] = readContent().blog;
 		expect(first).toMatchObject({ slug: 'first', title: 'Renamed', draft: true });
 		expect(second).toMatchObject({ slug: 'second', title: 'second', draft: false });
 		expect(postId('first')).toBe(idBefore);

@@ -1,10 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
-	guardReset,
+	resetAttempts,
 	isAdminConfigured,
-	isResetLocked,
-	recordFailedReset,
-	recordSuccessfulReset,
 	requestEmailPasswordReset,
 	resetPasswordWithRecoveryKey,
 	validateNewPassword
@@ -27,7 +24,7 @@ export const load: PageServerLoad = ({ locals }) => {
 export const actions: Actions = {
 	requestEmailLink: async ({ request, url, getClientAddress }) => {
 		const clientAddress = getClientAddress();
-		if (isResetLocked(clientAddress)) {
+		if (resetAttempts.isLocked(clientAddress)) {
 			return fail(429, { emailError: LOCKED_MESSAGE });
 		}
 
@@ -39,7 +36,7 @@ export const actions: Actions = {
 		}
 
 		// Every request counts toward the limit, so this form can't be used to flood the admin inbox.
-		recordFailedReset(clientAddress);
+		resetAttempts.recordFailure(clientAddress);
 		// Not awaited: sending takes noticeably longer than not sending, and waiting for it would
 		// let response time reveal whether the identifier matched the admin account.
 		requestEmailPasswordReset(identifier, siteOrigin(url)).catch((error) => {
@@ -63,7 +60,7 @@ export const actions: Actions = {
 			return fail(400, { error: passwordError });
 		}
 
-		const newRecoveryKey = await guardReset(clientAddress, () =>
+		const newRecoveryKey = await resetAttempts.guard(clientAddress, () =>
 			resetPasswordWithRecoveryKey(recoveryKey, newPassword)
 		);
 		if (newRecoveryKey === 'locked') {
@@ -73,7 +70,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid emergency recovery code.' });
 		}
 
-		recordSuccessfulReset(clientAddress);
+		resetAttempts.clear(clientAddress);
 
 		// No session is created here: signing in afterwards keeps two-factor authentication in
 		// force. The recovery code was used up, so its replacement is shown once.

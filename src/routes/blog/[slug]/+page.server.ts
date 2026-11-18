@@ -3,7 +3,7 @@ import { readContent } from '#lib/server/content.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params, locals }) => {
-	const post = readContent().blog.posts.find((p) => p.slug === params.slug);
+	const post = readContent().blog.find((p) => p.slug === params.slug);
 
 	// Draft posts are only visible to the logged-in admin, so they can be previewed
 	// before publishing without being reachable by the public.

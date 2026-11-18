@@ -13,18 +13,17 @@ afterEach(() => {
 });
 
 describe('encryption key configuration', () => {
-	it.each([
-		['', false],
-		['k'.repeat(31), false],
-		['k'.repeat(32), true],
-		// The minimum is measured in bytes: this is 16 characters but 32 bytes.
-		['é'.repeat(16), true]
-	])('classifies the key %j as usable: %s', (key, usable) => {
-		vi.stubEnv('TOTP_ENCRYPTION_KEY', key);
+	it('needs at least 32 bytes', () => {
+		for (const key of ['', 'k'.repeat(31)]) {
+			vi.stubEnv('TOTP_ENCRYPTION_KEY', key);
+			expect(isEncryptionKeyConfigured(), key).toBe(false);
+			expect(() => encryptSecret('secret'), key).toThrow('TOTP_ENCRYPTION_KEY');
+		}
 
-		expect(isEncryptionKeyConfigured()).toBe(usable);
-		if (usable) expect(decryptSecret(encryptSecret('secret'))).toBe('secret');
-		else expect(() => encryptSecret('secret')).toThrow('TOTP_ENCRYPTION_KEY');
+		// The minimum is measured in bytes: this is 16 characters but 32 bytes.
+		vi.stubEnv('TOTP_ENCRYPTION_KEY', 'é'.repeat(16));
+		expect(isEncryptionKeyConfigured()).toBe(true);
+		expect(decryptSecret(encryptSecret('secret'))).toBe('secret');
 	});
 });
 
@@ -52,19 +51,21 @@ describe('encryptSecret and decryptSecret', () => {
 		expect(decryptSecret(encrypted)).toBe('secret');
 	});
 
-	it.each([1, 2, 3])('detects tampering with part %i', (part) => {
-		const parts = encryptSecret('secret').split(':');
-		const bytes = Buffer.from(parts[part], 'base64');
-		bytes[0] ^= 1;
-		parts[part] = bytes.toString('base64');
+	it('detects tampering with any part', () => {
+		for (const part of [1, 2, 3]) {
+			const parts = encryptSecret('secret').split(':');
+			const bytes = Buffer.from(parts[part], 'base64');
+			bytes[0] ^= 1;
+			parts[part] = bytes.toString('base64');
 
-		expect(() => decryptSecret(parts.join(':'))).toThrow();
+			expect(() => decryptSecret(parts.join(':')), `part ${part}`).toThrow();
+		}
 	});
 
-	it.each(['plaintext', 'v2:AAAA:AAAA:AAAA', 'v1:AAAA:AAAA', 'v1:AAAA:AAAA:AAAA'])(
-		'rejects the malformed value %s',
-		(value) => {
-			expect(() => decryptSecret(value)).toThrow(/encrypted secret/);
+	it('rejects malformed values', () => {
+		const otherVersion = encryptSecret('secret').replace(/^v1:/, 'v2:');
+		for (const value of ['plaintext', otherVersion, 'v1:AAAA:AAAA', 'v1:AAAA:AAAA:AAAA']) {
+			expect(() => decryptSecret(value), value).toThrow(/encrypted secret/);
 		}
-	);
+	});
 });

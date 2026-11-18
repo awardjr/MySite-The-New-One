@@ -1,12 +1,15 @@
 <script lang="ts">
+	import { SvelteSet } from 'svelte/reactivity';
 	import { enhance } from '$app/forms';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 
 	let { data, form }: PageProps = $props();
 
-	let deletingSlug = $state<string | null>(null);
+	const deletingSlugs = new SvelteSet<string>();
 </script>
 
 <svelte:head>
@@ -30,17 +33,10 @@
 		<h2 class="text-lg font-semibold text-heading">Posts</h2>
 		<p class="text-sm text-muted">Create, edit, or remove posts.</p>
 	</div>
-	<a
-		href={resolve('admin/blog/new')}
-		class="shrink-0 rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
-	>
-		New Post
-	</a>
+	<a href={resolve('admin/blog/new')} class="btn-primary shrink-0"> New Post </a>
 </div>
 
-{#if form?.error}
-	<p class="mt-4 text-sm text-error">{form.error}</p>
-{/if}
+<FormStatus error={form?.error} class="mt-4" />
 
 <div class="mt-6 space-y-3">
 	{#each data.posts as post (post.slug)}
@@ -65,40 +61,39 @@
 					href={resolve('/blog/[slug]', { slug: post.slug })}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="rounded-lg border border-field-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary-hover"
+					class="btn-secondary px-3 py-1.5"
 				>
 					Preview
 				</a>
 				<a
 					href={resolve('/admin/(app)/blog/[slug]', { slug: post.slug })}
-					class="rounded-lg border border-field-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary-hover"
+					class="btn-secondary px-3 py-1.5"
 				>
 					Edit
 				</a>
 				<form
 					method="POST"
 					action="?/delete"
-					onsubmit={(event) => {
+					use:enhance={({ cancel }) => {
 						if (!confirm(`Delete "${post.title}"? This cannot be undone.`)) {
-							event.preventDefault();
+							cancel();
+							return;
 						}
-					}}
-					use:enhance={() => {
-						deletingSlug = post.slug;
+						const { slug } = post;
+						deletingSlugs.add(slug);
 						return async ({ update }) => {
 							await update();
-							deletingSlug = null;
+							deletingSlugs.delete(slug);
 						};
 					}}
 				>
 					<input type="hidden" name="slug" value={post.slug} />
-					<button
-						type="submit"
-						disabled={deletingSlug === post.slug}
-						class="rounded-lg border border-field-border px-3 py-1.5 text-sm text-danger-text transition-colors hover:bg-danger-hover disabled:opacity-60"
-					>
-						{deletingSlug === post.slug ? 'Deleting…' : 'Delete'}
-					</button>
+					<SubmitButton
+						pending={deletingSlugs.has(post.slug)}
+						label="Delete"
+						pendingLabel="Deleting…"
+						class="btn-remove"
+					/>
 				</form>
 			</div>
 		</div>

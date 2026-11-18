@@ -1,7 +1,7 @@
 import { dev } from '$app/env';
 import { db } from '../db';
 import { decryptSecret, encryptSecret, isEncryptionKeyConfigured } from '../secretbox';
-import { generateTotpSecret, verifyTotp } from '../totp';
+import { generateTotpSecret, normalizeTotpCode, verifyTotp } from '../totp';
 import { getAdmin, redeemRecoveryKey } from './admin';
 import { newToken } from './secrets';
 
@@ -94,12 +94,16 @@ export type SecondFactor = { method: 'totp' } | { method: 'recovery'; newRecover
 /**
  * Checks the second login factor: a 6-digit authenticator code, or the emergency recovery code
  * as a fallback for a lost authenticator. Returns null if the input matches neither.
+ * `canRedeemRecoveryKey` can stop a matching recovery code from being used up.
  */
-export async function verifySecondFactor(input: string): Promise<SecondFactor | null> {
-	if (/^\s*\d{3}\s*\d{3}\s*$/.test(input)) {
+export async function verifySecondFactor(
+	input: string,
+	canRedeemRecoveryKey?: () => boolean
+): Promise<SecondFactor | null> {
+	if (normalizeTotpCode(input)) {
 		return verifyTotpCode(input) ? { method: 'totp' } : null;
 	}
-	const newRecoveryKey = await redeemRecoveryKey(input);
+	const newRecoveryKey = await redeemRecoveryKey(input, canRedeemRecoveryKey);
 	return newRecoveryKey ? { method: 'recovery', newRecoveryKey } : null;
 }
 
@@ -143,7 +147,11 @@ export async function completeTwoFactorChallenge(
 	input: string
 ): Promise<SecondFactor | null> {
 	if (!token || !hasTwoFactorChallenge(token)) return null;
-	const factor = await verifySecondFactor(input);
+	// A recovery code is only used up by claiming the challenge in the same step. If the login was
+	// cancelled while the code was being checked, the code stays valid instead of being lost.
+	const factor = await verifySecondFactor(input, () => twoFactorChallenges.delete(token));
+	if (factor?.method === 'recovery') return factor;
+
 	// The challenge may have been cancelled or used while the code was being checked.
 	const challenge = twoFactorChallenges.get(token);
 	if (!challenge) return null;

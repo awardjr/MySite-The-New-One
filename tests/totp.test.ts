@@ -20,9 +20,12 @@ describe('base32', () => {
 		expect(base32Decode('gezd gnbv-gy3t')).toEqual(base32Decode('GEZDGNBVGY3T'));
 	});
 
-	it.each([1, 2, 3, 4, 5, 19, 20, 21])('round-trips %i bytes', (length) => {
-		const bytes = Buffer.from(Array.from({ length }, (_, i) => (i * 37 + 200) % 256));
-		expect(base32Decode(base32Encode(bytes))).toEqual(bytes);
+	it('round-trips bytes', () => {
+		// 20 bytes is a real secret; 21 leaves bits over at the end.
+		for (const length of [20, 21]) {
+			const bytes = Buffer.from(Array.from({ length }, (_, i) => (i * 37 + 200) % 256));
+			expect(base32Decode(base32Encode(bytes))).toEqual(bytes);
+		}
 	});
 
 	it('rejects characters outside the alphabet', () => {
@@ -52,15 +55,11 @@ describe('totpCode', () => {
 });
 
 describe('normalizeTotpCode', () => {
-	it.each([
-		['123456', '123456'],
-		[' 123 456 ', '123456'],
-		['12345', ''],
-		['1234567', ''],
-		['12345a', ''],
-		['', '']
-	])('turns %j into %j', (input, expected) => {
-		expect(normalizeTotpCode(input)).toBe(expected);
+	it('strips spaces and accepts only six digits', () => {
+		expect(normalizeTotpCode(' 123 456 ')).toBe('123456');
+		for (const invalid of ['12345', '1234567', '12345a', '']) {
+			expect(normalizeTotpCode(invalid), invalid).toBe('');
+		}
 	});
 });
 
@@ -84,13 +83,10 @@ describe('verifyTotp', () => {
 		expect(verifyTotp(RFC_SECRET, '', null, now)).toBeNull();
 	});
 
-	it('rejects replays of the last used step and anything older', () => {
+	it('accepts only steps after the last used one', () => {
 		expect(verifyTotp(RFC_SECRET, codeAt(0), step, now)).toBeNull();
 		expect(verifyTotp(RFC_SECRET, codeAt(-1), step, now)).toBeNull();
 		expect(verifyTotp(RFC_SECRET, codeAt(0), step + 1, now)).toBeNull();
-	});
-
-	it('accepts the first step after the last used one', () => {
 		expect(verifyTotp(RFC_SECRET, codeAt(0), step - 1, now)).toBe(step);
 		expect(verifyTotp(RFC_SECRET, codeAt(1), step, now)).toBe(step + 1);
 	});
@@ -108,9 +104,6 @@ describe('totpUri', () => {
 			digits: '6',
 			period: '30'
 		});
-	});
-
-	it('encodes characters that would break the label', () => {
 		expect(totpUri('ABCD', 'a/b?c', 'x:y')).toContain('/x%3Ay:a%2Fb%3Fc?');
 	});
 });

@@ -141,8 +141,14 @@ export async function rotateRecoveryKey(): Promise<string> {
 /**
  * Uses up a recovery key. A key only works once: on a match it is replaced, and the new key is
  * returned so it can be shown to the admin. Returns null if the candidate doesn't match.
+ *
+ * `canRedeem` runs immediately before the key is replaced. If it returns false the key stays valid
+ * and null is returned, so a caller that could not show the new key doesn't lose the old one.
  */
-export async function redeemRecoveryKey(candidate: string): Promise<string | null> {
+export async function redeemRecoveryKey(
+	candidate: string,
+	canRedeem: () => boolean = () => true
+): Promise<string | null> {
 	const normalized = normalizeRecoveryKey(candidate);
 	if (!normalized) return null;
 	const stored = getAdmin()?.recovery_key_hash;
@@ -151,7 +157,7 @@ export async function redeemRecoveryKey(candidate: string): Promise<string | nul
 	const newKey = generateRecoveryKey();
 	const newHash = await hashSecret(normalizeRecoveryKey(newKey));
 	// Another request may have redeemed the same key while this one was hashing; only one wins.
-	if (getAdmin()?.recovery_key_hash !== stored) return null;
+	if (getAdmin()?.recovery_key_hash !== stored || !canRedeem()) return null;
 	updateRecoveryKeyStmt.run({ recoveryKeyHash: newHash, updatedAt: new Date().toISOString() });
 	return newKey;
 }

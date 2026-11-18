@@ -1,22 +1,18 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
+	import SettingsField from './SettingsField.svelte';
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	let savingProfile = $state(false);
-	let savingPassword = $state(false);
-	let rotatingRecovery = $state(false);
-	let savingTwoFactor = $state(false);
-
-	const twoFactorSubmit = () => {
-		savingTwoFactor = true;
-		return async ({ update }: { update: () => Promise<void> }) => {
-			await update();
-			savingTwoFactor = false;
-		};
-	};
+	const profileForm = pendingForm({ reset: false });
+	const passwordForm = pendingForm({ reset: false });
+	const recoveryForm = pendingForm({ reset: false });
+	const twoFactorForm = pendingForm();
 </script>
 
 <svelte:head>
@@ -41,90 +37,63 @@
 			method="POST"
 			action="?/updateProfile"
 			class="mt-6 space-y-5"
-			use:enhance={() => {
-				savingProfile = true;
-				return async ({ update }) => {
-					await update({ reset: false });
-					savingProfile = false;
-				};
-			}}
+			use:enhance={profileForm.submit}
 		>
 			<div class="grid gap-5 sm:grid-cols-2">
-				<div class="space-y-2">
-					<label for="username" class="text-base font-medium text-field-label"> Username </label>
-					<input
-						id="username"
-						name="username"
-						type="text"
-						required
-						autocomplete="username"
-						value={data.username}
-						class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-					/>
-				</div>
+				<SettingsField
+					label="Username"
+					id="username"
+					name="username"
+					type="text"
+					required
+					autocomplete="username"
+					value={data.username}
+				/>
 
-				<div class="space-y-2">
-					<label for="email" class="text-base font-medium text-field-label"> Email address </label>
-					<input
-						id="email"
-						name="email"
-						type="email"
-						required
-						autocomplete="email"
-						value={data.email}
-						class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-					/>
-				</div>
+				<SettingsField
+					label="Email address"
+					id="email"
+					name="email"
+					type="email"
+					required
+					autocomplete="email"
+					value={data.email}
+				/>
 			</div>
 
 			<div class="grid gap-5 sm:grid-cols-2">
-				<div class="space-y-2">
-					<label for="profileCurrentPassword" class="text-base font-medium text-field-label">
-						Current password (required to change your profile)
-					</label>
-					<input
-						id="profileCurrentPassword"
-						name="currentPassword"
-						type="password"
-						required
-						autocomplete="current-password"
-						class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-					/>
-				</div>
+				<SettingsField
+					label="Current password (required to change your profile)"
+					id="profileCurrentPassword"
+					name="currentPassword"
+					type="password"
+					required
+					autocomplete="current-password"
+				/>
 
 				{#if data.twoFactorEnabled}
-					<div class="space-y-2">
-						<label for="profileTwoFactorCode" class="text-base font-medium text-field-label">
-							Authentication or recovery code
-						</label>
-						<input
-							id="profileTwoFactorCode"
-							name="code"
-							type="text"
-							required
-							autocomplete="one-time-code"
-							spellcheck="false"
-							maxlength="32"
-							class="w-full rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
-						/>
-					</div>
+					<SettingsField
+						label="Authentication or recovery code"
+						id="profileTwoFactorCode"
+						name="code"
+						type="text"
+						required
+						autocomplete="one-time-code"
+						spellcheck="false"
+						maxlength={32}
+						class="font-mono tracking-widest"
+					/>
 				{/if}
 			</div>
 
-			{#if form?.profileError}
-				<p class="text-base font-medium text-error">{form.profileError}</p>
-			{:else if form?.profileSuccess}
-				<p class="text-base font-medium text-success">Profile updated successfully.</p>
-			{/if}
+			<FormStatus
+				large
+				error={form?.profileError}
+				saved={form?.profileSuccess && 'Profile updated successfully.'}
+			/>
 
 			<div>
-				<button
-					type="submit"
-					disabled={savingProfile}
-					class="rounded-lg bg-primary px-5 py-2.5 text-base font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-				>
-					{savingProfile ? 'Saving…' : 'Save Profile'}
-				</button>
+				<SubmitButton pending={profileForm.pending} label="Save Profile" class="btn-primary-lg" />
 			</div>
 		</form>
 	</section>
@@ -142,74 +111,52 @@
 			method="POST"
 			action="?/changePassword"
 			class="mt-6 space-y-5"
-			use:enhance={() => {
-				savingPassword = true;
-				return async ({ update }) => {
-					await update({ reset: false });
-					savingPassword = false;
-				};
-			}}
+			use:enhance={passwordForm.submit}
 		>
-			<div class="space-y-2">
-				<label for="currentPassword" class="text-base font-medium text-field-label">
-					Current password
-				</label>
-				<input
-					id="currentPassword"
-					name="currentPassword"
+			<SettingsField
+				label="Current password"
+				id="currentPassword"
+				name="currentPassword"
+				type="password"
+				required
+				autocomplete="current-password"
+			/>
+
+			<div class="grid gap-5 sm:grid-cols-2">
+				<SettingsField
+					label="New password"
+					id="newPassword"
+					name="newPassword"
 					type="password"
 					required
-					autocomplete="current-password"
-					class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
+					minlength={8}
+					autocomplete="new-password"
+				/>
+
+				<SettingsField
+					label="Confirm new password"
+					id="confirmPassword"
+					name="confirmPassword"
+					type="password"
+					required
+					minlength={8}
+					autocomplete="new-password"
 				/>
 			</div>
 
-			<div class="grid gap-5 sm:grid-cols-2">
-				<div class="space-y-2">
-					<label for="newPassword" class="text-base font-medium text-field-label">
-						New password
-					</label>
-					<input
-						id="newPassword"
-						name="newPassword"
-						type="password"
-						required
-						minlength="8"
-						autocomplete="new-password"
-						class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-					/>
-				</div>
-
-				<div class="space-y-2">
-					<label for="confirmPassword" class="text-base font-medium text-field-label">
-						Confirm new password
-					</label>
-					<input
-						id="confirmPassword"
-						name="confirmPassword"
-						type="password"
-						required
-						minlength="8"
-						autocomplete="new-password"
-						class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-					/>
-				</div>
-			</div>
-
-			{#if form?.passwordError}
-				<p class="text-base font-medium text-error">{form.passwordError}</p>
-			{:else if form?.passwordSuccess}
-				<p class="text-base font-medium text-success">Password updated successfully.</p>
-			{/if}
+			<FormStatus
+				large
+				error={form?.passwordError}
+				saved={form?.passwordSuccess && 'Password updated successfully.'}
+			/>
 
 			<div>
-				<button
-					type="submit"
-					disabled={savingPassword}
-					class="rounded-lg bg-primary px-5 py-2.5 text-base font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-				>
-					{savingPassword ? 'Updating…' : 'Update Password'}
-				</button>
+				<SubmitButton
+					pending={passwordForm.pending}
+					label="Update Password"
+					pendingLabel="Updating…"
+					class="btn-primary-lg"
+				/>
 			</div>
 		</form>
 	</section>
@@ -254,53 +201,39 @@
 				method="POST"
 				action="?/disableTwoFactor"
 				class="mt-6 space-y-5"
-				use:enhance={twoFactorSubmit}
+				use:enhance={twoFactorForm.submit}
 			>
 				<div class="grid gap-5 sm:grid-cols-2">
-					<div class="space-y-2">
-						<label for="disableTwoFactorPassword" class="text-base font-medium text-field-label">
-							Current password
-						</label>
-						<input
-							id="disableTwoFactorPassword"
-							name="currentPassword"
-							type="password"
-							required
-							autocomplete="current-password"
-							class="w-full rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-						/>
-					</div>
-					<div class="space-y-2">
-						<label for="disableTwoFactorCode" class="text-base font-medium text-field-label">
-							Authentication or recovery code
-						</label>
-						<input
-							id="disableTwoFactorCode"
-							name="code"
-							type="text"
-							required
-							autocomplete="one-time-code"
-							spellcheck="false"
-							maxlength="32"
-							class="w-full rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
-						/>
-					</div>
+					<SettingsField
+						label="Current password"
+						id="disableTwoFactorPassword"
+						name="currentPassword"
+						type="password"
+						required
+						autocomplete="current-password"
+					/>
+					<SettingsField
+						label="Authentication or recovery code"
+						id="disableTwoFactorCode"
+						name="code"
+						type="text"
+						required
+						autocomplete="one-time-code"
+						spellcheck="false"
+						maxlength={32}
+						class="font-mono tracking-widest"
+					/>
 				</div>
 
-				{#if form?.twoFactorError}
-					<p class="text-base font-medium text-error">{form.twoFactorError}</p>
-				{:else if form?.twoFactorSuccess}
-					<p class="text-base font-medium text-success">{form.twoFactorSuccess}</p>
-				{/if}
+				<FormStatus large error={form?.twoFactorError} saved={form?.twoFactorSuccess} />
 
 				<div>
-					<button
-						type="submit"
-						disabled={savingTwoFactor}
-						class="rounded-lg border border-field-border bg-field px-5 py-2.5 text-base font-semibold text-field-label transition-colors hover:bg-secondary-hover hover:text-heading disabled:opacity-60"
-					>
-						{savingTwoFactor ? 'Turning off…' : 'Turn Off Two-Factor Authentication'}
-					</button>
+					<SubmitButton
+						pending={twoFactorForm.pending}
+						label="Turn Off Two-Factor Authentication"
+						pendingLabel="Turning off…"
+						class="btn-secondary-lg"
+					/>
 				</div>
 			</form>
 		{:else if data.twoFactorSetup}
@@ -330,43 +263,37 @@
 				method="POST"
 				action="?/confirmTwoFactor"
 				class="mt-6 space-y-5"
-				use:enhance={twoFactorSubmit}
+				use:enhance={twoFactorForm.submit}
 			>
-				<div class="space-y-2">
-					<label for="confirmTwoFactorCode" class="text-base font-medium text-field-label">
-						Authentication code
-					</label>
-					<input
-						id="confirmTwoFactorCode"
-						name="code"
-						type="text"
-						required
-						inputmode="numeric"
-						autocomplete="one-time-code"
-						pattern={String.raw`[0-9]{3}\s?[0-9]{3}`}
-						maxlength="7"
-						class="w-full max-w-xs rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
-					/>
-				</div>
+				<SettingsField
+					label="Authentication code"
+					id="confirmTwoFactorCode"
+					name="code"
+					type="text"
+					required
+					inputmode="numeric"
+					autocomplete="one-time-code"
+					pattern={String.raw`\s*([0-9]\s*){6}`}
+					maxlength={32}
+					class="max-w-xs font-mono tracking-widest"
+				/>
 
-				{#if form?.twoFactorError}
-					<p class="text-base font-medium text-error">{form.twoFactorError}</p>
-				{/if}
+				<FormStatus large error={form?.twoFactorError} />
 
 				<div class="flex flex-wrap items-center gap-3">
-					<button
-						type="submit"
-						disabled={savingTwoFactor || !data.twoFactorKeyConfigured}
-						class="rounded-lg bg-primary px-5 py-2.5 text-base font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-					>
-						{savingTwoFactor ? 'Verifying…' : 'Turn On Two-Factor Authentication'}
-					</button>
+					<SubmitButton
+						pending={twoFactorForm.pending}
+						label="Turn On Two-Factor Authentication"
+						pendingLabel="Verifying…"
+						disabled={!data.twoFactorKeyConfigured}
+						class="btn-primary-lg"
+					/>
 					<button
 						type="submit"
 						formaction="?/cancelTwoFactor"
 						formnovalidate
-						disabled={savingTwoFactor}
-						class="rounded-lg border border-field-border bg-field px-5 py-2.5 text-base font-semibold text-field-label transition-colors hover:bg-secondary-hover hover:text-heading disabled:opacity-60"
+						disabled={twoFactorForm.pending}
+						class="btn-secondary-lg"
 					>
 						Cancel
 					</button>
@@ -377,36 +304,28 @@
 				method="POST"
 				action="?/startTwoFactor"
 				class="mt-6 space-y-5"
-				use:enhance={twoFactorSubmit}
+				use:enhance={twoFactorForm.submit}
 			>
-				<div class="space-y-2">
-					<label for="startTwoFactorPassword" class="text-base font-medium text-field-label">
-						Current password (required to set up two-factor authentication)
-					</label>
-					<input
-						id="startTwoFactorPassword"
-						name="currentPassword"
-						type="password"
-						required
-						autocomplete="current-password"
-						class="w-full max-w-md rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-					/>
-				</div>
+				<SettingsField
+					label="Current password (required to set up two-factor authentication)"
+					id="startTwoFactorPassword"
+					name="currentPassword"
+					type="password"
+					required
+					autocomplete="current-password"
+					class="max-w-md"
+				/>
 
-				{#if form?.twoFactorError}
-					<p class="text-base font-medium text-error">{form.twoFactorError}</p>
-				{:else if form?.twoFactorSuccess}
-					<p class="text-base font-medium text-success">{form.twoFactorSuccess}</p>
-				{/if}
+				<FormStatus large error={form?.twoFactorError} saved={form?.twoFactorSuccess} />
 
 				<div>
-					<button
-						type="submit"
-						disabled={savingTwoFactor || !data.twoFactorKeyConfigured}
-						class="rounded-lg bg-primary px-5 py-2.5 text-base font-semibold text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-					>
-						{savingTwoFactor ? 'Starting…' : 'Set Up Two-Factor Authentication'}
-					</button>
+					<SubmitButton
+						pending={twoFactorForm.pending}
+						label="Set Up Two-Factor Authentication"
+						pendingLabel="Starting…"
+						disabled={!data.twoFactorKeyConfigured}
+						class="btn-primary-lg"
+					/>
 				</div>
 			</form>
 		{/if}
@@ -436,57 +355,40 @@
 			method="POST"
 			action="?/rotateRecoveryKey"
 			class="mt-6 space-y-5"
-			use:enhance={() => {
-				rotatingRecovery = true;
-				return async ({ update }) => {
-					await update({ reset: false });
-					rotatingRecovery = false;
-				};
-			}}
+			use:enhance={recoveryForm.submit}
 		>
-			<div class="space-y-2">
-				<label for="recoveryCurrentPassword" class="text-base font-medium text-field-label">
-					Current password (required to generate new code)
-				</label>
-				<input
-					id="recoveryCurrentPassword"
-					name="currentPassword"
-					type="password"
-					required
-					autocomplete="current-password"
-					class="w-full max-w-md rounded-lg border border-field-border px-4 py-2.5 text-base bg-field text-field-text focus:outline-none"
-				/>
-			</div>
+			<SettingsField
+				label="Current password (required to generate new code)"
+				id="recoveryCurrentPassword"
+				name="currentPassword"
+				type="password"
+				required
+				autocomplete="current-password"
+				class="max-w-md"
+			/>
 
 			{#if data.twoFactorEnabled}
-				<div class="space-y-2">
-					<label for="recoveryTwoFactorCode" class="text-base font-medium text-field-label">
-						Authentication code (required because two-factor authentication is on)
-					</label>
-					<input
-						id="recoveryTwoFactorCode"
-						name="code"
-						type="text"
-						required
-						inputmode="text"
-						autocomplete="one-time-code"
-						class="w-full max-w-xs rounded-lg border border-field-border px-4 py-2.5 font-mono text-base tracking-widest bg-field text-field-text focus:outline-none"
-					/>
-				</div>
+				<SettingsField
+					label="Authentication code (required because two-factor authentication is on)"
+					id="recoveryTwoFactorCode"
+					name="code"
+					type="text"
+					required
+					inputmode="text"
+					autocomplete="one-time-code"
+					class="max-w-xs font-mono tracking-widest"
+				/>
 			{/if}
 
-			{#if form?.recoveryError}
-				<p class="text-base font-medium text-error">{form.recoveryError}</p>
-			{/if}
+			<FormStatus large error={form?.recoveryError} />
 
 			<div>
-				<button
-					type="submit"
-					disabled={rotatingRecovery}
-					class="rounded-lg border border-field-border bg-field px-5 py-2.5 text-base font-semibold text-field-label transition-colors hover:bg-secondary-hover hover:text-heading disabled:opacity-60"
-				>
-					{rotatingRecovery ? 'Generating…' : 'Generate New Recovery Code'}
-				</button>
+				<SubmitButton
+					pending={recoveryForm.pending}
+					label="Generate New Recovery Code"
+					pendingLabel="Generating…"
+					class="btn-secondary-lg"
+				/>
 			</div>
 		</form>
 	</section>

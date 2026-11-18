@@ -1,11 +1,18 @@
 <script lang="ts">
-	import { applyAction, enhance } from '$app/forms';
+	import { enhance } from '$app/forms';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	let submitting = $state(false);
+	const setupForm = pendingForm({
+		// Show the recovery code without reloading the page data: now that the account exists, a
+		// reload would redirect away before the code could be read.
+		refreshAll: () => false
+	});
 	let copied = $state(false);
 
 	async function copyRecoveryKey(key: string) {
@@ -66,10 +73,7 @@
 			</p>
 
 			<div class="mt-6">
-				<a
-					href={resolve('admin')}
-					class="inline-block w-full text-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover"
-				>
+				<a href={resolve('admin')} class="btn-primary inline-block w-full text-center">
 					Continue to Admin Dashboard
 				</a>
 			</div>
@@ -82,23 +86,7 @@
 			> site.
 		</p>
 
-		<form
-			method="POST"
-			class="mt-6 space-y-4"
-			use:enhance={() => {
-				submitting = true;
-				return async ({ result, update }) => {
-					if (result.type === 'success') {
-						// Show the recovery code without reloading the page data: now that the account
-						// exists, a reload would redirect away before the code could be read.
-						await applyAction(result);
-					} else {
-						await update();
-					}
-					submitting = false;
-				};
-			}}
-		>
+		<form method="POST" class="mt-6 space-y-4" use:enhance={setupForm.submit}>
 			{#if data.setupTokenRequired}
 				<div class="space-y-1">
 					<label for="setupToken" class="text-sm font-medium text-copy"> Setup token </label>
@@ -108,7 +96,7 @@
 						type="password"
 						required
 						autocomplete="off"
-						class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+						class="input-auth"
 					/>
 					<p class="text-xs text-muted">
 						The value of <code class="rounded bg-code px-1 py-0.5 font-mono">SETUP_TOKEN</code> in the
@@ -126,7 +114,7 @@
 					required
 					autocomplete="username"
 					value={form?.username ?? ''}
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
@@ -139,7 +127,7 @@
 					required
 					autocomplete="email"
 					value={form?.email ?? ''}
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
@@ -152,7 +140,7 @@
 					required
 					minlength="8"
 					autocomplete="new-password"
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
@@ -167,21 +155,18 @@
 					required
 					minlength="8"
 					autocomplete="new-password"
-					class="w-full rounded-lg border border-field-border px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none bg-field"
+					class="input-auth"
 				/>
 			</div>
 
-			{#if form?.error}
-				<p class="text-sm text-error">{form.error}</p>
-			{/if}
+			<FormStatus error={form?.error} />
 
-			<button
-				type="submit"
-				disabled={submitting}
-				class="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-			>
-				{submitting ? 'Creating account…' : 'Create Account & Sign In'}
-			</button>
+			<SubmitButton
+				pending={setupForm.pending}
+				label="Create Account & Sign In"
+				pendingLabel="Creating account…"
+				class="btn-primary w-full"
+			/>
 		</form>
 	{/if}
 </section>

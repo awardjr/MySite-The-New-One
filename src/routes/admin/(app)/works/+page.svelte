@@ -1,42 +1,11 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { fade } from 'svelte/transition';
-	import { enhance } from '$app/forms';
+	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
-	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
-	import type { PageProps } from './$types';
+	import { platforms } from '#lib/platforms.js';
 	import type { WorkItem } from '#lib/server/content.js';
-
-	// Keep in sync with the platform keys used in src/routes/works/+page.svelte's `platformIcons` map.
-	const platformOptions: { key: string; label: string }[] = [
-		{ key: 'web', label: 'Web' },
-		{ key: 'windows', label: 'Windows' },
-		{ key: 'macos', label: 'macOS' },
-		{ key: 'linux', label: 'Linux' },
-		{ key: 'ios', label: 'iOS' },
-		{ key: 'android', label: 'Android' },
-		{ key: 'switch', label: 'Nintendo Switch' }
-	];
+	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
-
-	let items = $state<WorkItem[]>(untrack(() => structuredClone(data.items)));
-	let saving = $state(false);
-	let showSaved = $derived(!!(form && form.success));
-
-	function clearSaved() {
-		showSaved = false;
-	}
-
-	function addItem() {
-		items.push({ id: '', title: '', description: '', image: '', link: '', platforms: [] });
-	}
-
-	function removeItem(index: number) {
-		const item = items[index];
-		if (!confirm(`Remove "${item.title || 'this work'}"?`)) return;
-		items.splice(index, 1);
-	}
 
 	function togglePlatform(item: WorkItem, key: string, checked: boolean) {
 		if (checked) {
@@ -61,109 +30,55 @@
 	Edit the headline, subtitle, and works shown on the works page.
 </p>
 
-<HeadlineForm
+<ListEditor
+	field="items"
+	items={data.items}
 	headline={data.headline}
 	subtitle={data.subtitle}
-	saved={!!form?.headlineSuccess}
 	headlinePlaceholder="Works"
-	oninput={clearSaved}
-/>
-
-<form
-	method="POST"
-	action="?/save"
-	class="mt-6 space-y-4"
-	use:enhance={() => {
-		saving = true;
-		return async ({ update }) => {
-			await update({ reset: false });
-			saving = false;
-		};
-	}}
+	{form}
+	addLabel="+ Add Work"
+	newItem={(): WorkItem => ({
+		id: '',
+		title: '',
+		description: '',
+		image: '',
+		link: '',
+		platforms: []
+	})}
+	itemName={(item: WorkItem) => item.title || 'this work'}
 >
-	<input type="hidden" name="items" value={JSON.stringify(items)} />
+	{#snippet row(item: WorkItem, remove: () => void)}
+		<div class="space-y-2 rounded-lg border border-form-border p-3">
+			<input bind:value={item.title} placeholder="Title" class="input-compact w-full" />
+			<textarea
+				bind:value={item.description}
+				placeholder="Description"
+				rows="3"
+				class="input-compact w-full"></textarea>
+			<input
+				bind:value={item.link}
+				placeholder="Link URL (optional)"
+				type="url"
+				class="input-compact w-full"
+			/>
+			<ImageUploadField label={null} placeholder="Image URL / path" bind:value={item.image} />
 
-	<div class="space-y-3">
-		{#each items as item, i (i)}
-			<div class="space-y-2 rounded-lg border border-form-border p-3">
-				<input
-					bind:value={item.title}
-					oninput={clearSaved}
-					placeholder="Title"
-					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
-				/>
-				<textarea
-					bind:value={item.description}
-					oninput={clearSaved}
-					placeholder="Description"
-					rows="3"
-					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
-				></textarea>
-				<input
-					bind:value={item.link}
-					oninput={clearSaved}
-					placeholder="Link URL (optional)"
-					type="url"
-					class="w-full rounded-lg border border-field-border px-2 py-1.5 text-sm bg-field text-field-text"
-				/>
-				<ImageUploadField
-					label={null}
-					placeholder="Image URL / path"
-					bind:value={item.image}
-					onchange={clearSaved}
-				/>
-
-				<div class="flex flex-wrap gap-3 pt-1">
-					{#each platformOptions as platform (platform.key)}
-						<label class="flex items-center gap-1.5 text-sm text-field-label">
-							<input
-								type="checkbox"
-								checked={item.platforms.includes(platform.key)}
-								onchange={(e) => {
-									togglePlatform(item, platform.key, e.currentTarget.checked);
-									clearSaved();
-								}}
-								class="rounded border-field-border"
-							/>
-							{platform.label}
-						</label>
-					{/each}
-				</div>
-
-				<button
-					type="button"
-					onclick={() => removeItem(i)}
-					class="rounded-lg border border-field-border px-3 py-1.5 text-sm text-danger-text transition-colors hover:bg-danger-hover"
-				>
-					Remove
-				</button>
+			<div class="flex flex-wrap gap-3 pt-1">
+				{#each platforms as platform (platform.key)}
+					<label class="flex items-center gap-1.5 text-sm text-field-label">
+						<input
+							type="checkbox"
+							checked={item.platforms.includes(platform.key)}
+							onchange={(e) => togglePlatform(item, platform.key, e.currentTarget.checked)}
+							class="rounded border-field-border"
+						/>
+						{platform.label}
+					</label>
+				{/each}
 			</div>
-		{/each}
-	</div>
 
-	<button
-		type="button"
-		onclick={addItem}
-		class="rounded-lg border border-dashed border-field-border px-4 py-2 text-sm text-form-muted transition-colors hover:bg-secondary-hover"
-	>
-		+ Add Work
-	</button>
-
-	{#if form?.error}
-		<p class="text-sm text-error">{form.error}</p>
-	{:else if showSaved}
-		<p in:fade={{ duration: 200 }} out:fade={{ duration: 200 }} class="text-sm text-success">
-			Saved.
-		</p>
-	{/if}
-
-	<div>
-		<button
-			type="submit"
-			disabled={saving}
-			class="rounded-lg bg-primary px-4 py-2 font-medium text-primary-text transition-colors hover:bg-primary-hover disabled:opacity-60"
-		>
-			{saving ? 'Saving…' : 'Save changes'}
-		</button>
-	</div>
-</form>
+			<button type="button" onclick={remove} class="btn-remove"> Remove </button>
+		</div>
+	{/snippet}
+</ListEditor>

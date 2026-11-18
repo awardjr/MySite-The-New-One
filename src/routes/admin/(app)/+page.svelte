@@ -35,7 +35,7 @@
 		{
 			href: resolve('admin/settings'),
 			label: 'Settings',
-			description: 'Change the admin password.'
+			description: 'Profile, password, two-factor authentication, and recovery code.'
 		}
 	];
 </script>

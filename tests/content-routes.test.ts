@@ -89,9 +89,7 @@ describe('main menu sections', () => {
 	});
 
 	it('reports a section once it has content', () => {
-		updateSection('press', {
-			items: [{ outlet: 'Outlet', title: 'Title', summary: '', href: '', date: '' }]
-		});
+		updateSection('press', [{ outlet: 'Outlet', title: 'Title', summary: '', href: '', date: '' }]);
 
 		expect(sections()).toMatchObject({ press: true, works: false });
 	});
@@ -119,8 +117,8 @@ describe('home page', () => {
 		createPost(post('one'));
 		createPost(post('two'));
 		createPost(post('secret', { draft: true }));
-		updateSection('works', { items: [work('First'), work('Second')] });
-		const [first, second] = readContent().works.items;
+		updateSection('works', [work('First'), work('Second')]);
+		const [first, second] = readContent().works;
 		updateSection('home', {
 			...emptyHome,
 			featuredPosts: ['two', 'secret', 'deleted', 'one'],
@@ -269,30 +267,22 @@ describe('admin list editors', () => {
 		{ name: 'pinball', action: adminPinball.actions.save, field: 'machines' }
 	];
 
-	describe.each(editors)('$name', ({ action, field }) => {
-		it.each(['not json', '{"a":1}', '[null]', '[1]', '[[]]', '[{"a":1},null]'])(
-			'rejects the malformed payload %s',
-			async (value) => {
-				expect(await submit(action, { fields: { [field]: value } })).toMatchObject({
-					kind: 'failure',
-					status: 400
-				});
-			}
-		);
+	// Which payloads count as malformed is covered by the `readJsonRows` tests.
+	it('rejects a malformed payload, leaving stored rows alone', async () => {
+		updateSection('press', [{ outlet: 'O', title: 'Kept', summary: '', href: '', date: '' }]);
 
-		it('treats a missing payload as an empty list', async () => {
-			expect((await submit(action)).data).toEqual({ success: true });
-		});
+		for (const { name, action, field } of editors) {
+			const result = await submit(action, { fields: { [field]: 'not json' } });
+			expect(result, name).toMatchObject({ kind: 'failure', status: 400 });
+		}
+
+		expect(readContent().press[0].title).toBe('Kept');
 	});
 
-	it('leaves stored rows alone when the payload is malformed', async () => {
-		updateSection('press', {
-			items: [{ outlet: 'O', title: 'Kept', summary: '', href: '', date: '' }]
-		});
-
-		await submit(adminPress.actions.save, { fields: { items: 'not json' } });
-
-		expect(readContent().press.items[0].title).toBe('Kept');
+	it('treats a missing payload as an empty list', async () => {
+		for (const { name, action } of editors) {
+			expect((await submit(action)).data, name).toEqual({ success: true });
+		}
 	});
 
 	it('cleans works, dropping untitled rows and unsafe links', async () => {
@@ -312,7 +302,7 @@ describe('admin list editors', () => {
 			}
 		});
 
-		const { items } = readContent().works;
+		const items = readContent().works;
 		expect(items).toHaveLength(1);
 		expect(items[0]).toMatchObject({
 			title: 'Game',
@@ -321,6 +311,11 @@ describe('admin list editors', () => {
 			link: '',
 			platforms: ['PC', 'Mac']
 		});
+
+		// Saving keeps a row's id, because featured works on the home page point at it.
+		const { id } = items[0];
+		await submit(adminWorks.actions.save, { fields: { items: json([{ id, title: 'Game' }]) } });
+		expect(readContent().works[0].id).toBe(id);
 	});
 
 	it('cleans press items, dropping untitled rows and unsafe links', async () => {
@@ -333,7 +328,7 @@ describe('admin list editors', () => {
 			}
 		});
 
-		expect(readContent().press.items).toEqual([
+		expect(readContent().press).toEqual([
 			{ outlet: 'O', title: 'T', summary: 'S', href: '', date: 'D' }
 		]);
 	});
@@ -349,7 +344,7 @@ describe('admin list editors', () => {
 			}
 		});
 
-		expect(readContent().contact.links).toEqual([
+		expect(readContent().contact).toEqual([
 			{ label: 'Mail', href: 'mailto:me@example.com', icon: 'link', description: 'Hi' }
 		]);
 	});
@@ -370,7 +365,7 @@ describe('admin list editors', () => {
 			}
 		});
 
-		expect(readContent().pinball.machines).toEqual([
+		expect(readContent().pinball).toEqual([
 			{
 				name: 'Machine',
 				image: '/m.png',
@@ -399,7 +394,7 @@ describe('admin home editor', () => {
 				name: ' Ada ',
 				tagline: ' Engineer ',
 				photoSrc: ' /me.png ',
-				introParagraphs: ' First \n\n  \n\nSecond\n\n',
+				introParagraphs: ' First\nstill first \n\n  \n\nSecond\n\n',
 				featuredPosts: ['a', 'b'],
 				featuredWorks: ['7']
 			}
@@ -409,7 +404,8 @@ describe('admin home editor', () => {
 			name: 'Ada',
 			tagline: 'Engineer',
 			photoSrc: '/me.png',
-			introParagraphs: ['First', 'Second'],
+			// Form encoding may turn the single line break into CRLF.
+			introParagraphs: [expect.stringMatching(/^First\r?\nstill first$/), 'Second'],
 			featuredPosts: ['a', 'b'],
 			featuredWorks: ['7']
 		});
@@ -437,59 +433,56 @@ describe('page headline forms', () => {
 });
 
 describe('admin blog editor', () => {
-	const slugs = () => readContent().blog.posts.map((p) => p.slug);
+	const slugs = () => readContent().blog.map((p) => p.slug);
 	const create = (fields: Record<string, string>) =>
 		submit(adminNewPost.actions.default, { fields });
 
-	it.each([
-		['Hello, World!', '', 'hello-world'],
-		['  --Spaced  Out--  ', '', 'spaced-out'],
-		['Ignored title', ' My Custom/Slug ', 'my-custom-slug'],
-		['Café Ünï', '', 'caf-n']
-	])('derives the slug for title %j and slug %j', async (title, slug, expected) => {
-		expect(await create({ title, slug })).toMatchObject({
-			kind: 'redirect',
-			location: '/admin/blog'
-		});
-		expect(slugs()).toEqual([expected]);
+	it('derives the slug from the slug field or the title', async () => {
+		for (const [title, slug, expected] of [
+			['Hello, World!', '', 'hello-world'],
+			['  --Spaced  Out--  ', '', 'spaced-out'],
+			['Ignored title', ' My Custom/Slug ', 'my-custom-slug'],
+			['Café Ünï', '', 'caf-n'],
+			['New features', '', 'new-features']
+		]) {
+			expect(await create({ title, slug })).toMatchObject({
+				kind: 'redirect',
+				location: '/admin/blog'
+			});
+			expect(slugs().at(-1)).toBe(expected);
+		}
 	});
 
-	it('stores sanitized content and the draft flag', async () => {
+	it('stores sanitized content and the draft flag, defaulting missing fields', async () => {
 		await create({ title: 'Post', content: '<p>Hi</p><script>alert(1)</script>', draft: 'on' });
+		await create({ title: 'Plain' });
 
-		expect(readContent().blog.posts[0]).toMatchObject({ content: '<p>Hi</p>', draft: true });
+		const [first, second] = readContent().blog;
+		expect(first).toMatchObject({ content: '<p>Hi</p>', draft: true });
+		expect(second).toMatchObject({ date: '', image: '', preview: '', content: '', draft: false });
 	});
 
-	it.each([
-		['no title', { title: '  ', slug: 'valid' }],
-		['a title with nothing usable for a slug', { title: '!!!' }],
-		['a slug with nothing usable', { title: 'Valid', slug: '***' }]
-	])('rejects %s, keeping what was typed', async (_name, fields) => {
-		const result = await create({ ...fields, preview: 'typed preview' });
-
-		expect(result).toMatchObject({ kind: 'failure', status: 400 });
-		expect(result.data.preview).toBe('typed preview');
-		expect(slugs()).toEqual([]);
-	});
-
-	it('refuses a slug that is already taken', async () => {
+	it('refuses unusable, taken and reserved slugs, keeping what was typed', async () => {
 		createPost(post('taken'));
 
-		expect((await create({ title: 'Other', slug: 'TAKEN' })).status).toBe(400);
-		expect(readContent().blog.posts[0].title).toBe('Title taken');
-	});
+		const attempts: Record<string, string>[] = [
+			{ title: '  ', slug: 'valid' },
+			{ title: '!!!' },
+			{ title: 'Valid', slug: '***' },
+			{ title: 'Other', slug: 'TAKEN' },
+			{ title: 'New!' },
+			{ title: 'Other', slug: ' NEW ' }
+		];
 
-	it.each([
-		['the title', { title: 'New!' }],
-		['the slug field', { title: 'Other', slug: ' NEW ' }]
-	])('refuses the reserved slug "new" derived from %s', async (_name, fields) => {
-		expect(await create(fields)).toMatchObject({ kind: 'failure', status: 400 });
-		expect(slugs()).toEqual([]);
-	});
+		for (const fields of attempts) {
+			const result = await create({ ...fields, preview: 'typed preview' });
 
-	it('allows slugs that merely contain "new"', async () => {
-		await create({ title: 'New features' });
-		expect(slugs()).toEqual(['new-features']);
+			expect(result, JSON.stringify(fields)).toMatchObject({ kind: 'failure', status: 400 });
+			expect(result.data.preview).toBe('typed preview');
+		}
+
+		expect(slugs()).toEqual(['taken']);
+		expect(readContent().blog[0].title).toBe('Title taken');
 	});
 
 	it('loads a post for editing, or 404s', async () => {
@@ -509,48 +502,34 @@ describe('admin blog editor', () => {
 		});
 
 		expect(result.location).toBe('/admin/blog');
-		const [saved] = readContent().blog.posts;
+		const [saved] = readContent().blog;
 		expect(saved).toMatchObject({ slug: 'one', title: 'New title', draft: true });
 		expect(saved.content).not.toContain('onerror');
 	});
 
-	it('requires a title when updating', async () => {
+	it('refuses an update without a title or for a missing post', async () => {
 		createPost(post('one'));
+		const update = (slug: string, title: string) =>
+			submit(adminEditPost.actions.update, { params: { slug }, fields: { title } });
 
-		const result = await submit(adminEditPost.actions.update, {
-			params: { slug: 'one' },
-			fields: { title: ' ' }
-		});
+		expect(await update('one', ' ')).toMatchObject({ kind: 'failure', status: 400 });
+		expect(readContent().blog[0].title).toBe('Title one');
 
-		expect(result).toMatchObject({ kind: 'failure', status: 400 });
-		expect(readContent().blog.posts[0].title).toBe('Title one');
+		expect(await update('gone', 'Title')).toMatchObject({ kind: 'error', status: 404 });
+		expect(slugs()).toEqual(['one']);
 	});
 
-	it('returns 404 when updating a post that no longer exists', async () => {
-		const result = await submit(adminEditPost.actions.update, {
-			params: { slug: 'gone' },
-			fields: { title: 'Title' }
-		});
-
-		expect(result).toMatchObject({ kind: 'error', status: 404 });
-		expect(slugs()).toEqual([]);
-	});
-
-	it('deletes from the edit page and from the list', async () => {
+	it('deletes from the edit page and from the list, which requires a slug', async () => {
 		createPost(post('one'));
 		createPost(post('two'));
 
 		await outcome(() => adminEditPost.actions.delete({ params: { slug: 'one' } } as never));
 		expect(slugs()).toEqual(['two']);
 
+		expect((await submit(adminBlog.actions.delete)).status).toBe(400);
+		expect(slugs()).toEqual(['two']);
+
 		await submit(adminBlog.actions.delete, { fields: { slug: ' two ' } });
 		expect(slugs()).toEqual([]);
-	});
-
-	it('requires a slug when deleting from the list', async () => {
-		createPost(post('one'));
-
-		expect((await submit(adminBlog.actions.delete)).status).toBe(400);
-		expect(slugs()).toEqual(['one']);
 	});
 });

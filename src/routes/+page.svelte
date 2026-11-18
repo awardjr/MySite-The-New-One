@@ -37,19 +37,21 @@
 		</div>
 
 		<!-- Photo Section -->
-		<div class="flex shrink-0 justify-center">
-			<button
-				aria-label={`View larger photo of ${name}`}
-				onclick={() => openLightbox(photoSrc, name)}
-				type="button"
-			>
-				<img
-					alt={name}
-					class="h-72 w-72 cursor-pointer rounded-2xl object-cover shadow-md sm:h-96 sm:w-96"
-					src={photoSrc}
-				/>
-			</button>
-		</div>
+		{#if photoSrc}
+			<div class="flex shrink-0 justify-center">
+				<button
+					aria-label={`View larger photo of ${name}`}
+					onclick={() => openLightbox(photoSrc, name)}
+					type="button"
+				>
+					<img
+						alt={name}
+						class="h-72 w-72 cursor-pointer rounded-2xl object-cover shadow-md sm:h-96 sm:w-96"
+						src={photoSrc}
+					/>
+				</button>
+			</div>
+		{/if}
 	</div>
 </section>
 

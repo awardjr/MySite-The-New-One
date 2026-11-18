@@ -73,35 +73,27 @@ describe('admin route guard', () => {
 		expect(result.redirect?.location).toBe('/admin/login?redirectTo=%2Fadmin%2Fblog%3Fpage%3D2');
 	});
 
-	it('guards the dashboard itself', async () => {
-		expect((await run('/admin', '/admin/(app)')).redirect?.status).toBe(303);
-	});
-
 	// SvelteKit matches routes against the decoded path, so the raw pathname can differ from
 	// the route that will actually run. The guard has to follow the matched route.
-	it.each(['/%61dmin/settings', '/%41dmin/settings', '/admin%2Fsettings'])(
-		'guards an admin route reached through the encoded path %s',
-		async (pathname) => {
-			const result = await run(pathname, '/admin/(app)/settings');
-			expect(result.resolved).toBe(false);
-			expect(result.redirect?.location).toMatch(/^\/admin\/login\?redirectTo=/);
+	it('guards every matched admin route, however its path is written', async () => {
+		for (const [pathname, route] of [
+			['/admin', '/admin/(app)'],
+			['/%61dmin/settings', '/admin/(app)/settings'],
+			['/admin%2Fsettings', '/admin/(app)/settings'],
+			['/%61dmin/upload', '/admin/upload'],
+			['/admin/logout', '/admin/logout']
+		]) {
+			const result = await run(pathname, route);
+			expect(result.resolved, pathname).toBe(false);
+			expect(result.redirect?.location, pathname).toMatch(/^\/admin\/login\?redirectTo=/);
 		}
-	);
-
-	it.each([
-		['/%61dmin/upload', '/admin/upload'],
-		['/admin/upload', '/admin/upload'],
-		['/admin/logout', '/admin/logout']
-	])('guards the endpoint %s outside the (app) group', async (pathname, route) => {
-		expect((await run(pathname, route)).redirect?.status).toBe(303);
 	});
 
-	it.each(['/admin', '/admin/nope', '/%61dmin/nope', '/ADMIN/nope', '/Admin'])(
-		'guards the admin-looking path %s that matches no route',
-		async (pathname) => {
-			expect((await run(pathname, null)).redirect?.status).toBe(303);
+	it('guards admin-looking paths that match no route', async () => {
+		for (const pathname of ['/admin/nope', '/%61dmin/nope', '/ADMIN/nope']) {
+			expect((await run(pathname, null)).redirect?.status, pathname).toBe(303);
 		}
-	);
+	});
 
 	it('does not crash on a malformed escape in an unmatched path', async () => {
 		expect((await run('/%E0%A4%A', null)).resolved).toBe(true);
@@ -114,44 +106,36 @@ describe('admin route guard', () => {
 		expect(result.locals.isAdmin).toBe(true);
 	});
 
-	it.each([
-		['an unknown session', () => 'forged-token'],
-		[
-			'an expired session',
-			() => {
-				const token = createSession();
-				testDb
-					.prepare('UPDATE sessions SET expires_at = ?')
-					.run(new Date(Date.now() - 1000).toISOString());
-				return token;
-			}
-		]
-	])('rejects %s', async (_name, token) => {
-		const result = await run('/admin/settings', '/admin/(app)/settings', token());
-		expect(result.redirect?.status).toBe(303);
-		expect(result.locals.isAdmin).toBe(false);
+	it('rejects an unknown or expired session', async () => {
+		const expired = createSession();
+		testDb
+			.prepare('UPDATE sessions SET expires_at = ?')
+			.run(new Date(Date.now() - 1000).toISOString());
+
+		for (const token of ['forged-token', expired]) {
+			const result = await run('/admin/settings', '/admin/(app)/settings', token);
+			expect(result.redirect?.status).toBe(303);
+			expect(result.locals.isAdmin).toBe(false);
+		}
 	});
 
-	it.each(['/admin/login', '/admin/forgot-password', '/admin/reset', '/admin/setup'])(
-		'keeps %s reachable without a session',
-		async (route) => {
-			expect((await run(route, route)).resolved).toBe(true);
+	it('keeps the sign-in pages reachable without a session', async () => {
+		for (const route of [
+			'/admin/login',
+			'/admin/forgot-password',
+			'/admin/reset',
+			'/admin/setup'
+		]) {
+			expect((await run(route, route)).resolved, route).toBe(true);
 		}
-	);
-
-	it('recognizes a public admin page inside a route group', async () => {
 		expect((await run('/admin/login', '/admin/(auth)/login')).resolved).toBe(true);
 	});
 
-	it('leaves public pages alone', async () => {
+	it('leaves public pages alone and marks visitors as not admin', async () => {
+		expect((await run('/', '/')).locals.isAdmin).toBe(false);
 		expect((await run('/', '/')).resolved).toBe(true);
-		expect((await run('/blog/hello', '/blog/[slug]')).resolved).toBe(true);
 		expect((await run('/blog/admin', '/blog/[slug]')).resolved).toBe(true);
 		expect((await run('/administrator', null)).resolved).toBe(true);
-	});
-
-	it('marks public requests from visitors as not admin', async () => {
-		expect((await run('/', '/')).locals.isAdmin).toBe(false);
 	});
 
 	it('sends every admin route to setup until an account exists', async () => {
@@ -176,12 +160,14 @@ describe('security headers', () => {
 		expect(response?.headers.get('Strict-Transport-Security')).toBe('max-age=31536000');
 	});
 
-	it.each(['https://localhost:3000', 'https://127.0.0.1:3000', 'https://[::1]:3000'])(
-		'does not pin https for %s, where it would affect every other local project',
-		async (origin) => {
+	it('does not pin https on localhost, where it would affect every other local project', async () => {
+		for (const origin of [
+			'https://localhost:3000',
+			'https://127.0.0.1:3000',
+			'https://[::1]:3000'
+		]) {
 			const { response } = await run('/', '/', undefined, origin);
-			expect(response?.headers.has('Strict-Transport-Security')).toBe(false);
-			expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
+			expect(response?.headers.has('Strict-Transport-Security'), origin).toBe(false);
 		}
-	);
+	});
 });

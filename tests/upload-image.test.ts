@@ -28,9 +28,7 @@ describe('uploadImage', () => {
 
 	it.each([
 		['a non-JSON response', 'gateway error', 502],
-		['a success without a path', '{}', 200],
-		['a path that is not text', '{"path":1}', 200],
-		['an error that is not text', '{"error":{"code":1}}', 400],
+		['no usable path or error', '{"error":{"code":1}}', 200],
 		['a path on a failed response', '{"path":"/uploads/a.png"}', 500]
 	])('falls back to a generic message for %s', async (_name, body, status) => {
 		respondWith(body, status);

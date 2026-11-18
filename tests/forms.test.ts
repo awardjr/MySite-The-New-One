@@ -1,37 +1,46 @@
 import { describe, expect, it } from 'vitest';
-import { readJsonRows, safeUrl, text, textList } from '../src/lib/server/forms';
-
-function formDataWith(field: string, value: string): FormData {
-	const formData = new FormData();
-	formData.set(field, value);
-	return formData;
-}
+import { raw, readJsonRows, safeUrl, text, textList } from '#lib/server/forms.js';
+import { formData } from './route-helpers';
 
 describe('readJsonRows', () => {
 	it('parses a JSON array field', () => {
-		const formData = formDataWith('rows', '[{"a":1},{"b":2}]');
-		expect(readJsonRows(formData, 'rows')).toEqual([{ a: 1 }, { b: 2 }]);
+		const data = formData({ rows: '[{"a":1},{"b":2}]' });
+		expect(readJsonRows(data, 'rows')).toEqual([{ a: 1 }, { b: 2 }]);
 	});
 
 	it('defaults to an empty array when the field is missing', () => {
-		const formData = new FormData();
-		expect(readJsonRows(formData, 'rows')).toEqual([]);
+		expect(readJsonRows(formData(), 'rows')).toEqual([]);
 	});
 
-	it('returns null for invalid JSON', () => {
-		const formData = formDataWith('rows', 'not json');
-		expect(readJsonRows(formData, 'rows')).toBeNull();
+	it.each([
+		'not json',
+		'',
+		'{"a":1}',
+		'null',
+		'"text"',
+		'[null]',
+		'[1]',
+		'["a"]',
+		'[[]]',
+		'[{"a":1},null]'
+	])('returns null for %j', (value) => {
+		expect(readJsonRows(formData({ rows: value }), 'rows')).toBeNull();
+	});
+});
+
+describe('raw', () => {
+	it('returns a field exactly as submitted, so passwords are not altered', () => {
+		expect(raw(formData({ password: '  spaced  ' }), 'password')).toBe('  spaced  ');
 	});
 
-	it('returns null when the parsed value is not an array', () => {
-		const formData = formDataWith('rows', '{"a":1}');
-		expect(readJsonRows(formData, 'rows')).toBeNull();
+	it('returns an empty string for a missing field', () => {
+		expect(raw(formData(), 'password')).toBe('');
 	});
 });
 
 describe('text', () => {
 	it('trims a string value', () => {
-		expect(text('  hello  ')).toBe('hello');
+		expect(text('  hello \n')).toBe('hello');
 	});
 
 	it('coerces nullish values to an empty string', () => {
@@ -41,32 +50,46 @@ describe('text', () => {
 
 	it('coerces non-string values to a string', () => {
 		expect(text(42)).toBe('42');
+		expect(text(0)).toBe('0');
 	});
 });
 
 describe('safeUrl', () => {
-	it('keeps http, https, mailto, tel, relative and scheme-less links', () => {
-		expect(safeUrl(' https://example.com ')).toBe('https://example.com');
-		expect(safeUrl('http://example.com')).toBe('http://example.com');
-		expect(safeUrl('mailto:me@example.com')).toBe('mailto:me@example.com');
-		expect(safeUrl('tel:+15551234')).toBe('tel:+15551234');
-		expect(safeUrl('/works#work-1')).toBe('/works#work-1');
-		expect(safeUrl('example.com/page')).toBe('example.com/page');
+	it.each([
+		[' https://example.com ', 'https://example.com'],
+		['HTTPS://example.com', 'HTTPS://example.com'],
+		['http://example.com', 'http://example.com'],
+		['mailto:me@example.com', 'mailto:me@example.com'],
+		['tel:+15551234', 'tel:+15551234'],
+		['/works#work-1', '/works#work-1'],
+		['#section', '#section'],
+		['example.com/page', 'example.com/page'],
+		['/path?next=javascript:alert(1)', '/path?next=javascript:alert(1)'],
+		['', '']
+	])('keeps %j', (input, expected) => {
+		expect(safeUrl(input)).toBe(expected);
 	});
 
-	it('drops script and other unsafe schemes, including obfuscated ones', () => {
-		expect(safeUrl('javascript:alert(1)')).toBe('');
-		expect(safeUrl('JavaScript:alert(1)')).toBe('');
-		expect(safeUrl('java\tscript:alert(1)')).toBe('');
-		expect(safeUrl('\u0001javascript:alert(1)')).toBe('');
-		expect(safeUrl('data:text/html,<script>alert(1)</script>')).toBe('');
-		expect(safeUrl('vbscript:msgbox(1)')).toBe('');
+	it.each([
+		'javascript:alert(1)',
+		'JavaScript:alert(1)',
+		' javascript:alert(1)',
+		'java\tscript:alert(1)',
+		'java\nscript:alert(1)',
+		'java script:alert(1)',
+		'\u0001javascript:alert(1)',
+		'data:text/html,<script>alert(1)</script>',
+		'vbscript:msgbox(1)',
+		'file:///etc/passwd',
+		'blob:https://example.com/id'
+	])('drops %j', (input) => {
+		expect(safeUrl(input)).toBe('');
 	});
 });
 
 describe('textList', () => {
 	it('trims and filters out empty entries', () => {
-		expect(textList([' a ', '', '  ', 'b'])).toEqual(['a', 'b']);
+		expect(textList([' a ', '', '  ', 'b', null])).toEqual(['a', 'b']);
 	});
 
 	it('returns an empty array for non-array input', () => {

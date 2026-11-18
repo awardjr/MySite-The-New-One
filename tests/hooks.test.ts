@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../src/lib/server/db', async () => {
+vi.mock('#lib/server/db.js', async () => {
 	const { getTestDb } = await import('./test-db');
 	return { db: getTestDb() };
 });
@@ -8,35 +8,54 @@ vi.mock('../src/lib/server/db', async () => {
 // Run the hook as it runs in production; the dev server skips the HSTS header.
 vi.mock('$app/env', () => ({ dev: false, browser: false }));
 
+import { seedAdmin } from './auth-helpers';
 import { getTestDb } from './test-db';
-import { createSession, setAdminCredentials } from '../src/lib/server/auth';
+import { createSession } from '#lib/server/auth.js';
 import { handle } from '../src/hooks.server';
 
 const testDb = getTestDb();
 
 /** Runs the hook for a request and reports what happened: a redirect, or the resolved response. */
-async function run(pathname: string, routeId: string | null, sessionToken?: string) {
+async function run(
+	pathname: string,
+	routeId: string | null,
+	sessionToken?: string,
+	origin = 'https://example.test'
+) {
 	const event = {
-		url: new URL(`https://example.test${pathname}`),
+		url: new URL(`${origin}${pathname}`),
 		route: { id: routeId },
 		cookies: { get: () => sessionToken },
 		locals: {} as App.Locals
 	};
 	const resolve = vi.fn(async () => new Response('ok'));
 	try {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const response = await handle({ event, resolve } as any);
-		return { resolved: resolve.mock.calls.length > 0, response, redirect: null };
+		const response = await handle({ event, resolve } as unknown as Parameters<typeof handle>[0]);
+		return {
+			resolved: resolve.mock.calls.length > 0,
+			response,
+			redirect: null,
+			locals: event.locals
+		};
 	} catch (thrown) {
 		const { status, location } = thrown as { status: number; location: string };
-		return { resolved: false, response: null, redirect: { status, location } };
+		return {
+			resolved: false,
+			response: null,
+			redirect: { status, location },
+			locals: event.locals
+		};
 	}
 }
 
 beforeEach(async () => {
 	testDb.exec('DELETE FROM admin_user');
 	testDb.exec('DELETE FROM sessions');
-	await setAdminCredentials('admin', 'admin@example.com', 'supersecret123');
+	await seedAdmin('admin', 'admin@example.com', 'supersecret123');
+});
+
+afterEach(() => {
+	vi.useRealTimers();
 });
 
 describe('admin route guard', () => {
@@ -47,6 +66,15 @@ describe('admin route guard', () => {
 			status: 303,
 			location: '/admin/login?redirectTo=%2Fadmin%2Fsettings'
 		});
+	});
+
+	it('remembers the query string for after login', async () => {
+		const result = await run('/admin/blog?page=2', '/admin/(app)/blog');
+		expect(result.redirect?.location).toBe('/admin/login?redirectTo=%2Fadmin%2Fblog%3Fpage%3D2');
+	});
+
+	it('guards the dashboard itself', async () => {
+		expect((await run('/admin', '/admin/(app)')).redirect?.status).toBe(303);
 	});
 
 	// SvelteKit matches routes against the decoded path, so the raw pathname can differ from
@@ -60,31 +88,70 @@ describe('admin route guard', () => {
 		}
 	);
 
-	it('guards admin endpoints outside the (app) group', async () => {
-		expect((await run('/%61dmin/upload', '/admin/upload')).resolved).toBe(false);
-		expect((await run('/admin/logout', '/admin/logout')).resolved).toBe(false);
+	it.each([
+		['/%61dmin/upload', '/admin/upload'],
+		['/admin/upload', '/admin/upload'],
+		['/admin/logout', '/admin/logout']
+	])('guards the endpoint %s outside the (app) group', async (pathname, route) => {
+		expect((await run(pathname, route)).redirect?.status).toBe(303);
 	});
 
-	it('guards admin-looking paths that match no route', async () => {
-		expect((await run('/admin/nope', null)).redirect?.status).toBe(303);
-		expect((await run('/%61dmin/nope', null)).redirect?.status).toBe(303);
+	it.each(['/admin', '/admin/nope', '/%61dmin/nope', '/ADMIN/nope', '/Admin'])(
+		'guards the admin-looking path %s that matches no route',
+		async (pathname) => {
+			expect((await run(pathname, null)).redirect?.status).toBe(303);
+		}
+	);
+
+	it('does not crash on a malformed escape in an unmatched path', async () => {
+		expect((await run('/%E0%A4%A', null)).resolved).toBe(true);
+		expect((await run('/admin/%E0%A4%A', null)).redirect?.status).toBe(303);
 	});
 
-	it('lets a signed-in admin through', async () => {
+	it('lets a signed-in admin through and marks the request', async () => {
 		const result = await run('/admin/settings', '/admin/(app)/settings', createSession());
 		expect(result.resolved).toBe(true);
+		expect(result.locals.isAdmin).toBe(true);
 	});
 
-	it('keeps the sign-in pages reachable without a session', async () => {
-		for (const route of ['/admin/login', '/admin/forgot-password', '/admin/reset']) {
+	it.each([
+		['an unknown session', () => 'forged-token'],
+		[
+			'an expired session',
+			() => {
+				const token = createSession();
+				testDb
+					.prepare('UPDATE sessions SET expires_at = ?')
+					.run(new Date(Date.now() - 1000).toISOString());
+				return token;
+			}
+		]
+	])('rejects %s', async (_name, token) => {
+		const result = await run('/admin/settings', '/admin/(app)/settings', token());
+		expect(result.redirect?.status).toBe(303);
+		expect(result.locals.isAdmin).toBe(false);
+	});
+
+	it.each(['/admin/login', '/admin/forgot-password', '/admin/reset', '/admin/setup'])(
+		'keeps %s reachable without a session',
+		async (route) => {
 			expect((await run(route, route)).resolved).toBe(true);
 		}
+	);
+
+	it('recognizes a public admin page inside a route group', async () => {
+		expect((await run('/admin/login', '/admin/(auth)/login')).resolved).toBe(true);
 	});
 
 	it('leaves public pages alone', async () => {
 		expect((await run('/', '/')).resolved).toBe(true);
 		expect((await run('/blog/hello', '/blog/[slug]')).resolved).toBe(true);
+		expect((await run('/blog/admin', '/blog/[slug]')).resolved).toBe(true);
 		expect((await run('/administrator', null)).resolved).toBe(true);
+	});
+
+	it('marks public requests from visitors as not admin', async () => {
+		expect((await run('/', '/')).locals.isAdmin).toBe(false);
 	});
 
 	it('sends every admin route to setup until an account exists', async () => {
@@ -94,7 +161,9 @@ describe('admin route guard', () => {
 			'/admin/setup'
 		);
 		expect((await run('/admin/login', '/admin/login')).redirect?.location).toBe('/admin/setup');
+		expect((await run('/admin/nope', null)).redirect?.location).toBe('/admin/setup');
 		expect((await run('/admin/setup', '/admin/setup')).resolved).toBe(true);
+		expect((await run('/', '/')).resolved).toBe(true);
 	});
 });
 
@@ -103,19 +172,16 @@ describe('security headers', () => {
 		const { response } = await run('/', '/');
 		expect(response?.headers.get('X-Content-Type-Options')).toBe('nosniff');
 		expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
+		expect(response?.headers.get('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
+		expect(response?.headers.get('Strict-Transport-Security')).toBe('max-age=31536000');
 	});
 
-	it('does not pin https for localhost, where it would affect every other local project', async () => {
-		expect((await run('/', '/')).response?.headers.has('Strict-Transport-Security')).toBe(true);
-
-		const event = {
-			url: new URL('https://localhost:3000/'),
-			route: { id: '/' },
-			cookies: { get: () => undefined },
-			locals: {} as App.Locals
-		};
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const response = await handle({ event, resolve: async () => new Response('ok') } as any);
-		expect(response.headers.has('Strict-Transport-Security')).toBe(false);
-	});
+	it.each(['https://localhost:3000', 'https://127.0.0.1:3000', 'https://[::1]:3000'])(
+		'does not pin https for %s, where it would affect every other local project',
+		async (origin) => {
+			const { response } = await run('/', '/', undefined, origin);
+			expect(response?.headers.has('Strict-Transport-Security')).toBe(false);
+			expect(response?.headers.get('X-Frame-Options')).toBe('DENY');
+		}
+	);
 });

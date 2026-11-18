@@ -20,17 +20,9 @@ const upsertPageHeadlineStmt = db.prepare(`
 		headline = excluded.headline,
 		subtitle = excluded.subtitle
 `);
-const deletePageHeadlinesStmt = db.prepare('DELETE FROM page_headlines');
 
 export function getPageHeadlines(): PageHeadlinesContent {
 	return { items: getPageHeadlinesStmt.all() as PageHeadline[] };
-}
-
-export function setPageHeadlines(value: PageHeadlinesContent): void {
-	deletePageHeadlinesStmt.run();
-	for (const item of value.items) {
-		upsertPageHeadlineStmt.run(item);
-	}
 }
 
 /** Inserts or replaces the headline/subtitle for a single page, leaving the other pages alone. */

@@ -1,138 +1,176 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import nodemailer from 'nodemailer';
-import {
-	getEmailTransporter,
-	isSmtpConfigured,
-	sendEmail,
-	sendPasswordResetEmail
-} from '../src/lib/server/email';
+import { getEmailTransporter, sendEmail, sendPasswordResetEmail } from '#lib/server/email.js';
 
-describe('email service & SMTP transport', () => {
-	const originalEnv = { ...process.env };
+const SMTP_VARIABLES = [
+	'SMTP_HOST',
+	'SMTP_SERVICE',
+	'SMTP_PORT',
+	'SMTP_USER',
+	'SMTP_PASS',
+	'SMTP_FROM',
+	'SMTP_SECURE',
+	'SMTP_REQUIRE_TLS',
+	'SMTP_IGNORE_TLS'
+];
+const message = { to: 'recipient@example.com', subject: 'Hello', text: 'Plain text' };
 
-	beforeEach(() => {
-		vi.restoreAllMocks();
-		delete process.env.SMTP_HOST;
-		delete process.env.SMTP_SERVICE;
-		delete process.env.SMTP_PORT;
-		delete process.env.SMTP_USER;
-		delete process.env.SMTP_PASS;
-		delete process.env.SMTP_FROM;
-		delete process.env.SMTP_SECURE;
-		delete process.env.SMTP_REQUIRE_TLS;
-		delete process.env.SMTP_IGNORE_TLS;
-	});
+type SentMail = { from: string; to: string; subject: string; text: string; html?: string };
+type SendMail = (mail: SentMail) => Promise<unknown>;
 
-	afterEach(() => {
-		process.env = { ...originalEnv };
-	});
+function fakeTransport(sendMail = vi.fn<SendMail>().mockResolvedValue({ messageId: '123' })) {
+	const createTransport = vi.spyOn(nodemailer, 'createTransport').mockReturnValue({
+		sendMail
+	} as unknown as ReturnType<typeof nodemailer.createTransport>);
+	return { createTransport, sendMail };
+}
 
-	it('reports SMTP as not configured when environment variables are unset', () => {
-		expect(isSmtpConfigured()).toBe(false);
+/** The options the transport is created with under the current environment. */
+function transportConfig(): unknown {
+	const { createTransport } = fakeTransport();
+	getEmailTransporter();
+	return createTransport.mock.calls[0][0];
+}
+
+beforeEach(() => {
+	for (const name of SMTP_VARIABLES) vi.stubEnv(name, '');
+});
+
+afterEach(() => {
+	vi.unstubAllEnvs();
+	vi.restoreAllMocks();
+});
+
+describe('SMTP configuration', () => {
+	it('is off without a host or service, and blank values count as unset', () => {
+		vi.stubEnv('SMTP_USER', 'mailer@example.com');
 		expect(getEmailTransporter()).toBeNull();
 	});
 
-	it('falls back to console logging when SMTP is not configured', async () => {
-		const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+	it('uses all the settings given for a host', () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		vi.stubEnv('SMTP_PORT', '2525');
+		vi.stubEnv('SMTP_USER', 'mailer@example.com');
+		vi.stubEnv('SMTP_PASS', 'secret123');
+		vi.stubEnv('SMTP_SECURE', 'true');
 
-		const result = await sendEmail({
-			to: 'user@example.com',
-			subject: 'Test Subject',
-			text: 'Hello world'
-		});
-
-		expect(result).toBe(true);
-		expect(consoleInfoSpy).toHaveBeenCalledWith(
-			expect.stringContaining('[EMAIL DISPATCH (LOCAL / NO SMTP)]')
-		);
-	});
-
-	it('initializes SMTP transporter when SMTP_HOST is provided', () => {
-		process.env.SMTP_HOST = 'smtp.example.com';
-		process.env.SMTP_PORT = '465';
-		process.env.SMTP_USER = 'mailer@example.com';
-		process.env.SMTP_PASS = 'secret123';
-		process.env.SMTP_SECURE = 'true';
-
-		expect(isSmtpConfigured()).toBe(true);
-
-		const createTransportSpy = vi.spyOn(nodemailer, 'createTransport');
-		const transporter = getEmailTransporter();
-
-		expect(transporter).not.toBeNull();
-		expect(createTransportSpy).toHaveBeenCalledWith({
+		expect(transportConfig()).toEqual({
 			host: 'smtp.example.com',
-			port: 465,
+			port: 2525,
 			secure: true,
-			auth: {
-				user: 'mailer@example.com',
-				pass: 'secret123'
-			}
+			auth: { user: 'mailer@example.com', pass: 'secret123' }
 		});
 	});
 
-	it('sends email using nodemailer transporter when configured', async () => {
-		process.env.SMTP_HOST = 'smtp.example.com';
-		process.env.SMTP_USER = 'mailer@example.com';
-		process.env.SMTP_PASS = 'secret';
-		process.env.SMTP_FROM = 'Site Admin <noreply@example.com>';
+	it('defaults to port 587 with STARTTLS and no credentials', () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		expect(transportConfig()).toEqual({ host: 'smtp.example.com', port: 587, secure: false });
+	});
 
-		const mockSendMail = vi.fn().mockResolvedValue({ messageId: '123' });
-		vi.spyOn(nodemailer, 'createTransport').mockReturnValue({
-			sendMail: mockSendMail
-		} as unknown as ReturnType<typeof nodemailer.createTransport>);
+	it('uses implicit TLS on port 465 unless told otherwise', () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		vi.stubEnv('SMTP_PORT', '465');
+		expect(transportConfig()).toMatchObject({ port: 465, secure: true });
 
-		const result = await sendEmail({
-			to: 'recipient@example.com',
-			subject: 'Hello',
-			text: 'Plain text',
-			html: '<p>HTML text</p>'
-		});
+		vi.restoreAllMocks();
+		vi.stubEnv('SMTP_SECURE', 'false');
+		expect(transportConfig()).toMatchObject({ port: 465, secure: false });
+	});
 
-		expect(result).toBe(true);
-		expect(mockSendMail).toHaveBeenCalledWith({
+	it('falls back to port 587 for an unparseable port', () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		vi.stubEnv('SMTP_PORT', 'not-a-port');
+		expect(transportConfig()).toMatchObject({ port: 587, secure: false });
+	});
+
+	it('prefers a named service over a host', () => {
+		vi.stubEnv('SMTP_SERVICE', 'gmail');
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+
+		expect(transportConfig()).toEqual({ service: 'gmail' });
+	});
+
+	it.each([
+		['true', true],
+		['1', true],
+		['false', false],
+		['yes', false]
+	])('reads the TLS flags from %j', (value, expected) => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		vi.stubEnv('SMTP_REQUIRE_TLS', value);
+		vi.stubEnv('SMTP_IGNORE_TLS', value);
+
+		expect(transportConfig()).toMatchObject({ requireTLS: expected, ignoreTLS: expected });
+	});
+});
+
+describe('sendEmail', () => {
+	it('logs the message instead of sending when SMTP is not configured', async () => {
+		const log = vi.spyOn(console, 'info').mockImplementation(() => {});
+		const { createTransport } = fakeTransport();
+
+		expect(await sendEmail(message)).toBe(true);
+
+		expect(createTransport).not.toHaveBeenCalled();
+		const output = log.mock.calls[0][0] as string;
+		expect(output).toContain('[EMAIL DISPATCH (LOCAL / NO SMTP)]');
+		expect(output).toContain('To: recipient@example.com');
+		expect(output).toContain('Plain text');
+	});
+
+	it('sends through the transport when configured', async () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		vi.stubEnv('SMTP_USER', 'mailer@example.com');
+		vi.stubEnv('SMTP_FROM', 'Site Admin <noreply@example.com>');
+		const { sendMail } = fakeTransport();
+
+		expect(await sendEmail({ ...message, html: '<p>HTML text</p>' })).toBe(true);
+
+		expect(sendMail).toHaveBeenCalledWith({
 			from: 'Site Admin <noreply@example.com>',
-			to: 'recipient@example.com',
-			subject: 'Hello',
-			text: 'Plain text',
+			...message,
 			html: '<p>HTML text</p>'
 		});
 	});
 
-	it('handles SMTP transmission errors gracefully', async () => {
-		process.env.SMTP_HOST = 'smtp.example.com';
+	it('sends from SMTP_USER, then a placeholder, when SMTP_FROM is unset', async () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		const { sendMail } = fakeTransport();
 
-		const mockSendMail = vi.fn().mockRejectedValue(new Error('Connection timed out'));
-		vi.spyOn(nodemailer, 'createTransport').mockReturnValue({
-			sendMail: mockSendMail
-		} as unknown as ReturnType<typeof nodemailer.createTransport>);
+		await sendEmail(message);
+		expect(sendMail.mock.calls[0][0].from).toBe('noreply@localhost');
 
-		const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.stubEnv('SMTP_USER', 'mailer@example.com');
+		await sendEmail(message);
+		expect(sendMail.mock.calls[1][0].from).toBe('mailer@example.com');
+	});
 
-		const result = await sendEmail({
-			to: 'recipient@example.com',
-			subject: 'Hello',
-			text: 'Test message'
-		});
+	it('reports a delivery failure without throwing', async () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		fakeTransport(vi.fn<SendMail>().mockRejectedValue(new Error('Connection timed out')));
+		const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-		expect(result).toBe(false);
-		expect(consoleErrorSpy).toHaveBeenCalledWith(
-			expect.stringContaining('[SMTP ERROR] Failed to send email to recipient@example.com:'),
+		expect(await sendEmail(message)).toBe(false);
+
+		expect(logged).toHaveBeenCalledWith(
+			expect.stringContaining('Failed to send email to recipient@example.com'),
 			expect.any(Error)
 		);
 	});
+});
 
-	it('builds valid password reset email with reset link and sends it', async () => {
-		const consoleInfoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+describe('sendPasswordResetEmail', () => {
+	it('puts the reset link in both the text and HTML bodies', async () => {
+		vi.stubEnv('SMTP_HOST', 'smtp.example.com');
+		const { sendMail } = fakeTransport();
+		const link = 'https://example.com/admin/reset?token=test-token-123';
 
-		const result = await sendPasswordResetEmail(
-			'admin@example.com',
-			'https://example.com/admin/reset?token=test-token-123'
-		);
+		expect(await sendPasswordResetEmail('admin@example.com', link)).toBe(true);
 
-		expect(result).toBe(true);
-		expect(consoleInfoSpy).toHaveBeenCalledWith(
-			expect.stringContaining('https://example.com/admin/reset?token=test-token-123')
-		);
+		const sent = sendMail.mock.calls[0][0];
+		expect(sent.to).toBe('admin@example.com');
+		expect(sent.subject).toBe('Password Reset Request');
+		expect(sent.text).toContain(link);
+		expect(sent.html).toContain(`href="${link}"`);
 	});
 });

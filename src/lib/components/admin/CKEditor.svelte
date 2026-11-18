@@ -4,9 +4,11 @@
 	import { uploadImage } from '#lib/uploadImage.js';
 	import type {
 		ClassicEditor as ClassicEditorType,
+		Editor,
 		EditorConfig,
 		FileLoader,
-		UploadAdapter
+		UploadAdapter,
+		WordCountUpdateEvent
 	} from 'ckeditor5';
 	import 'ckeditor5/ckeditor5.css';
 
@@ -112,8 +114,7 @@
 				WordCount
 			} = await import('ckeditor5');
 
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			function CustomUploadAdapterPlugin(editor: any) {
+			function CustomUploadAdapterPlugin(editor: Editor) {
 				editor.plugins.get('FileRepository').createUploadAdapter = (loader: FileLoader) => {
 					return new CustomUploadAdapter(loader);
 				};
@@ -178,7 +179,8 @@
 
 			const config: EditorConfig = {
 				licenseKey: 'GPL',
-				placeholder,
+				attachTo: hostElement,
+				root: { placeholder },
 				plugins: isMobile ? mobilePlugins : desktopPlugins,
 				toolbar: {
 					items: isMobile
@@ -273,7 +275,7 @@
 			};
 
 			try {
-				const editor = await ClassicEditor.create(hostElement, config);
+				const editor = await ClassicEditor.create(config);
 				if (!isMounted) {
 					await editor.destroy();
 					return;
@@ -297,8 +299,7 @@
 				if (wordCountPlugin) {
 					words = wordCountPlugin.words;
 					characters = wordCountPlugin.characters;
-					// eslint-disable-next-line @typescript-eslint/no-explicit-any
-					wordCountPlugin.on('update', (_evt: any, data: { words: number; characters: number }) => {
+					wordCountPlugin.on<WordCountUpdateEvent>('update', (_evt, data) => {
 						words = data.words;
 						characters = data.characters;
 					});

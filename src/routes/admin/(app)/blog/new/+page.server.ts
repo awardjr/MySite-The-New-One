@@ -4,6 +4,9 @@ import { text } from '#lib/server/forms.js';
 import { readPostFields } from '../postForm';
 import type { Actions } from './$types';
 
+/** `/admin/blog/new` is this page, so a post with this slug could never be opened for editing. */
+const RESERVED_SLUGS = new Set(['new']);
+
 function slugify(value: string): string {
 	return value
 		.trim()
@@ -27,6 +30,10 @@ export const actions: Actions = {
 
 		if (!slug) {
 			return invalid('Slug is required.');
+		}
+
+		if (RESERVED_SLUGS.has(slug)) {
+			return invalid(`The slug "${slug}" is reserved. Please choose another.`);
 		}
 
 		if (!createPost({ slug, ...fields })) {

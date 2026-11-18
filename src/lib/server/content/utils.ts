@@ -2,7 +2,7 @@ import sanitizeHtml from 'sanitize-html';
 
 export function parseJsonArray<T>(raw: string): T[] {
 	try {
-		const parsed = JSON.parse(raw);
+		const parsed: unknown = JSON.parse(raw);
 		return Array.isArray(parsed) ? (parsed as T[]) : [];
 	} catch {
 		return [];
@@ -15,7 +15,7 @@ const CSS_TEXT_ALIGN = /^(left|right|center|justify)$/;
 const postSanitizeOptions: sanitizeHtml.IOptions = {
 	// Everything else the editor can produce (headings, u, s, figure, tables, ...) is
 	// already part of the sanitize-html defaults.
-	allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img', 'strike'],
+	allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img'],
 	allowedAttributes: {
 		...sanitizeHtml.defaults.allowedAttributes,
 		img: ['src', 'alt', 'title', 'class', 'width', 'height', 'loading', 'decoding', 'style'],
@@ -49,7 +49,8 @@ const postSanitizeOptions: sanitizeHtml.IOptions = {
 		// Prevent reverse-tabnabbing: any admin-authored link that opens in a new
 		// tab must not be able to access `window.opener`.
 		a: (tagName, attribs) => {
-			if (attribs.target === '_blank') {
+			// Browsers match target keywords case-insensitively.
+			if (attribs.target?.toLowerCase() === '_blank') {
 				attribs.rel = 'noopener noreferrer';
 			}
 			return { tagName, attribs };

@@ -1,56 +1,68 @@
-CREATE TABLE IF NOT EXISTS admin_user (
+CREATE TABLE admin_user (
 	id INTEGER PRIMARY KEY CHECK (id = 1),
+	username TEXT NOT NULL,
+	email TEXT NOT NULL,
 	password_hash TEXT NOT NULL,
+	recovery_key_hash TEXT NOT NULL,
+	totp_secret TEXT,
+	totp_pending_secret TEXT,
+	totp_last_step INTEGER,
 	updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS sessions (
-	id TEXT PRIMARY KEY,
+-- Session ids and password reset tokens are stored only as SHA-256 hashes.
+CREATE TABLE sessions (
+	token_hash TEXT PRIMARY KEY,
 	created_at TEXT NOT NULL,
 	expires_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS home (
+CREATE TABLE password_reset_tokens (
+	token_hash TEXT PRIMARY KEY,
+	created_at TEXT NOT NULL,
+	expires_at TEXT NOT NULL
+);
+
+CREATE TABLE home (
 	id INTEGER PRIMARY KEY CHECK (id = 1),
 	name TEXT NOT NULL DEFAULT '',
 	tagline TEXT NOT NULL DEFAULT '',
 	photo_src TEXT NOT NULL DEFAULT '',
-	intro_paragraphs TEXT NOT NULL DEFAULT '[]'
+	intro_paragraphs TEXT NOT NULL DEFAULT '[]',
+	featured_posts TEXT NOT NULL DEFAULT '[]',
+	featured_works TEXT NOT NULL DEFAULT '[]'
 );
 
-CREATE TABLE IF NOT EXISTS contact_links (
+CREATE TABLE links (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	label TEXT NOT NULL,
 	href TEXT NOT NULL,
 	icon TEXT NOT NULL,
+	description TEXT NOT NULL DEFAULT '',
 	sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS skill_categories (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	category TEXT NOT NULL,
-	skills TEXT NOT NULL DEFAULT '[]',
-	sort_order INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE TABLE IF NOT EXISTS work_items (
+CREATE TABLE works (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	title TEXT NOT NULL,
 	description TEXT NOT NULL,
 	image TEXT NOT NULL DEFAULT '',
+	link TEXT NOT NULL DEFAULT '',
 	platforms TEXT NOT NULL DEFAULT '[]',
 	sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS press_items (
+CREATE TABLE press (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	outlet TEXT NOT NULL DEFAULT '',
 	title TEXT NOT NULL,
 	summary TEXT NOT NULL,
 	href TEXT NOT NULL,
+	date TEXT NOT NULL DEFAULT '',
 	sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS pinball_machines (
+CREATE TABLE pinball_machines (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	name TEXT NOT NULL,
 	image TEXT NOT NULL DEFAULT '',
@@ -59,8 +71,9 @@ CREATE TABLE IF NOT EXISTS pinball_machines (
 	sort_order INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS blog_posts (
-	slug TEXT PRIMARY KEY,
+CREATE TABLE posts (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	slug TEXT NOT NULL UNIQUE,
 	title TEXT NOT NULL,
 	date TEXT NOT NULL,
 	image TEXT NOT NULL DEFAULT '',
@@ -68,4 +81,10 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 	content TEXT NOT NULL DEFAULT '',
 	draft INTEGER NOT NULL DEFAULT 0,
 	sort_order INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE page_headlines (
+	page TEXT PRIMARY KEY,
+	headline TEXT NOT NULL DEFAULT '',
+	subtitle TEXT NOT NULL DEFAULT ''
 );

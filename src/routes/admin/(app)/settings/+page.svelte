@@ -310,7 +310,7 @@
 					alt="QR code for setting up two-factor authentication"
 					width="200"
 					height="200"
-					class="h-[200px] w-[200px] shrink-0 rounded-lg bg-white"
+					class="h-50 w-50 shrink-0 rounded-lg bg-white"
 				/>
 				<div class="space-y-3">
 					<p class="text-base text-copy">
@@ -397,13 +397,6 @@
 					<p class="text-base font-medium text-error">{form.twoFactorError}</p>
 				{:else if form?.twoFactorSuccess}
 					<p class="text-base font-medium text-success">{form.twoFactorSuccess}</p>
-				{/if}
-
-				{#if !data.hasRecoveryKey}
-					<p class="text-base text-muted">
-						Tip: generate an emergency recovery code below first, so you can still sign in if you
-						lose your authenticator.
-					</p>
 				{/if}
 
 				<div>

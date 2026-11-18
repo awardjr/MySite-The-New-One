@@ -33,9 +33,13 @@
 	function onWindowClick(e: MouseEvent) {
 		if (open && root && !root.contains(e.target as Node)) open = false;
 	}
+
+	function onWindowKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') open = false;
+	}
 </script>
 
-<svelte:window onclick={onWindowClick} onkeydown={(e) => e.key === 'Escape' && (open = false)} />
+<svelte:window onclick={onWindowClick} onkeydown={onWindowKeydown} />
 
 <div class="space-y-1" bind:this={root}>
 	<span class="text-sm font-medium text-field-label">{label}</span>

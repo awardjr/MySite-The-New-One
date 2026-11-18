@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../src/lib/server/db', async () => {
+vi.mock('#lib/server/db.js', async () => {
 	const { getTestDb } = await import('./test-db');
 	return { db: getTestDb() };
 });
@@ -14,11 +14,41 @@ import {
 	saveHeadlineForPage,
 	updatePost,
 	updateSection
-} from '../src/lib/server/content';
+} from '#lib/server/content.js';
 
 const testDb = getTestDb();
 
-function resetContentTables(): void {
+const emptyHome = {
+	name: '',
+	tagline: '',
+	photoSrc: '',
+	introParagraphs: [],
+	featuredPosts: [],
+	featuredWorks: []
+};
+const press = (title: string) => ({ outlet: 'O', title, summary: 's', href: '/h', date: '' });
+const work = (title: string, id = '') => ({
+	id,
+	title,
+	description: '',
+	image: '',
+	link: '',
+	platforms: []
+});
+const fields = (title: string) => ({
+	title,
+	date: '2024-01-01',
+	image: '',
+	preview: '',
+	content: `<p>${title}</p>`,
+	draft: false
+});
+const post = (slug: string, title = slug) => ({ slug, ...fields(title) });
+const slugs = () => readContent().blog.posts.map((p) => p.slug);
+const postId = (slug: string) =>
+	(testDb.prepare('SELECT id FROM posts WHERE slug = ?').get(slug) as { id: number }).id;
+
+beforeEach(() => {
 	testDb.exec(`
 		DELETE FROM home;
 		DELETE FROM links WHERE id IS NOT NULL;
@@ -28,171 +58,190 @@ function resetContentTables(): void {
 		DELETE FROM posts WHERE slug IS NOT NULL;
 		DELETE FROM page_headlines WHERE page IS NOT NULL;
 	`);
-}
-
-beforeEach(() => {
-	resetContentTables();
-	// The content controller caches the site content in module state; force a
-	// fresh read from the (now-empty) tables for every test.
-	updateSection('home', {
-		name: '',
-		tagline: '',
-		photoSrc: '',
-		introParagraphs: [],
-		featuredPosts: [],
-		featuredWorks: []
-	});
+	// The content controller caches the site content in module state; a write forces a fresh
+	// read from the (now-empty) tables for every test.
+	updateSection('contact', { links: [] });
 });
 
 describe('readContent', () => {
 	it('returns defaults for every section when the database is empty', () => {
-		const content = readContent();
-
-		expect(content.home).toEqual({
-			name: '',
-			tagline: '',
-			photoSrc: '',
-			introParagraphs: [],
-			featuredPosts: [],
-			featuredWorks: []
+		expect(readContent()).toEqual({
+			home: emptyHome,
+			contact: { links: [] },
+			works: { items: [] },
+			press: { items: [] },
+			pinball: { machines: [] },
+			blog: { posts: [] },
+			pageHeadlines: { items: [] }
 		});
-		expect(content.contact).toEqual({ links: [] });
-		expect(content.works).toEqual({ items: [] });
-		expect(content.press).toEqual({ items: [] });
-		expect(content.pinball).toEqual({ machines: [] });
-		expect(content.blog).toEqual({ posts: [] });
 	});
 
-	it('caches the result across calls until a section is updated', () => {
-		const first = readContent();
-		const second = readContent();
-		expect(first).toBe(second);
+	it('falls back to empty lists when stored JSON is corrupt', () => {
+		updateSection('home', { ...emptyHome, introParagraphs: ['Hello'] });
+		updateSection('works', { items: [work('W')] });
+		updateSection('pinball', {
+			machines: [{ name: 'M', image: '', highScore: '', modeScores: [] }]
+		});
+		testDb.exec(`
+			UPDATE home SET intro_paragraphs = 'corrupt', featured_posts = '{}';
+			UPDATE works SET platforms = 'corrupt';
+			UPDATE pinball_machines SET mode_scores = '"text"';
+		`);
+		saveHeadlineForPage('any', '', '');
+
+		const content = readContent();
+		expect(content.home.introParagraphs).toEqual([]);
+		expect(content.home.featuredPosts).toEqual([]);
+		expect(content.works.items[0].platforms).toEqual([]);
+		expect(content.pinball.machines[0].modeScores).toEqual([]);
+	});
+});
+
+describe('content cache', () => {
+	const insertBehindTheCache = () =>
+		testDb.prepare("INSERT INTO press (title, summary, href) VALUES ('Direct', '', '')").run();
+
+	it('keeps serving the cached content until something is written', () => {
+		readContent();
+		insertBehindTheCache();
+		expect(readContent().press.items).toEqual([]);
+	});
+
+	it.each([
+		['updateSection', () => updateSection('contact', { links: [] })],
+		['saveHeadlineForPage', () => saveHeadlineForPage('blog', 'Blog', '')],
+		['createPost', () => createPost(post('new'))],
+		['updatePost', () => updatePost('existing', fields('Changed'))],
+		['deletePost', () => deletePost('existing')]
+	])('is refreshed by %s', (_name, write) => {
+		createPost(post('existing'));
+		readContent();
+		insertBehindTheCache();
+
+		write();
+
+		expect(readContent().press.items).toHaveLength(1);
 	});
 });
 
 describe('updateSection', () => {
-	it('only writes to the target section table', () => {
-		updateSection('home', {
+	it('round-trips every field of every section', () => {
+		const home = {
 			name: 'Ada',
 			tagline: 'Engineer',
 			photoSrc: '/photo.jpg',
-			introParagraphs: ['Hello'],
-			featuredPosts: [],
-			featuredWorks: []
-		});
-
-		const content = readContent();
-		expect(content.home.name).toBe('Ada');
-		expect(content.pinball.machines).toEqual([]);
-		expect(content.blog.posts).toEqual([]);
-	});
-
-	it('round-trips pinball machines including mode scores', () => {
-		updateSection('pinball', {
-			machines: [
-				{
-					name: 'Medieval Madness',
-					image: '/mm.jpg',
-					highScore: '1,000,000',
-					modeScores: [{ mode: 'Castle', score: '500' }]
-				}
-			]
-		});
-
-		const content = readContent();
-		expect(content.pinball.machines).toEqual([
+			introParagraphs: ['Hello', 'World'],
+			featuredPosts: ['a'],
+			featuredWorks: ['1', '2']
+		};
+		const links = [{ label: 'Mail', href: 'mailto:a@b.c', icon: 'at', description: 'Write' }];
+		const items = [{ outlet: 'V', title: 'T', summary: 'S', href: '/a', date: '2024-01-01' }];
+		const machines = [
 			{
-				name: 'Medieval Madness',
-				image: '/mm.jpg',
+				name: 'Machine',
+				image: '/m.jpg',
 				highScore: '1,000,000',
 				modeScores: [{ mode: 'Castle', score: '500' }]
 			}
-		]);
-	});
+		];
+		const posts = [
+			{ ...post('draft-post'), image: '/i.png', preview: 'p', draft: true },
+			{ ...post('live-post'), draft: false }
+		];
+		const workItem = {
+			title: 'W',
+			description: 'D',
+			image: '/w.png',
+			link: '/x',
+			platforms: ['PC', 'Mac']
+		};
 
-	it('preserves insertion order for list sections', () => {
-		updateSection('press', {
-			items: [
-				{ outlet: 'Venue A', title: 'First', summary: 'a', href: '/a', date: '2024-01-01' },
-				{ outlet: 'Venue B', title: 'Second', summary: 'b', href: '/b', date: '' }
-			]
-		});
-
-		const content = readContent();
-		expect(content.press.items.map((item) => item.title)).toEqual(['First', 'Second']);
-	});
-
-	it('round-trips blog posts and coerces the draft flag to a boolean', () => {
-		updateSection('blog', {
-			posts: [
-				{
-					slug: 'hello-world',
-					title: 'Hello World',
-					date: '2024-01-01',
-					image: '',
-					preview: 'preview text',
-					content: '<p>content</p>',
-					draft: true
-				}
-			]
-		});
+		updateSection('home', home);
+		updateSection('contact', { links });
+		updateSection('press', { items });
+		updateSection('pinball', { machines });
+		for (const blogPost of posts) createPost(blogPost);
+		updateSection('works', { items: [{ id: '', ...workItem }] });
 
 		const content = readContent();
-		expect(content.blog.posts[0]).toEqual({
-			slug: 'hello-world',
-			title: 'Hello World',
-			date: '2024-01-01',
-			image: '',
-			preview: 'preview text',
-			content: '<p>content</p>',
-			draft: true
-		});
+		expect(content.home).toEqual(home);
+		expect(content.contact.links).toEqual(links);
+		expect(content.press.items).toEqual(items);
+		expect(content.pinball.machines).toEqual(machines);
+		expect(content.blog.posts).toEqual(posts);
+		expect(content.works.items[0]).toMatchObject(workItem);
 	});
 
-	it('replaces the previous rows for a section rather than appending to them', () => {
-		updateSection('press', {
-			items: [{ outlet: 'A', title: 'First', summary: 'a', href: '/a', date: '' }]
-		});
-		updateSection('press', {
-			items: [{ outlet: 'B', title: 'Second', summary: 'b', href: '/b', date: '' }]
-		});
+	it('only changes the target section', () => {
+		updateSection('press', { items: [press('Kept')] });
+		createPost(post('kept'));
+		saveHeadlineForPage('blog', 'Kept', '');
+
+		updateSection('home', { ...emptyHome, name: 'Ada' });
 
 		const content = readContent();
-		expect(content.press.items).toHaveLength(1);
-		expect(content.press.items[0].title).toBe('Second');
+		expect(content.home.name).toBe('Ada');
+		expect(content.press.items.map((item) => item.title)).toEqual(['Kept']);
+		expect(slugs()).toEqual(['kept']);
+		expect(getHeadlineForPage('blog').headline).toBe('Kept');
 	});
 
-	it('refreshes the cache so subsequent reads see the update', () => {
-		const before = readContent();
-		updateSection('press', {
-			items: [{ outlet: 'X', title: 'Changed', summary: 'a', href: '/a', date: '' }]
-		});
-		const after = readContent();
+	it('replaces a section with the submitted rows, in the submitted order', () => {
+		updateSection('press', { items: [press('Old'), press('Older')] });
+		updateSection('press', { items: [press('B'), press('A')] });
 
-		expect(before).not.toBe(after);
-		expect(after.press.items[0].title).toBe('Changed');
+		expect(readContent().press.items.map((item) => item.title)).toEqual(['B', 'A']);
+	});
+
+	it('can empty a section', () => {
+		updateSection('press', { items: [press('Old')] });
+		updateSection('press', { items: [] });
+		expect(readContent().press.items).toEqual([]);
+	});
+
+	it('keeps the previous rows when saving fails partway through', () => {
+		updateSection('press', { items: [press('Kept')] });
+		const invalid = { ...press('Bad'), title: null } as unknown as ReturnType<typeof press>;
+
+		expect(() => updateSection('press', { items: [press('New'), invalid] })).toThrow();
+
+		// Another write drops the cache, so this reads what the failed save left in the table.
+		saveHeadlineForPage('any', '', '');
+		expect(readContent().press.items.map((item) => item.title)).toEqual(['Kept']);
 	});
 
 	it('keeps work ids stable across saves and assigns new ids to new or duplicate rows', () => {
-		const w = (title: string, id = '') => ({
-			id,
-			title,
-			description: '',
-			image: '',
-			link: '',
-			platforms: []
-		});
-		updateSection('works', { items: [w('A'), w('B')] });
+		updateSection('works', { items: [work('A'), work('B')] });
 		const [a, b] = readContent().works.items;
 
 		updateSection('works', {
-			items: [w('B renamed', b.id), w('A', a.id), w('New'), w('Dup', a.id)]
+			items: [work('B renamed', b.id), work('A', a.id), work('New'), work('Dup', a.id)]
 		});
 
 		const items = readContent().works.items;
+		expect(items.map((item) => item.title)).toEqual(['B renamed', 'A', 'New', 'Dup']);
 		expect(items[0].id).toBe(b.id);
 		expect(items[1].id).toBe(a.id);
-		expect(new Set(items.map((i) => i.id)).size).toBe(4);
+		expect(new Set(items.map((item) => item.id)).size).toBe(4);
+	});
+
+	it('does not let a new work take the id of an existing one listed after it', () => {
+		updateSection('works', { items: [work('A')] });
+		const [a] = readContent().works.items;
+
+		updateSection('works', { items: [work('New'), work('A', a.id)] });
+
+		const [created, kept] = readContent().works.items;
+		expect(kept.id).toBe(a.id);
+		expect(created.id).not.toBe(a.id);
+	});
+
+	it.each(['abc', '0', '-3', '1.5', 'Infinity'])('ignores the invalid work id %j', (id) => {
+		updateSection('works', { items: [work('W', id)] });
+
+		const saved = Number(readContent().works.items[0].id);
+		expect(Number.isInteger(saved)).toBe(true);
+		expect(saved).toBeGreaterThan(0);
 	});
 });
 
@@ -210,33 +259,9 @@ describe('page headlines', () => {
 		expect(getHeadlineForPage('press')).toEqual({ headline: 'Press', subtitle: 'In the news' });
 		expect(testDb.prepare('SELECT COUNT(*) AS n FROM page_headlines').get()).toEqual({ n: 2 });
 	});
-
-	it('is served from the cached content and refreshed on save', () => {
-		saveHeadlineForPage('blog', 'Blog', '');
-		const cached = readContent();
-		getHeadlineForPage('blog');
-		expect(readContent()).toBe(cached);
-
-		saveHeadlineForPage('blog', 'Posts', '');
-		expect(readContent()).not.toBe(cached);
-		expect(getHeadlineForPage('blog').headline).toBe('Posts');
-	});
 });
 
 describe('blog posts', () => {
-	const fields = (title: string) => ({
-		title,
-		date: '2024-01-01',
-		image: '',
-		preview: '',
-		content: `<p>${title}</p>`,
-		draft: false
-	});
-	const post = (slug: string, title = slug) => ({ slug, ...fields(title) });
-	const slugs = () => readContent().blog.posts.map((p) => p.slug);
-	const postId = (slug: string) =>
-		(testDb.prepare('SELECT id FROM posts WHERE slug = ?').get(slug) as { id: number }).id;
-
 	it('appends new posts in order and rejects a duplicate slug', () => {
 		expect(createPost(post('first'))).toBe(true);
 		expect(createPost(post('second'))).toBe(true);
@@ -244,6 +269,11 @@ describe('blog posts', () => {
 
 		expect(slugs()).toEqual(['first', 'second']);
 		expect(readContent().blog.posts[0].title).toBe('first');
+	});
+
+	it('keeps the draft flag of a new post', () => {
+		createPost({ ...post('hidden'), draft: true });
+		expect(readContent().blog.posts[0].draft).toBe(true);
 	});
 
 	it('updates one post in place, keeping its id, position and the other posts', () => {
@@ -255,7 +285,7 @@ describe('blog posts', () => {
 
 		const [first, second] = readContent().blog.posts;
 		expect(first).toMatchObject({ slug: 'first', title: 'Renamed', draft: true });
-		expect(second).toMatchObject({ slug: 'second', title: 'second' });
+		expect(second).toMatchObject({ slug: 'second', title: 'second', draft: false });
 		expect(postId('first')).toBe(idBefore);
 	});
 

@@ -23,11 +23,6 @@ type PostRow = Omit<Post, 'draft'> & { draft: number };
 const getBlogPostsStmt = db.prepare(
 	'SELECT slug, title, date, image, preview, content, draft FROM posts ORDER BY sort_order, rowid'
 );
-const getBlogIdsStmt = db.prepare('SELECT slug, id FROM posts');
-const deleteBlogPostsStmt = db.prepare('DELETE FROM posts WHERE slug IS NOT NULL');
-const insertBlogPostStmt = db.prepare(
-	'INSERT INTO posts (id, slug, title, date, image, preview, content, draft, sort_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-);
 // A new post goes after every existing one.
 const appendBlogPostStmt = db.prepare(`
 	INSERT INTO posts (slug, title, date, image, preview, content, draft, sort_order)
@@ -45,28 +40,6 @@ const deleteBlogPostStmt = db.prepare('DELETE FROM posts WHERE slug = ?');
 export function getBlog(): BlogContent {
 	const rows = getBlogPostsStmt.all() as PostRow[];
 	return { posts: rows.map((row) => ({ ...row, draft: Boolean(row.draft) })) };
-}
-
-/** Replaces every post. Editing a single post should use the targeted functions below instead. */
-export function setBlog(value: BlogContent): void {
-	// Keep each post's id stable across saves (matched by slug).
-	const ids = new Map(
-		(getBlogIdsStmt.all() as { slug: string; id: number }[]).map((r) => [r.slug, r.id])
-	);
-	deleteBlogPostsStmt.run();
-	value.posts.forEach((post, i) => {
-		insertBlogPostStmt.run(
-			ids.get(post.slug) ?? null,
-			post.slug,
-			post.title,
-			post.date,
-			post.image,
-			post.preview,
-			post.content,
-			post.draft ? 1 : 0,
-			i
-		);
-	});
 }
 
 /** Adds a post after the existing ones. The slug must not be in use. */

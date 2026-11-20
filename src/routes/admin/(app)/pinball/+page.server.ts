@@ -36,6 +36,7 @@ export const actions: Actions = {
 			modeScores: toModeScores(item.modeScores)
 		}),
 		keep: (machine) => machine.name,
+		skipReason: 'without a name',
 		save: (machines) => updateSection('pinball', machines)
 	})
 };

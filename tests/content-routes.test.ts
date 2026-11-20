@@ -21,6 +21,8 @@ import * as blogPage from '../src/routes/blog/+page.server';
 import * as pressPage from '../src/routes/press/+page.server';
 import * as postPage from '../src/routes/blog/[slug]/+page.server';
 import { GET as rss } from '../src/routes/blog/rss.xml/+server';
+import { GET as sitemap } from '../src/routes/sitemap.xml/+server';
+import { GET as robots } from '../src/routes/robots.txt/+server';
 import * as adminHome from '../src/routes/admin/(app)/home/+page.server';
 import * as adminWorks from '../src/routes/admin/(app)/works/+page.server';
 import * as adminPress from '../src/routes/admin/(app)/press/+page.server';
@@ -77,7 +79,9 @@ afterEach(() => {
 
 describe('main menu sections', () => {
 	const sections = () =>
-		(rootLayout.load as () => { sections: Record<string, boolean> })().sections;
+		(rootLayout.load as (event: { url: URL }) => { sections: Record<string, boolean> })({
+			url: new URL('https://example.test/')
+		}).sections;
 
 	it('reports every section as empty when there is no content', () => {
 		expect(sections()).toEqual({
@@ -219,6 +223,39 @@ describe('public blog', () => {
 	});
 });
 
+describe('search engine files', () => {
+	const request = { url: new URL('https://request.test/any') } as never;
+
+	it('lists the home page, sections with content and published posts in the sitemap', async () => {
+		vi.stubEnv('ORIGIN', 'https://configured.test');
+		createPost(post('published'));
+		createPost(post('undated', { date: 'soon' }));
+		createPost(post('secret', { draft: true }));
+
+		const response = sitemap(request) as Response;
+		const xml = await response.text();
+
+		expect(response.headers.get('Content-Type')).toBe('application/xml; charset=utf-8');
+		expect(xml).toContain('<url><loc>https://configured.test/</loc></url>');
+		expect(xml).toContain('<url><loc>https://configured.test/blog</loc></url>');
+		expect(xml).toContain(
+			'<url><loc>https://configured.test/blog/published</loc><lastmod>2024-01-02</lastmod></url>'
+		);
+		expect(xml).toContain('<url><loc>https://configured.test/blog/undated</loc></url>');
+		expect(xml).not.toContain('secret');
+		expect(xml).not.toContain('/press');
+	});
+
+	it('keeps crawlers out of the admin area and points them at the sitemap', async () => {
+		vi.stubEnv('ORIGIN', 'https://configured.test');
+
+		const text = await (robots(request) as Response).text();
+
+		expect(text).toContain('Disallow: /admin');
+		expect(text).toContain('Sitemap: https://configured.test/sitemap.xml');
+	});
+});
+
 describe('press page', () => {
 	it('lists items newest first, with undated items last', async () => {
 		const item = (title: string, date: string) => ({
@@ -328,7 +365,7 @@ describe('admin list editors', () => {
 	});
 
 	it('cleans works, dropping untitled rows and unsafe links', async () => {
-		await submit(adminWorks.actions.save, {
+		const { data } = await submit(adminWorks.actions.save, {
 			fields: {
 				items: json([
 					{
@@ -343,6 +380,7 @@ describe('admin list editors', () => {
 				])
 			}
 		});
+		expect(data.notice).toBe('Saved. Skipped 1 row without a title. Removed 1 unsafe link.');
 
 		const items = readContent().works;
 		expect(items).toHaveLength(1);
@@ -356,12 +394,16 @@ describe('admin list editors', () => {
 
 		// Saving keeps a row's id, because featured works on the home page point at it.
 		const { id } = items[0];
-		await submit(adminWorks.actions.save, { fields: { items: json([{ id, title: 'Game' }]) } });
+		const saveAgain = await submit(adminWorks.actions.save, {
+			fields: { items: json([{ id, title: 'Game' }]) }
+		});
 		expect(readContent().works[0].id).toBe(id);
+		// A row that simply has no link isn't reported as having lost one.
+		expect(saveAgain.data.notice).toBeUndefined();
 	});
 
 	it('cleans press items, dropping untitled rows and unsafe links', async () => {
-		await submit(adminPress.actions.save, {
+		const { data } = await submit(adminPress.actions.save, {
 			fields: {
 				items: json([
 					{ outlet: ' O ', title: ' T ', summary: ' S ', href: 'data:text/html,x', date: ' D ' },
@@ -369,6 +411,7 @@ describe('admin list editors', () => {
 				])
 			}
 		});
+		expect(data.notice).toBe('Saved. Skipped 1 row without a title. Removed 1 unsafe link.');
 
 		expect(readContent().press).toEqual([
 			{ outlet: 'O', title: 'T', summary: 'S', href: '', date: 'D' }
@@ -376,7 +419,7 @@ describe('admin list editors', () => {
 	});
 
 	it('keeps only contact links with a label and a safe address', async () => {
-		await submit(adminContact.actions.save, {
+		const { data } = await submit(adminContact.actions.save, {
 			fields: {
 				links: json([
 					{ label: ' Mail ', href: ' mailto:me@example.com ', description: ' Hi ' },
@@ -385,6 +428,7 @@ describe('admin list editors', () => {
 				])
 			}
 		});
+		expect(data.notice).toBe('Saved. Skipped 2 rows without a label and a safe link.');
 
 		expect(readContent().contact).toEqual([
 			{ label: 'Mail', href: 'mailto:me@example.com', icon: 'link', description: 'Hi' }
@@ -392,7 +436,7 @@ describe('admin list editors', () => {
 	});
 
 	it('cleans pinball machines and their mode scores', async () => {
-		await submit(adminPinball.actions.save, {
+		const { data } = await submit(adminPinball.actions.save, {
 			fields: {
 				machines: json([
 					{
@@ -406,6 +450,7 @@ describe('admin list editors', () => {
 				])
 			}
 		});
+		expect(data.notice).toBe('Saved. Skipped 1 row without a name.');
 
 		expect(readContent().pinball).toEqual([
 			{

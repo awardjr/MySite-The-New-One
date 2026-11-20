@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
+import sharp from 'sharp';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // UPLOAD_DIR is read when the module loads, so point it at a throwaway directory first.
@@ -20,7 +21,10 @@ import { GET as serveUpload } from '../src/routes/uploads/[...path]/+server';
 
 const BASE = path.resolve('/srv/uploads');
 const MAX_SIZE = 5 * 1024 * 1024;
-const PNG_BYTES = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 255]);
+const picture = (width: number, height: number) =>
+	sharp({ create: { width, height, channels: 3, background: 'red' } });
+const PNG_BYTES = new Uint8Array(await picture(4, 4).png().toBuffer());
+const NOT_AN_IMAGE = new Uint8Array([1, 2, 3, 4]);
 
 const image = (name = 'photo.png', type = 'image/png', content: BlobPart = PNG_BYTES) =>
 	new File([content], name, { type });
@@ -86,25 +90,68 @@ describe('resolveUploadPath', () => {
 });
 
 describe('saveUploadedImage', () => {
-	it('stores the bytes under a generated public name', async () => {
+	it('stores a still image as WebP under a generated public name', async () => {
 		const publicPath = await saveUploadedImage(image());
 
-		expect(publicPath).toMatch(/^\/uploads\/\d+-[0-9a-f]{12}\.png$/);
-		expect(new Uint8Array(fs.readFileSync(storedPath(publicPath)))).toEqual(PNG_BYTES);
+		expect(publicPath).toMatch(/^\/uploads\/\d+-[0-9a-f]{12}\.webp$/);
+		expect((await sharp(storedPath(publicPath)).metadata()).format).toBe('webp');
+	});
+
+	it('shrinks large images without enlarging small ones', async () => {
+		const stored = async (width: number, height: number) => {
+			const content = new Uint8Array(await picture(width, height).jpeg().toBuffer());
+			const publicPath = await saveUploadedImage(image('a.jpg', 'image/jpeg', content));
+			return sharp(storedPath(publicPath)).metadata();
+		};
+
+		expect(await stored(3840, 1000)).toMatchObject({ width: 1920, height: 500 });
+		expect(await stored(100, 50)).toMatchObject({ width: 100, height: 50 });
+	});
+
+	it('removes photo metadata', async () => {
+		const withMetadata = await picture(4, 4)
+			.withExif({ IFD0: { Copyright: 'private' } })
+			.jpeg()
+			.toBuffer();
+		const publicPath = await saveUploadedImage(
+			image('a.jpg', 'image/jpeg', new Uint8Array(withMetadata))
+		);
+
+		expect((await sharp(storedPath(publicPath)).metadata()).exif).toBeUndefined();
+	});
+
+	it('keeps an animated image as it is', async () => {
+		const frame = (background: string) =>
+			sharp({ create: { width: 4, height: 4, channels: 3, background } })
+				.png()
+				.toBuffer();
+		const frames = await Promise.all([frame('red'), frame('blue')]);
+		const animated = new Uint8Array(
+			await sharp(frames, { join: { animated: true } })
+				.gif()
+				.toBuffer()
+		);
+
+		const publicPath = await saveUploadedImage(image('a.gif', 'image/gif', animated));
+
+		expect(path.extname(publicPath)).toBe('.gif');
+		expect(new Uint8Array(fs.readFileSync(storedPath(publicPath)))).toEqual(animated);
+	});
+
+	it('rejects a file that is not really an image', async () => {
+		await expect(saveUploadedImage(image('a.png', 'image/png', NOT_AN_IMAGE))).rejects.toThrow(
+			'could not be read'
+		);
+		expect(fs.readdirSync(uploadDir)).toEqual([]);
 	});
 
 	it('never overwrites an earlier upload of the same file', async () => {
 		expect(await saveUploadedImage(image())).not.toBe(await saveUploadedImage(image()));
 	});
 
-	it.each([
-		['image/jpeg', 'jpg'],
-		['image/png', 'png'],
-		['image/gif', 'gif'],
-		['image/webp', 'webp']
-	])('names %s files by type, ignoring the client file name', async (type, extension) => {
-		const publicPath = await saveUploadedImage(image('../../evil.html', type));
-		expect(path.extname(publicPath)).toBe(`.${extension}`);
+	it('names files itself, ignoring the client file name', async () => {
+		const publicPath = await saveUploadedImage(image('../../evil.html'));
+		expect(path.extname(publicPath)).toBe('.webp');
 		expect(path.dirname(publicPath)).toBe('/uploads');
 	});
 
@@ -126,7 +173,8 @@ describe('saveUploadedImage', () => {
 		const atLimit = image('a.png', 'image/png', new Uint8Array(MAX_SIZE));
 		const overLimit = image('a.png', 'image/png', new Uint8Array(MAX_SIZE + 1));
 
-		await expect(saveUploadedImage(atLimit)).resolves.toMatch(/\.png$/);
+		// Getting as far as reading the file shows it passed the size check.
+		await expect(saveUploadedImage(atLimit)).rejects.toThrow('could not be read');
 		await expect(saveUploadedImage(overLimit)).rejects.toThrow('too large');
 	});
 

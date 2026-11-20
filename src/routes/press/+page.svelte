@@ -1,17 +1,17 @@
 <script lang="ts">
+	import PageHeading from '#lib/components/PageHeading.svelte';
+	import PageMeta from '#lib/components/PageMeta.svelte';
 	import Fa from 'svelte-fa';
 	import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+	import { formatDate } from '#lib/formatDate.js';
 	import type { PressItem } from '#lib/server/content.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { items, siteName, headline, subtitle } = $derived(data);
+	let { items, headline, subtitle } = $derived(data);
 </script>
 
-<svelte:head>
-	<title>{siteName ? `Press - ${siteName}` : 'Press'}</title>
-	<meta name="description" content={siteName ? `Press - ${siteName}` : 'Press'} />
-</svelte:head>
+<PageMeta title="Press" />
 
 {#snippet cardText(item: PressItem, leaveRoomForIcon: boolean)}
 	{#if item.outlet || item.date}
@@ -21,7 +21,7 @@
 				leaveRoomForIcon && 'pr-8'
 			]}
 		>
-			{[item.outlet, item.date].filter(Boolean).join(' · ')}
+			{[item.outlet, formatDate(item.date)].filter(Boolean).join(' · ')}
 		</p>
 	{/if}
 	<h2 class={['text-2xl font-bold text-card-heading sm:text-3xl', leaveRoomForIcon && 'pr-8']}>
@@ -33,10 +33,7 @@
 {/snippet}
 
 <section class="py-6 sm:py-10">
-	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
-		<p class="text-lg text-muted">{subtitle}</p>
-	</div>
+	<PageHeading {headline} {subtitle} />
 
 	<div class="mt-8 grid grid-cols-1 gap-6">
 		{#each items as item, i (i)}

@@ -69,7 +69,7 @@
 	</div>
 
 	<!-- Site name - centered on mobile -->
-	<div class="flex items-center gap-6 md:gap-6">
+	<div class="flex items-center gap-6">
 		<a
 			aria-label="Home"
 			class="text-base font-bold tracking-tight text-heading"

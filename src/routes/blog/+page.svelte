@@ -1,4 +1,7 @@
 <script lang="ts">
+	import PageHeading from '#lib/components/PageHeading.svelte';
+	import PageMeta from '#lib/components/PageMeta.svelte';
+	import { formatDate } from '#lib/formatDate.js';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
@@ -8,17 +11,11 @@
 	let { posts, siteName, headline, subtitle } = $derived(data);
 </script>
 
-<svelte:head>
-	<title>{siteName ? `Posts - ${siteName}` : 'Posts'}</title>
-	<meta name="description" content={siteName ? `Posts by ${siteName}` : 'Posts'} />
-</svelte:head>
+<PageMeta title="Posts" description={siteName ? `Posts by ${siteName}` : undefined} />
 
 <section class="py-6 sm:py-10">
 	<div class="flex items-start justify-between gap-4">
-		<div class="space-y-1">
-			<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
-			<p class="text-lg text-muted">{subtitle}</p>
-		</div>
+		<PageHeading {headline} {subtitle} />
 		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 		<a
 			href="/blog/rss.xml"
@@ -50,7 +47,9 @@
 				{/if}
 
 				<div class="p-5 sm:p-6">
-					<p class="text-xs font-semibold tracking-wider text-card-meta uppercase">{post.date}</p>
+					<p class="text-xs font-semibold tracking-wider text-card-meta uppercase">
+						{formatDate(post.date)}
+					</p>
 					<h2 class="mt-1 text-xl font-bold text-card-heading sm:text-2xl">
 						{post.title}
 					</h2>

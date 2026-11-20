@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import type { PressItem } from '#lib/server/content.js';
 	import type { PageProps } from './$types';
@@ -22,11 +23,12 @@
 	subtitle={data.subtitle}
 	headlinePlaceholder="Press"
 	{form}
+	reorderable={false}
 	addLabel="+ Add Press Mention"
 	newItem={(): PressItem => ({ outlet: '', title: '', summary: '', href: '', date: '' })}
 	itemName={(item: PressItem) => item.title || 'this press mention'}
 >
-	{#snippet row(item: PressItem, remove: () => void)}
+	{#snippet row(item: PressItem, controls: Snippet)}
 		<div class="space-y-2 rounded-lg border border-form-border p-3">
 			<input
 				bind:value={item.outlet}
@@ -51,7 +53,7 @@
 				class="input-compact w-full"
 			/>
 
-			<button type="button" onclick={remove} class="btn-remove"> Remove </button>
+			{@render controls()}
 		</div>
 	{/snippet}
 </ListEditor>

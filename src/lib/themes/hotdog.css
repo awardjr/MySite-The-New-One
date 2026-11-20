@@ -61,9 +61,9 @@
 	--theme-secondary-hover: var(--color-red-900);
 
 	--theme-code: var(--color-red-950);
-	--theme-file-button: var(--color-red-900);
-	--theme-file-button-text: var(--color-yellow-100);
-	--theme-file-button-hover: var(--color-red-950);
+	--theme-file-button: var(--color-yellow-400);
+	--theme-file-button-text: var(--color-black);
+	--theme-file-button-hover: var(--color-yellow-300);
 
 	/* Status and destructive actions */
 	--theme-error: var(--color-amber-300);

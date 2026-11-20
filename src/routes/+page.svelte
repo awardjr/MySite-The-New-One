@@ -1,5 +1,7 @@
 <script lang="ts">
+	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
+	import { formatDate } from '#lib/formatDate.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -7,16 +9,12 @@
 	let { headline } = $derived(data);
 </script>
 
-<svelte:head>
-	<title>Home - {name}</title>
-	<meta content="Personal Website for {name}" name="description" />
-</svelte:head>
+<PageMeta title="Home" description={`Personal Website for ${name}`} />
 
 <section class="py-6 sm:py-10">
 	<div
 		class="flex flex-col-reverse items-center gap-8 md:flex-row md:items-start md:justify-between md:gap-12"
 	>
-		<!-- Text Introduction Section -->
 		<div class="flex-1 space-y-4 text-center md:text-left">
 			<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl lg:text-5xl">
 				{headline}
@@ -36,7 +34,6 @@
 			</div>
 		</div>
 
-		<!-- Photo Section -->
 		{#if photoSrc}
 			<div class="flex shrink-0 justify-center">
 				<button
@@ -89,7 +86,13 @@
 		<h2 class="text-2xl font-bold tracking-tight text-heading">Featured Posts</h2>
 		<div class="mt-4 grid gap-5 sm:grid-cols-2">
 			{#each data.featuredPosts as post (post.slug)}
-				{@render featureCard(`/blog/${post.slug}`, post.image, post.title, post.preview, post.date)}
+				{@render featureCard(
+					`/blog/${post.slug}`,
+					post.image,
+					post.title,
+					post.preview,
+					formatDate(post.date)
+				)}
 			{/each}
 		</div>
 	</section>

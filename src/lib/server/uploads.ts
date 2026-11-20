@@ -2,11 +2,13 @@ import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import sanitizeHtml from 'sanitize-html';
+import sharp from 'sharp';
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'static', 'uploads');
 const PUBLIC_PREFIX = '/uploads/';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGE_WIDTH = 1920;
 
 const ALLOWED_MIME_TO_EXTENSION: Record<string, string> = {
 	'image/jpeg': 'jpg',
@@ -127,6 +129,44 @@ const svgSanitizeOptions: sanitizeHtml.IOptions = {
 	parser: { lowerCaseTags: false, lowerCaseAttributeNames: false }
 };
 
+/** The image formats sharp can report for an upload, with the extension each is stored under. */
+const RASTER_EXTENSIONS: Record<string, string> = {
+	jpeg: 'jpg',
+	png: 'png',
+	webp: 'webp',
+	gif: 'gif'
+};
+
+/**
+ * Prepares a photo or graphic for the web: checks it really is an image, then stores a still
+ * image as a resized WebP without its metadata (which can include where a photo was taken).
+ * Animated images are kept as they are, because converting them would lose quality or motion.
+ */
+async function optimizeRasterImage(input: Buffer): Promise<{ data: Buffer; extension: string }> {
+	const metadata = await sharp(input)
+		.metadata()
+		.catch(() => null);
+	const originalExtension = metadata && RASTER_EXTENSIONS[metadata.format];
+	if (!originalExtension) {
+		throw new UploadError('That file could not be read as an image.');
+	}
+	if ((metadata.pages ?? 1) > 1) {
+		return { data: input, extension: originalExtension };
+	}
+
+	try {
+		const data = await sharp(input)
+			.rotate()
+			.resize({ width: MAX_IMAGE_WIDTH, withoutEnlargement: true })
+			// PNGs are often logos or screenshots, where lossy compression blurs edges and text.
+			.webp(metadata.format === 'png' ? { nearLossless: true } : { quality: 82 })
+			.toBuffer();
+		return { data, extension: 'webp' };
+	} catch {
+		throw new UploadError('That file could not be read as an image.');
+	}
+}
+
 export async function saveUploadedImage(file: File): Promise<string> {
 	if (!(file instanceof File) || file.size === 0) {
 		throw new UploadError('No file was uploaded.');
@@ -144,15 +184,14 @@ export async function saveUploadedImage(file: File): Promise<string> {
 
 	await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
-	const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${extension}`;
-	const filePath = path.join(UPLOAD_DIR, filename);
-
 	const buffer = Buffer.from(await file.arrayBuffer());
-	const finalBuffer =
+	const prepared =
 		file.type === 'image/svg+xml'
-			? Buffer.from(sanitizeHtml(buffer.toString('utf-8'), svgSanitizeOptions))
-			: buffer;
-	await fs.writeFile(filePath, finalBuffer);
+			? { data: Buffer.from(sanitizeHtml(buffer.toString('utf-8'), svgSanitizeOptions)), extension }
+			: await optimizeRasterImage(buffer);
+
+	const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${prepared.extension}`;
+	await fs.writeFile(path.join(UPLOAD_DIR, filename), prepared.data);
 
 	return `${PUBLIC_PREFIX}${filename}`;
 }

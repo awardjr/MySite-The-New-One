@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeading from '#lib/components/PageHeading.svelte';
+	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { fly } from 'svelte/transition';
 	import Fa from 'svelte-fa';
 	import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
@@ -22,16 +24,10 @@
 	let hoveredIndex: number | null = $state(null);
 </script>
 
-<svelte:head>
-	<title>{siteName ? `Contact - ${siteName}` : 'Contact'}</title>
-	<meta name="description" content={siteName ? `Contact ${siteName}` : 'Contact'} />
-</svelte:head>
+<PageMeta title="Contact" description={siteName ? `Contact ${siteName}` : undefined} />
 
 <section class="py-6 sm:py-10">
-	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
-		<p class="text-base text-muted">{subtitle}</p>
-	</div>
+	<PageHeading {headline} {subtitle} />
 
 	<div class="mt-8 flex w-full flex-col gap-3 lg:flex-row lg:items-start">
 		<div
@@ -64,12 +60,12 @@
 		</div>
 
 		<!-- Hover description panel - desktop only -->
-		<div class="hidden w-0 lg:block lg:w-2/5 lg:pl-8">
+		<div class="hidden lg:block lg:w-2/5 lg:pl-8">
 			{#if hoveredIndex !== null && links[hoveredIndex]?.description}
 				<div
 					transition:fly={{ duration: 200, x: -40, y: 0 }}
 					style:--link-color={iconColors[links[hoveredIndex].icon] ?? iconColors.link}
-					class="sticky top-24 rounded-xl border border-transparent bg-(--link-color) p-6 text-white shadow-md transition-colors duration-200"
+					class="sticky top-24 rounded-xl bg-(--link-color) p-6 text-white shadow-md transition-colors duration-200"
 				>
 					<p class="text-base leading-relaxed">
 						{links[hoveredIndex].description}

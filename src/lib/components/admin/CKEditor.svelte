@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { ClassicEditor, WordCountUpdateEvent } from 'ckeditor5';
 	import 'ckeditor5/ckeditor5.css';
+	import { acceptCurrentValue } from '#lib/unsavedChanges.js';
 	import { buildEditorConfig } from './ckeditorConfig';
 
 	let {
@@ -50,6 +51,11 @@
 				words = data.words;
 				characters = data.characters;
 			});
+
+			// The editor tidies the HTML it loads, which isn't an edit by the admin.
+			await tick();
+			const form = host.closest('form');
+			if (form && name) acceptCurrentValue(form, name);
 		}
 
 		if (hostElement) {

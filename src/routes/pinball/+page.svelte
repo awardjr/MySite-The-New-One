@@ -1,11 +1,13 @@
 <script lang="ts">
+	import PageHeading from '#lib/components/PageHeading.svelte';
+	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
-	import { openLightbox } from '#lib/lightbox.svelte.js';
+	import Thumbnail from '#lib/components/Thumbnail.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { machines, siteName, headline, subtitle } = $derived(data);
+	let { machines, headline, subtitle } = $derived(data);
 
 	let expanded: Record<number, boolean> = $state({});
 
@@ -14,18 +16,10 @@
 	}
 </script>
 
-<svelte:head>
-	<title>{siteName ? `Pinball - ${siteName}` : 'Pinball'}</title>
-	<meta name="description" content="Pinball high scores" />
-</svelte:head>
+<PageMeta title="Pinball" description="Pinball high scores" />
 
 <section class="py-6 sm:py-10">
-	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
-		<p class="text-lg text-muted">
-			{subtitle}
-		</p>
-	</div>
+	<PageHeading {headline} {subtitle} />
 
 	<div class="mt-8 space-y-6">
 		{#each machines as machine, i (i)}
@@ -35,27 +29,7 @@
 				<div class="flex flex-col gap-5 sm:flex-row sm:items-start">
 					<!-- Image Section -->
 					<div class="flex shrink-0 justify-center sm:justify-start">
-						{#if machine.image}
-							<button
-								type="button"
-								onclick={() => openLightbox(machine.image, machine.name)}
-								aria-label={`View larger image of ${machine.name}`}
-							>
-								<img
-									src={machine.image}
-									loading="lazy"
-									decoding="async"
-									alt={machine.name}
-									class="h-40 w-40 cursor-pointer rounded-xl object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
-								/>
-							</button>
-						{:else}
-							<div
-								class="flex h-40 w-40 items-center justify-center rounded-xl border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
-							>
-								No Image
-							</div>
-						{/if}
+						<Thumbnail src={machine.image} alt={machine.name} />
 					</div>
 
 					<!-- Text Section -->

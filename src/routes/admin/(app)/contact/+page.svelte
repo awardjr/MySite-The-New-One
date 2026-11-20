@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import { iconOptions } from '#lib/icons.js';
 	import type { ContactLink } from '#lib/server/content.js';
@@ -27,7 +28,7 @@
 	newItem={(): ContactLink => ({ label: '', href: 'https://', icon: 'link', description: '' })}
 	itemName={(link: ContactLink) => link.label || 'this link'}
 >
-	{#snippet row(link: ContactLink, remove: () => void)}
+	{#snippet row(link: ContactLink, controls: Snippet)}
 		<div
 			class="grid grid-cols-1 gap-2 rounded-lg border border-form-border p-3 sm:grid-cols-[1fr_2fr_auto_auto] sm:items-center"
 		>
@@ -42,7 +43,7 @@
 					<option value={iconKey}>{iconKey}</option>
 				{/each}
 			</select>
-			<button type="button" onclick={remove} class="btn-remove"> Remove </button>
+			{@render controls()}
 			<textarea
 				bind:value={link.description}
 				placeholder="Description shown on hover"

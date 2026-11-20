@@ -1,24 +1,20 @@
 <script lang="ts">
+	import PageHeading from '#lib/components/PageHeading.svelte';
+	import PageMeta from '#lib/components/PageMeta.svelte';
 	import Fa from 'svelte-fa';
 	import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
-	import { openLightbox } from '#lib/lightbox.svelte.js';
+	import Thumbnail from '#lib/components/Thumbnail.svelte';
 	import { getPlatform } from '#lib/platforms.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-	let { items, siteName, headline, subtitle } = $derived(data);
+	let { items, headline, subtitle } = $derived(data);
 </script>
 
-<svelte:head>
-	<title>{siteName ? `Works - ${siteName}` : 'Works'}</title>
-	<meta content={siteName ? `Works - ${siteName}` : 'Works'} name="description" />
-</svelte:head>
+<PageMeta title="Works" />
 
 <section class="py-6 sm:py-10">
-	<div class="space-y-1">
-		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">{headline}</h1>
-		<p class="text-lg text-muted">{subtitle}</p>
-	</div>
+	<PageHeading {headline} {subtitle} />
 
 	<div class="mt-8 space-y-6">
 		{#each items as work (work.id)}
@@ -49,28 +45,7 @@
 				<div
 					class="relative z-10 flex shrink-0 justify-center max-sm:w-full max-sm:pr-5 sm:justify-start"
 				>
-					{#if work.image}
-						<button
-							class="max-sm:w-full"
-							type="button"
-							onclick={() => openLightbox(work.image, work.title)}
-							aria-label={`View larger image of ${work.title}`}
-						>
-							<img
-								src={work.image}
-								loading="lazy"
-								decoding="async"
-								alt={work.title}
-								class="h-40 w-40 cursor-pointer rounded-xl object-cover ring-1 ring-card-ring sm:h-32 sm:w-32"
-							/>
-						</button>
-					{:else}
-						<div
-							class="flex h-40 w-40 items-center justify-center rounded-xl border-2 border-dashed border-image-placeholder-border bg-image-placeholder text-center text-xs text-image-placeholder-text sm:h-32 sm:w-32"
-						>
-							No Image
-						</div>
-					{/if}
+					<Thumbnail src={work.image} alt={work.title} class="max-sm:w-full" />
 				</div>
 
 				<!-- Text + Platforms Section -->

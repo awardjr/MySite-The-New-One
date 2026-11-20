@@ -36,7 +36,7 @@
 	}
 </script>
 
-<div class="mx-auto flex h-16 max-w-7/10 max-lg:max-w-none items-center justify-between px-4">
+<div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4">
 	<!-- Burger menu - left on mobile, hidden on desktop -->
 	{#if !isAuthPage}
 		<div class="flex lg:hidden">
@@ -49,7 +49,7 @@
 		<a
 			href={resolve('/')}
 			onclick={closeMobileMenu}
-			class="inline-flex items-center gap-1.5 rounded-lg border border-menu-border px-3 py-1.5 text-xs sm:text-sm font-medium text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
+			class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-menu-border px-3 py-1.5 text-xs whitespace-nowrap sm:text-sm font-medium text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 			><span aria-hidden="true">←</span> Back to site</a
 		>
 
@@ -59,7 +59,7 @@
 					{@const isActive = isAdminItemActive(item.href)}
 					<a
 						href={item.href}
-						class="rounded-lg px-2.5 py-1.5 text-xl transition-colors {isActive
+						class="rounded-lg px-2.5 py-1.5 text-base whitespace-nowrap transition-colors xl:text-lg {isActive
 							? 'bg-nav-active font-semibold text-heading'
 							: 'text-nav-text hover:bg-nav-surface-hover hover:text-admin-nav-hover'}"
 					>
@@ -76,7 +76,7 @@
 			<form method="POST" action={resolve('admin/logout')} class="hidden sm:block">
 				<button
 					type="submit"
-					class="rounded-lg border border-menu-border px-3 py-1.5 text-xs sm:text-sm text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
+					class="rounded-lg border border-menu-border px-3 py-1.5 text-xs whitespace-nowrap sm:text-sm text-nav-text transition-colors hover:bg-nav-surface-hover hover:text-heading"
 				>
 					Log out
 				</button>

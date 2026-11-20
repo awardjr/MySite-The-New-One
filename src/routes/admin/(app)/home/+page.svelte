@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import { trackChanges } from '#lib/unsavedChanges.js';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
@@ -45,7 +46,13 @@
 	oninput={clearSaved}
 />
 
-<form method="POST" action="?/save" class="mt-6 space-y-5" use:enhance={saveForm.submit}>
+<form
+	method="POST"
+	action="?/save"
+	class="mt-6 space-y-5"
+	use:enhance={saveForm.submit}
+	use:trackChanges
+>
 	<div class="space-y-1">
 		<label for="name" class="text-sm font-medium text-field-label">Name</label>
 		<input id="name" name="name" bind:value={name} oninput={clearSaved} required class="input" />

@@ -3,6 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import { trackChanges } from '#lib/unsavedChanges.js';
 	import CKEditor from '#lib/components/admin/CKEditor.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
@@ -31,7 +32,7 @@
 	const saveForm = pendingForm({ reset: false });
 </script>
 
-<form {action} class="mt-6 space-y-5" method="POST" use:enhance={saveForm.submit}>
+<form {action} class="mt-6 space-y-5" method="POST" use:enhance={saveForm.submit} use:trackChanges>
 	<div class="space-y-1">
 		<label class="text-sm font-medium text-field-label" for="title">Title</label>
 		<input bind:value={fields.title} class="input" id="title" name="title" required />

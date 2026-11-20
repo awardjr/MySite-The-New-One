@@ -54,6 +54,7 @@
 		"nodemailer": "^10.6.0",
 		"qrcode": "^1.5.4",
 		"sanitize-html": "^2.17.7",
+		"sharp": "^0.35.5",
 		"svelte-fa": "^4.0.4"
 	},
 	"allowScripts": {

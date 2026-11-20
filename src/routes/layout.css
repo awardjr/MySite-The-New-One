@@ -5,11 +5,44 @@
 @import '../lib/themes/dark.css';
 @import '../lib/themes/hotdog.css';
 
-/* Apply every `hover:` utility on touch too (while pressed), not only on hover-capable devices */
 @custom-variant hover (&:hover, &:active);
 
 :root {
 	--font-sans: 'Raleway Variable', sans-serif;
+	color-scheme: light;
+	scrollbar-color: var(--theme-menu-border) transparent;
+}
+
+:root.dark,
+:root.hotdog {
+	color-scheme: dark;
+}
+
+.page-scroller {
+	--footer-height: 0px;
+	--footer-visible: 0px;
+	background: linear-gradient(
+			to top,
+			var(--color-footer) calc(var(--footer-height) - 1px),
+			var(--color-chrome-border) 0 var(--footer-height),
+			var(--color-page) 0
+		)
+		local;
+}
+
+/*
+ * Chromium paints a `local` background only inside the scrollbar, so the version above doesn't
+ * reach under it there. In browsers other than Firefox the layout adds this class and keeps
+ * `--footer-visible` at the height of the footer currently on screen, painted on a background
+ * that stays put.
+ */
+.page-scroller.footer-band {
+	background: linear-gradient(
+		to top,
+		var(--color-footer) calc(var(--footer-visible) - 1px),
+		var(--color-chrome-border) 0 var(--footer-visible),
+		var(--color-page) 0
+	);
 }
 
 @utility card {
@@ -52,8 +85,6 @@
 	}
 }
 
-/* Form controls. `input` suits most forms; the others match the denser list editors and the
-   sign-in pages. */
 @utility input {
 	@apply w-full rounded-lg border border-field-border bg-field px-3 py-2 text-field-text;
 }

@@ -27,6 +27,8 @@ export const actions: Actions = {
 			platforms: textList(item.platforms)
 		}),
 		keep: (item) => item.title,
+		skipReason: 'without a title',
+		linkField: 'link',
 		save: (items) => updateSection('works', items)
 	})
 };

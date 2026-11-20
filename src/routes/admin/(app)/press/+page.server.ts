@@ -26,6 +26,8 @@ export const actions: Actions = {
 			date: text(item.date)
 		}),
 		keep: (item) => item.title,
+		skipReason: 'without a title',
+		linkField: 'href',
 		save: (items) => updateSection('press', items)
 	})
 };

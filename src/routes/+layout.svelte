@@ -5,6 +5,7 @@
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
+	import type { Snapshot } from '@sveltejs/kit';
 	import './layout.css';
 	import type { LayoutProps } from './$types';
 
@@ -12,11 +13,42 @@
 	let siteName = $derived(data.siteName);
 	let scroller: HTMLDivElement | undefined = $state();
 
-	// Pages scroll inside this container, which SvelteKit's own scroll reset doesn't reach. A link
-	// to a spot on a page (`#...`) is left alone, because SvelteKit scrolls to that spot itself.
-	afterNavigate(({ from, to }) => {
+	export const snapshot: Snapshot<number> = {
+		capture: () => scroller?.scrollTop ?? 0,
+		restore: (top) => scroller?.scrollTo(0, top)
+	};
+
+	afterNavigate(({ from, to, type }) => {
+		if (type === 'popstate') return;
 		if (from?.url.pathname !== to?.url.pathname && !to?.url.hash) scroller?.scrollTo(0, 0);
 	});
+
+	let paintFooterBand = $state(false);
+	$effect(() => {
+		const footer = scroller?.querySelector('footer');
+		if (!scroller || !footer) return;
+		const area = scroller;
+		const footerElement = footer;
+		paintFooterBand = !CSS.supports('-moz-appearance', 'none');
+
+		function update() {
+			const height = footerElement.offsetHeight;
+			const onScreen =
+				area.getBoundingClientRect().bottom - footerElement.getBoundingClientRect().top;
+			area.style.setProperty('--footer-height', `${height}px`);
+			area.style.setProperty('--footer-visible', `${Math.min(Math.max(onScreen, 0), height)}px`);
+		}
+
+		const observer = new ResizeObserver(update);
+		observer.observe(footer);
+		observer.observe(area);
+		area.addEventListener('scroll', update, { passive: true });
+		return () => {
+			observer.disconnect();
+			area.removeEventListener('scroll', update);
+		};
+	});
+
 	const reduceMotion =
 		typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 </script>
@@ -30,7 +62,10 @@
 
 <div class="flex h-screen flex-col bg-page text-body transition-colors overflow-hidden">
 	<Header {siteName} sections={data.sections} />
-	<div bind:this={scroller} class="flex flex-1 flex-col overflow-y-auto">
+	<div
+		bind:this={scroller}
+		class={['page-scroller flex flex-1 flex-col overflow-y-auto', paintFooterBand && 'footer-band']}
+	>
 		<main class="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
 			<div class="grid">
 				{#key page.url.pathname}
@@ -44,7 +79,7 @@
 				{/key}
 			</div>
 		</main>
+		<Footer {siteName} />
 	</div>
-	<Footer {siteName} />
 	<Lightbox />
 </div>

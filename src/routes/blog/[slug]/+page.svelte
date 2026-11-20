@@ -1,16 +1,21 @@
 <script lang="ts">
+	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
+	import { formatDate } from '#lib/formatDate.js';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 
 	let { data }: PageProps = $props();
-	let { post, siteName } = $derived(data);
+	let { post } = $derived(data);
 </script>
 
-<svelte:head>
-	<title>{siteName ? `${post.title} - ${siteName}` : post.title}</title>
-	<meta name="description" content={post.preview} />
-</svelte:head>
+<PageMeta
+	title={post.title}
+	description={post.preview}
+	image={post.image}
+	publishedDate={post.date}
+	noindex={post.draft}
+/>
 
 <section class="py-6 sm:py-10">
 	<a href={resolve('blog')} class="text-sm font-medium text-link hover:underline">← Back to Blog</a>
@@ -42,10 +47,9 @@
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">
 			{post.title}
 		</h1>
-		<p class="mt-1 text-eyebrow">{post.date}</p>
+		<p class="mt-1 text-eyebrow">{formatDate(post.date)}</p>
 
 		<div class="post-content mt-6 text-lg leading-relaxed text-copy">
-			<!-- Sanitized on the admin page-->
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html post.content}
 		</div>
@@ -134,7 +138,6 @@
 		font-size: inherit;
 	}
 
-	/* Highlighter colors stay bright in every theme, so their text stays dark. */
 	.post-content :global(.marker-yellow) {
 		background: #fdfd77;
 		color: #111827;

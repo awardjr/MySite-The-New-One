@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import { platforms } from '#lib/platforms.js';
@@ -48,7 +49,7 @@
 	})}
 	itemName={(item: WorkItem) => item.title || 'this work'}
 >
-	{#snippet row(item: WorkItem, remove: () => void)}
+	{#snippet row(item: WorkItem, controls: Snippet)}
 		<div class="space-y-2 rounded-lg border border-form-border p-3">
 			<input bind:value={item.title} placeholder="Title" class="input-compact w-full" />
 			<textarea
@@ -78,7 +79,7 @@
 				{/each}
 			</div>
 
-			<button type="button" onclick={remove} class="btn-remove"> Remove </button>
+			{@render controls()}
 		</div>
 	{/snippet}
 </ListEditor>

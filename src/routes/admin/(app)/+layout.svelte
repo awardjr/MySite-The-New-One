@@ -1,11 +1,16 @@
 <script lang="ts">
+	import { beforeNavigate } from '$app/navigation';
+	import { hasUnsavedChanges } from '#lib/unsavedChanges.js';
 	import type { LayoutProps } from './$types';
 
 	let { children }: LayoutProps = $props();
+
+	beforeNavigate(({ cancel, type }) => {
+		if (type === 'goto' || !hasUnsavedChanges()) return;
+		if (type === 'leave' || !confirm('You have unsaved changes. Leave without saving?')) cancel();
+	});
 </script>
 
-<div class="min-h-[calc(100vh-8rem)] py-6 sm:py-10">
-	<div class="min-w-0 flex-1">
-		{@render children()}
-	</div>
+<div class="py-6 sm:py-10">
+	{@render children()}
 </div>

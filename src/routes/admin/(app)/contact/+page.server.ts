@@ -25,6 +25,7 @@ export const actions: Actions = {
 			description: text(item.description ?? '')
 		}),
 		keep: (link) => link.label && link.href,
+		skipReason: 'without a label and a safe link',
 		save: (links) => updateSection('contact', links)
 	})
 };

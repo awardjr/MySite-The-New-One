@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import { trackChanges } from '#lib/unsavedChanges.js';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 
@@ -49,6 +50,7 @@
 	action="?/saveHeadline"
 	class="mt-4 space-y-3 rounded-xl border border-form-border p-4"
 	use:enhance={saveForm.submit}
+	use:trackChanges
 >
 	<div class="space-y-1">
 		<label for="headline" class="text-sm font-medium text-field-label">{headlineLabel}</label>

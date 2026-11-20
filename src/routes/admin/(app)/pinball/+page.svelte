@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { Snippet } from 'svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import type { PinballMachine } from '#lib/server/content.js';
@@ -33,11 +34,12 @@
 	subtitle={data.subtitle}
 	headlinePlaceholder="Pinball"
 	{form}
+	removeLabel="Remove Machine"
 	addLabel="+ Add Machine"
 	newItem={(): PinballMachine => ({ name: '', image: '', highScore: '', modeScores: [] })}
 	itemName={(machine: PinballMachine) => machine.name || 'this machine'}
 >
-	{#snippet row(machine: PinballMachine, remove: () => void)}
+	{#snippet row(machine: PinballMachine, controls: Snippet)}
 		<div class="space-y-2 rounded-lg border border-form-border p-3">
 			<input bind:value={machine.name} placeholder="Machine name" class="input-compact w-full" />
 			<ImageUploadField label={null} placeholder="Image URL / path" bind:value={machine.image} />
@@ -75,7 +77,7 @@
 				</button>
 			</div>
 
-			<button type="button" onclick={remove} class="btn-remove"> Remove Machine </button>
+			{@render controls()}
 		</div>
 	{/snippet}
 </ListEditor>

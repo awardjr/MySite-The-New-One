@@ -11,9 +11,7 @@
 		{notFound ? 'HUH?' : 'Uh, What?'}
 	</h1>
 	<p class="mt-3 max-w-md text-lg text-muted">
-		{notFound
-			? 'What are you doing here?'
-			: 'Please try again.'}
+		{notFound ? 'What are you doing here?' : 'Please try again.'}
 	</p>
 	<a href={resolve('/')} class="btn-primary mt-6 inline-block">Back to home</a>
 </section>

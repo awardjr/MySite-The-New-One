@@ -90,7 +90,7 @@
 }
 
 @utility input-date {
-	@apply input box-border block min-w-0 max-w-full appearance-none [&::-webkit-date-and-time-value]:min-h-[1.5em] [&::-webkit-date-and-time-value]:text-left;
+	@apply input block min-w-0 max-w-full appearance-none [&::-webkit-date-and-time-value]:min-h-[1.5em] [&::-webkit-date-and-time-value]:text-left;
 	-webkit-appearance: none;
 }
 

@@ -60,12 +60,12 @@
 		</div>
 
 		<!-- Hover description panel - desktop only -->
-		<div class="hidden w-0 lg:block lg:w-2/5 lg:pl-8">
+		<div class="hidden lg:block lg:w-2/5 lg:pl-8">
 			{#if hoveredIndex !== null && links[hoveredIndex]?.description}
 				<div
 					transition:fly={{ duration: 200, x: -40, y: 0 }}
 					style:--link-color={iconColors[links[hoveredIndex].icon] ?? iconColors.link}
-					class="sticky top-24 rounded-xl border border-transparent bg-(--link-color) p-6 text-white shadow-md transition-colors duration-200"
+					class="sticky top-24 rounded-xl bg-(--link-color) p-6 text-white shadow-md transition-colors duration-200"
 				>
 					<p class="text-base leading-relaxed">
 						{links[hoveredIndex].description}

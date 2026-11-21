@@ -1,8 +1,10 @@
 <script lang="ts">
+	import CardAction from '#lib/components/CardAction.svelte';
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import ExternalLinkIcon from '#lib/components/ExternalLinkIcon.svelte';
 	import { formatDate } from '#lib/formatDate.js';
+	import { linkHost } from '#lib/linkHost.js';
 	import type { PressItem } from '#lib/server/content.js';
 	import type { PageProps } from './$types';
 
@@ -15,10 +17,18 @@
 {#snippet cardText(item: PressItem, leaveRoomForIcon: boolean)}
 	{#if item.outlet || item.date}
 		<p class={['mb-1 card-header', leaveRoomForIcon && 'pr-8']}>
-			{[item.outlet, formatDate(item.date)].filter(Boolean).join(' · ')}
+			{#if item.outlet}
+				<span>{item.outlet}</span>
+			{/if}
+			{#if item.outlet && item.date}
+				<span>·</span>
+			{/if}
+			{#if item.date}
+				<span class="whitespace-nowrap">{formatDate(item.date)}</span>
+			{/if}
 		</p>
 	{/if}
-	<h2 class={['text-2xl font-bold text-card-heading sm:text-3xl', leaveRoomForIcon && 'pr-8']}>
+	<h2 class={['text-xl font-bold text-card-heading sm:text-2xl', leaveRoomForIcon && 'pr-8']}>
 		{item.title}
 	</h2>
 	<p class="mt-3 text-base leading-relaxed text-card-copy">
@@ -33,6 +43,7 @@
 		{#each items as item, i (i)}
 			{#if item.href}
 				{@const external = item.href.startsWith('http')}
+				{@const host = linkHost(item.href)}
 				<a
 					href={item.href}
 					target={external ? '_blank' : undefined}
@@ -43,6 +54,7 @@
 						<ExternalLinkIcon href={item.href} class="top-5 right-5" />
 					{/if}
 					{@render cardText(item, external)}
+					<CardAction class="mt-4">{host ? `Read on ${host}` : 'Read more'}</CardAction>
 				</a>
 			{:else}
 				<div class="card p-6 sm:p-8">

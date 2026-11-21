@@ -7,10 +7,6 @@
 	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 
-	/**
-	 * The page headline and list form shared by the admin list pages. It posts every row as JSON
-	 * to the page's `save` action (see `saveListAction` in #lib/server/listAction.ts).
-	 */
 	let {
 		field,
 		items: savedItems,
@@ -25,7 +21,6 @@
 		itemName,
 		row
 	}: {
-		/** The form field the rows are posted in. */
 		field: string;
 		items: T[];
 		headline: string;
@@ -39,12 +34,9 @@
 		} | null;
 		addLabel: string;
 		removeLabel?: string;
-		/** Turn off for lists the public page sorts by itself. */
 		reorderable?: boolean;
 		newItem: () => T;
-		/** How the remove confirmation and move buttons refer to an item. */
 		itemName: (item: T) => string;
-		/** Renders one row; the second argument renders its move and remove buttons. */
 		row: Snippet<[item: T, controls: Snippet]>;
 	} = $props();
 
@@ -52,11 +44,8 @@
 	let formElement: HTMLFormElement | undefined = $state();
 	let rowsElement: HTMLDivElement | undefined = $state();
 	const saveForm = pendingForm({ reset: false });
-	// Follows the last save, but hides again as soon as anything is edited.
 	let showSaved = $derived(!!form?.success);
 
-	// After a save, show what was actually stored: skipped rows disappear and new rows get their
-	// ids. Anything edited while the save was running is left alone.
 	$effect(() => {
 		const element = formElement;
 		if (!form?.success || !element) return;
@@ -87,7 +76,6 @@
 		[items[index], items[target]] = [items[target], items[index]];
 		clearSaved();
 
-		// Keep keyboard focus with the moved row, so it can be moved again.
 		await tick();
 		const movedRow = rowsElement?.children[target];
 		const button =

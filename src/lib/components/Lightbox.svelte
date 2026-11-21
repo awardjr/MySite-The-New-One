@@ -5,7 +5,6 @@
 
 	let dialog: HTMLDialogElement | undefined = $state();
 
-	// A modal <dialog> keeps keyboard focus inside, closes on Escape, and returns focus afterwards.
 	$effect(() => {
 		if (!dialog) return;
 		if (lightbox.src && !dialog.open) dialog.showModal();
@@ -17,7 +16,6 @@
 	}
 </script>
 
-<!-- Escape and the close button are the keyboard equivalents of clicking outside the image. -->
 <dialog
 	bind:this={dialog}
 	aria-label="Expanded image"

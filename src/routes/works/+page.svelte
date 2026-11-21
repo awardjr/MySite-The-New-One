@@ -2,7 +2,7 @@
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import Fa from 'svelte-fa';
-	import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+	import ExternalLinkIcon from '#lib/components/ExternalLinkIcon.svelte';
 	import Thumbnail from '#lib/components/Thumbnail.svelte';
 	import { getPlatform } from '#lib/platforms.js';
 	import type { PageProps } from './$types';
@@ -32,23 +32,17 @@
 						rel="noopener noreferrer"
 						aria-label={`${work.title} (opens in a new tab)`}
 						class="absolute inset-0 z-0 rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link"
-					></a>
-					<span
-						title="Opens an external site"
-						class="pointer-events-none absolute top-4 right-4 z-10 text-card-action transition-colors group-hover:text-card-heading"
 					>
-						<Fa icon={faArrowUpRightFromSquare} class="h-4 w-4" />
-					</span>
+						<ExternalLinkIcon href={work.link} class="top-4 right-4" />
+					</a>
 				{/if}
 
-				<!-- Image Section -->
 				<div
 					class="relative z-10 flex shrink-0 justify-center max-sm:w-full max-sm:pr-5 sm:justify-start"
 				>
 					<Thumbnail src={work.image} alt={work.title} class="max-sm:w-full" />
 				</div>
 
-				<!-- Text + Platforms Section -->
 				<div class="pointer-events-none relative z-10 flex-1 space-y-3">
 					<h2 class={['text-xl font-semibold text-card-heading', work.link && 'sm:pr-8']}>
 						{work.title}

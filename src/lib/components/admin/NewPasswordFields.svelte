@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Field from './Field.svelte';
 
-	/** A new password and its confirmation, posted as `name` and `confirmPassword`. */
 	let {
 		name = 'newPassword',
 		label = 'New password',

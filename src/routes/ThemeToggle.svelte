@@ -12,8 +12,6 @@
 	let theme: keyof typeof themes = $state('light');
 
 	onMount(() => {
-		// app.html applies the stored theme before first paint by adding a `dark` or `hotdog`
-		// class to <html>; the light theme is the absence of both.
 		const classes = document.documentElement.classList;
 		theme = classes.contains('hotdog') ? 'hotdog' : classes.contains('dark') ? 'dark' : 'light';
 	});

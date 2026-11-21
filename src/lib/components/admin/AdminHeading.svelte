@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 
-	/** An admin page's heading, which also names the browser tab. Children describe the page. */
 	let { title, children }: { title: string; children?: Snippet } = $props();
 </script>
 

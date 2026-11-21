@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import {
 	resetAttempts,
 	isAdminConfigured,
+	LOCKED_MESSAGE,
 	requestEmailPasswordReset,
 	resetPasswordWithRecoveryKey,
 	validateNewPassword
@@ -9,8 +10,6 @@ import {
 import { raw, text } from '#lib/server/forms.js';
 import { siteOrigin } from '#lib/server/origin.js';
 import type { Actions, PageServerLoad } from './$types';
-
-const LOCKED_MESSAGE = 'Too many attempts. Please try again later.';
 
 export const load: PageServerLoad = ({ locals }) => {
 	if (locals.isAdmin) {

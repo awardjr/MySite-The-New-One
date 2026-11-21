@@ -12,8 +12,6 @@
 	let { data, form }: PageProps = $props();
 
 	const setupForm = pendingForm({
-		// Show the recovery code without reloading the page data: now that the account exists, a
-		// reload would redirect away before the code could be read.
 		refreshAll: () => false
 	});
 </script>

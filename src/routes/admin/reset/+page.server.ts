@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
+	LOCKED_MESSAGE,
 	resetAttempts,
 	resetPasswordWithToken,
 	validateNewPassword,
@@ -29,7 +30,7 @@ export const actions: Actions = {
 	default: async ({ request, getClientAddress }) => {
 		const clientAddress = getClientAddress();
 		if (resetAttempts.isLocked(clientAddress)) {
-			return fail(429, { error: 'Too many attempts. Please try again later.' });
+			return fail(429, { error: LOCKED_MESSAGE });
 		}
 
 		const formData = await request.formData();

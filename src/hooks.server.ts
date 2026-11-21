@@ -1,16 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { dev } from '$app/env';
+import { SETUP_ROUTE, signInRoutes } from '#lib/adminSections.js';
 import { SESSION_COOKIE_NAME, isAdminConfigured, verifySessionToken } from '#lib/server/auth.js';
-
-const SETUP_ROUTE = '/admin/setup';
-/** Admin routes that are reachable without a session. */
-const PUBLIC_ADMIN_ROUTES = new Set([
-	'/admin/login',
-	SETUP_ROUTE,
-	'/admin/forgot-password',
-	'/admin/reset'
-]);
 
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
 
@@ -36,7 +28,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		: // No route matched (a 404): still treat admin-looking paths as private.
 			looksLikeAdminPath(event.url.pathname);
 	const isSetupRoute = routeId === SETUP_ROUTE;
-	const isPublicAdminRoute = routeId !== null && PUBLIC_ADMIN_ROUTES.has(routeId);
+	const isPublicAdminRoute = routeId !== null && signInRoutes.has(routeId);
 
 	// No admin password has been created in the database yet: send user to the one time setup page
 	if (isAdminRoute && !isSetupRoute && !isAdminConfigured()) {

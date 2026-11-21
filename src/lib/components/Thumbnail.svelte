@@ -3,7 +3,6 @@
 	import Fa from 'svelte-fa';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
 
-	/** A square card image that opens larger, or a quiet placeholder when there is none. */
 	let { src, alt, class: className }: { src: string; alt: string; class?: string } = $props();
 </script>
 

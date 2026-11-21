@@ -1,5 +1,4 @@
 <script lang="ts">
-	/** The banner image of a linked card, which zooms in slightly while the card is hovered. */
 	let { src, alt, class: className }: { src: string; alt: string; class?: string } = $props();
 </script>
 

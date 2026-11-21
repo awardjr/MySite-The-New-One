@@ -2,7 +2,7 @@
 	import { slide } from 'svelte/transition';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import { adminSections } from '#lib/adminSections.js';
+	import { adminSections, signInRoutes } from '#lib/adminSections.js';
 	import MenuButton from './MenuButton.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 
@@ -10,14 +10,7 @@
 
 	const adminNavItems = [{ href: resolve('admin'), label: 'Dashboard' }, ...adminSections];
 
-	// The sign-in pages show no admin menu.
-	const authPages = new Set<string>([
-		resolve('admin/login'),
-		resolve('admin/setup'),
-		resolve('admin/forgot-password'),
-		resolve('admin/reset')
-	]);
-	let isAuthPage = $derived(authPages.has(page.url.pathname));
+	let isAuthPage = $derived(signInRoutes.has(page.route.id ?? ''));
 
 	function isAdminItemActive(href: string): boolean {
 		return href === resolve('admin')
@@ -31,14 +24,12 @@
 </script>
 
 <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4">
-	<!-- Burger menu - left on mobile, hidden on desktop -->
 	{#if !isAuthPage}
 		<div class="flex lg:hidden">
 			<MenuButton label="Toggle admin navigation menu" bind:open={menuOpen} />
 		</div>
 	{/if}
 
-	<!-- Center: Dashboard link on mobile, Back to site + nav on desktop -->
 	<div class="flex items-center gap-3 lg:gap-4">
 		<a
 			href={resolve('/')}
@@ -64,7 +55,6 @@
 		{/if}
 	</div>
 
-	<!-- Theme toggle - right -->
 	<div class="flex items-center gap-2">
 		{#if !isAuthPage}
 			<form method="POST" action={resolve('admin/logout')} class="hidden sm:block">

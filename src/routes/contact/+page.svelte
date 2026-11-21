@@ -50,7 +50,6 @@
 			{/each}
 		</div>
 
-		<!-- Hover description panel - desktop only -->
 		<div class="hidden lg:block lg:w-2/5 lg:pl-8">
 			{#if hovered?.description}
 				<div

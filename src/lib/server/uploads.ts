@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import sanitizeHtml from 'sanitize-html';
 import sharp from 'sharp';
+import { UPLOAD_IMAGE_TYPES } from '../imageTypes';
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'static', 'uploads');
 const PUBLIC_PREFIX = '/uploads/';
@@ -10,17 +11,9 @@ const PUBLIC_PREFIX = '/uploads/';
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_IMAGE_WIDTH = 1920;
 
-const ALLOWED_MIME_TO_EXTENSION: Record<string, string> = {
-	'image/jpeg': 'jpg',
-	'image/png': 'png',
-	'image/gif': 'gif',
-	'image/webp': 'webp',
-	'image/svg+xml': 'svg'
-};
-
 const EXTENSION_TO_MIME: Record<string, string> = {
 	...Object.fromEntries(
-		Object.entries(ALLOWED_MIME_TO_EXTENSION).map(([mime, extension]) => [extension, mime])
+		Object.entries(UPLOAD_IMAGE_TYPES).map(([mime, extension]) => [extension, mime])
 	),
 	jpeg: 'image/jpeg'
 };
@@ -123,7 +116,7 @@ export async function saveUploadedImage(file: File): Promise<string> {
 		throw new UploadError('Image is too large (max 5 MB).');
 	}
 
-	const extension = ALLOWED_MIME_TO_EXTENSION[file.type];
+	const extension = UPLOAD_IMAGE_TYPES[file.type];
 	if (!extension) {
 		throw new UploadError(
 			'Unsupported file type. Please upload a JPEG, PNG, GIF, WebP, or SVG image.'

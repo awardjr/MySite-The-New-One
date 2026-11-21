@@ -8,6 +8,7 @@ import {
 	hasTwoFactorChallenge,
 	isAdminConfigured,
 	isTotpEnabled,
+	LOCKED_MESSAGE,
 	startSession,
 	twoFactorCookieOptions,
 	TWO_FACTOR_COOKIE_NAME,
@@ -15,8 +16,6 @@ import {
 } from '#lib/server/auth.js';
 import { raw } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
-
-const LOCKED_MESSAGE = 'Too many failed attempts. Please try again later.';
 
 /** Only allow redirects to admin paths on this site, so `redirectTo` can't send users off-site. */
 function safeRedirectTarget(url: URL): string {

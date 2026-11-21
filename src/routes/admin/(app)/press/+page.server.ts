@@ -10,9 +10,7 @@ import { safeUrl, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	const items = readContent().press;
-	const { headline, subtitle } = getHeadlineForPage('press');
-	return { items, headline, subtitle };
+	return { items: readContent().press, ...getHeadlineForPage('press') };
 };
 
 export const actions: Actions = {

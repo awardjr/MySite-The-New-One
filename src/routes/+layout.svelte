@@ -37,8 +37,6 @@
 			area.style.setProperty('--footer-visible', `${Math.min(Math.max(onScreen, 0), height)}px`);
 		};
 
-		// The footer moves when the area resizes, when it scrolls, and when the page content grows or
-		// shrinks (such as after going to another page), so each of those repaints the band.
 		const observer = new ResizeObserver(update);
 		observer.observe(area);
 		for (const child of area.children) observer.observe(child);

@@ -14,7 +14,6 @@
 		options: Option[];
 		selected: string[];
 		emptyText?: string;
-		/** Called whenever the selection changes. */
 		onchange?: () => void;
 	} = $props();
 

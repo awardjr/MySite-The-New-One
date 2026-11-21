@@ -1,8 +1,7 @@
 <script lang="ts">
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
-	import Fa from 'svelte-fa';
-	import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+	import ExternalLinkIcon from '#lib/components/ExternalLinkIcon.svelte';
 	import { formatDate } from '#lib/formatDate.js';
 	import type { PressItem } from '#lib/server/content.js';
 	import type { PageProps } from './$types';
@@ -15,12 +14,7 @@
 
 {#snippet cardText(item: PressItem, leaveRoomForIcon: boolean)}
 	{#if item.outlet || item.date}
-		<p
-			class={[
-				'mb-1 text-xs font-semibold tracking-wider text-card-meta uppercase',
-				leaveRoomForIcon && 'pr-8'
-			]}
-		>
+		<p class={['mb-1 card-header', leaveRoomForIcon && 'pr-8']}>
 			{[item.outlet, formatDate(item.date)].filter(Boolean).join(' · ')}
 		</p>
 	{/if}
@@ -46,12 +40,7 @@
 					class="group card card-interactive relative block p-6 sm:p-8"
 				>
 					{#if external}
-						<span
-							title="Opens an external site"
-							class="absolute top-5 right-5 text-card-action transition-colors group-hover:text-card-heading"
-						>
-							<Fa icon={faArrowUpRightFromSquare} class="h-4 w-4" />
-						</span>
+						<ExternalLinkIcon href={item.href} class="top-5 right-5" />
 					{/if}
 					{@render cardText(item, external)}
 				</a>

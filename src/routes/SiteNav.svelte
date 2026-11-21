@@ -14,7 +14,6 @@
 		menuOpen = $bindable()
 	}: { siteName: string; sections: Sections; menuOpen: boolean } = $props();
 
-	// Items naming a section are only shown while that section has content.
 	const allNavItems: { href: string; label: string; section?: keyof Sections }[] = [
 		{ href: resolve('/'), label: 'Home' },
 		{ href: resolve('blog'), label: 'Posts', section: 'blog' },
@@ -33,7 +32,6 @@
 	let underlineReady = $state(false);
 	let activeBar = $state({ left: 0, width: 0, top: 0 });
 
-	/** Moves a bar under a link, or hides it when there is no link. Returns whether it is shown. */
 	function placeBar(bar: typeof underline, link: HTMLAnchorElement | undefined): boolean {
 		if (!link) {
 			bar.width = 0;
@@ -63,12 +61,10 @@
 <svelte:window onresize={updateBars} />
 
 <div class="mx-auto flex h-16 max-w-7/10 max-lg:max-w-none items-center justify-between px-4">
-	<!-- Burger menu - left on mobile, hidden on desktop -->
 	<div class="flex md:hidden">
 		<MenuButton label="Toggle navigation menu" bind:open={menuOpen} />
 	</div>
 
-	<!-- Site name - centered on mobile -->
 	<div class="flex items-center gap-6">
 		<a
 			aria-label="Home"
@@ -120,7 +116,6 @@
 		</nav>
 	</div>
 
-	<!-- Theme toggle - right on mobile -->
 	<div class="flex items-center gap-2">
 		<ThemeToggle />
 	</div>

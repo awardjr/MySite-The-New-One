@@ -3,13 +3,10 @@
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import { trackChanges } from '#lib/unsavedChanges.js';
+	import FormRow from '#lib/components/admin/FormRow.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 
-	/**
-	 * The "page headline" editor shared by the admin pages. It posts to the page's
-	 * `saveHeadline` action (see `saveHeadlineAction` in $lib/server/headlineAction.ts).
-	 */
 	let {
 		headline: savedHeadline,
 		subtitle: savedSubtitle,
@@ -20,15 +17,11 @@
 		oninput
 	}: {
 		headline: string;
-		/** Omit for pages that only have a headline. */
 		subtitle?: string;
-		/** Whether the last form submission saved the headline (`form?.headlineSuccess`). */
 		saved?: boolean;
 		headlineLabel?: string;
 		headlinePlaceholder?: string;
-		/** Optional help text under the headline field. */
 		hint?: string;
-		/** Called when either field is edited. */
 		oninput?: () => void;
 	} = $props();
 
@@ -36,7 +29,6 @@
 	let headline = $state(untrack(() => savedHeadline));
 	let subtitle = $state(untrack(() => savedSubtitle ?? ''));
 	const saveForm = pendingForm({ reset: false });
-	// Follows `saved`, but hides again as soon as the fields are edited.
 	let showSaved = $derived(saved);
 
 	function handleInput() {
@@ -52,8 +44,7 @@
 	use:enhance={saveForm.submit}
 	use:trackChanges
 >
-	<div class="space-y-1">
-		<label for="headline" class="text-sm font-medium text-field-label">{headlineLabel}</label>
+	<FormRow id="headline" label={headlineLabel} {hint}>
 		<input
 			id="headline"
 			name="headline"
@@ -62,14 +53,10 @@
 			placeholder={headlinePlaceholder}
 			class="input"
 		/>
-		{#if hint}
-			<p class="text-xs text-form-hint">{hint}</p>
-		{/if}
-	</div>
+	</FormRow>
 
 	{#if hasSubtitle}
-		<div class="space-y-1">
-			<label for="subtitle" class="text-sm font-medium text-field-label">Page subtitle</label>
+		<FormRow id="subtitle" label="Page subtitle">
 			<input
 				id="subtitle"
 				name="subtitle"
@@ -78,7 +65,7 @@
 				placeholder="Short description"
 				class="input"
 			/>
-		</div>
+		</FormRow>
 	{/if}
 
 	<div class="flex flex-wrap items-center gap-3">

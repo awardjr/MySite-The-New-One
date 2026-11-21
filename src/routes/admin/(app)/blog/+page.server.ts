@@ -5,9 +5,7 @@ import { text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	const posts = readContent().blog;
-	const { headline, subtitle } = getHeadlineForPage('blog');
-	return { posts, headline, subtitle };
+	return { posts: readContent().blog, ...getHeadlineForPage('blog') };
 };
 
 export const actions: Actions = {

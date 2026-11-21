@@ -44,10 +44,5 @@
 		</form>
 	{/if}
 
-	<a
-		href={resolve('admin/login')}
-		class="mx-auto mt-6 text-xs text-muted transition-colors hover:text-heading hover:underline"
-	>
-		← Return to Login
-	</a>
+	<a href={resolve('admin/login')} class="mx-auto mt-6 link-subtle"> ← Return to Login </a>
 </section>

@@ -7,7 +7,6 @@
 
 	const emptyPost = {
 		title: '',
-		// Today's date in the visitor's time zone; Canadian English writes dates as YYYY-MM-DD.
 		date: new Date().toLocaleDateString('en-CA'),
 		image: '',
 		preview: '',

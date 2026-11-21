@@ -40,7 +40,7 @@
 				{/if}
 
 				<div class="p-5 sm:p-6">
-					<p class="text-xs font-semibold tracking-wider text-card-meta uppercase">
+					<p class="card-header">
 						{formatDate(post.date)}
 					</p>
 					<h2 class="mt-1 text-xl font-bold text-card-heading sm:text-2xl">

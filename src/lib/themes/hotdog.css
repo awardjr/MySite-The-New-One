@@ -1,5 +1,4 @@
 :root.hotdog {
-	/* Page and typography */
 	--theme-page: var(--color-red-900);
 	--theme-body: var(--color-yellow-100);
 	--theme-heading: var(--color-yellow-500);
@@ -9,7 +8,6 @@
 	--theme-eyebrow: var(--color-yellow-200);
 	--theme-link: var(--color-yellow-200);
 
-	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-yellow-400);
 	--theme-footer: var(--color-red-950);
 	--theme-header: var(--color-red-950);
@@ -25,7 +23,6 @@
 
 	--theme-menu-border: var(--color-yellow-400);
 
-	/* Cards and badges */
 	--theme-card-border: var(--color-black);
 	--theme-card: var(--color-yellow-500);
 	--theme-card-border-hover: var(--color-gray-800);
@@ -42,12 +39,10 @@
 	--theme-badge: var(--color-red-800);
 	--theme-badge-text: var(--color-yellow-500);
 
-	/* Primary buttons */
 	--theme-primary: var(--color-yellow-500);
 	--theme-primary-text: var(--color-black);
 	--theme-primary-hover: var(--color-yellow-400);
 
-	/* Forms and secondary buttons */
 	--theme-field-label: var(--color-yellow-200);
 	--theme-field-border: var(--color-yellow-400);
 	--theme-field: transparent;
@@ -65,7 +60,6 @@
 	--theme-file-button-text: var(--color-black);
 	--theme-file-button-hover: var(--color-yellow-300);
 
-	/* Status and destructive actions */
 	--theme-error: var(--color-amber-300);
 	--theme-success: var(--color-lime-400);
 	--theme-danger-text: var(--color-pink-300);
@@ -74,18 +68,15 @@
 	--theme-danger-heading: var(--color-pink-300);
 	--theme-danger-button-border: var(--color-pink-300);
 
-	/* Photos and image placeholders */
 	--theme-photo-ring: var(--color-yellow-400);
 	--theme-image-placeholder-border: var(--color-red-800);
 	--theme-image-placeholder: var(--color-red-800);
 	--theme-image-placeholder-text: var(--color-yellow-100);
 
-	/* Pinball scores */
 	--theme-score-label: var(--color-red-800);
 	--theme-score-caption: var(--color-yellow-200);
 	--theme-score-value: var(--color-yellow-200);
 
-	/* Lightbox */
 	--theme-overlay: color-mix(in oklab, var(--color-black) 80%, transparent);
 	--theme-overlay-button: color-mix(in oklab, var(--color-white) 10%, transparent);
 	--theme-overlay-text: var(--color-white);

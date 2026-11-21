@@ -5,6 +5,7 @@
 	import Fa from 'svelte-fa';
 	import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
 	import { getIcon } from '#lib/icons.js';
+	import { linkDestination } from '#lib/linkHost.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -27,6 +28,7 @@
 		>
 			{#each links as link, i (i)}
 				{@const { icon, color } = getIcon(link.icon)}
+				{@const destination = linkDestination(link.href)}
 				<a
 					href={link.href}
 					target={link.href.startsWith('http') ? '_blank' : undefined}
@@ -40,7 +42,16 @@
 					>
 						<Fa {icon} class="h-4 w-4" />
 					</span>
-					<span class="font-medium">{link.label}</span>
+					<span class="flex min-w-0 flex-col">
+						<span class="font-medium">{link.label}</span>
+						{#if destination}
+							<span
+								class="truncate text-xs text-card-meta transition-colors duration-200 group-hover:text-white/80"
+							>
+								{destination}
+							</span>
+						{/if}
+					</span>
 					<span
 						class="ml-auto opacity-40 transition duration-200 group-hover:opacity-100 motion-safe:group-hover:translate-x-0.5"
 					>

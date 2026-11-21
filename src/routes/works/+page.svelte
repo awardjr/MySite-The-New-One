@@ -1,9 +1,11 @@
 <script lang="ts">
+	import CardAction from '#lib/components/CardAction.svelte';
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import Fa from 'svelte-fa';
 	import ExternalLinkIcon from '#lib/components/ExternalLinkIcon.svelte';
 	import Thumbnail from '#lib/components/Thumbnail.svelte';
+	import { linkHost } from '#lib/linkHost.js';
 	import { getPlatform } from '#lib/platforms.js';
 	import type { PageProps } from './$types';
 
@@ -44,26 +46,32 @@
 				</div>
 
 				<div class="pointer-events-none relative z-10 flex-1 space-y-3">
-					<h2 class={['text-xl font-semibold text-card-heading', work.link && 'sm:pr-8']}>
+					<h2 class={['text-xl font-bold text-card-heading sm:text-2xl', work.link && 'sm:pr-8']}>
 						{work.title}
 					</h2>
-					<p class="text-lg leading-relaxed text-card-copy">
+					<p class="text-base leading-relaxed text-card-copy">
 						{work.description}
 					</p>
-					<div class="flex flex-wrap gap-2 pt-1">
-						{#each work.platforms as platformKey (platformKey)}
-							{@const platform = getPlatform(platformKey)}
-							{#if platform}
-								<span
-									title={platform.label}
-									aria-label={platform.label}
-									class="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg bg-badge text-badge-text"
-								>
-									<Fa icon={platform.icon} class="h-4 w-4" />
-								</span>
-							{/if}
-						{/each}
-					</div>
+					{#if work.platforms.length}
+						<div class="flex flex-wrap gap-2 pt-1">
+							{#each work.platforms as platformKey (platformKey)}
+								{@const platform = getPlatform(platformKey)}
+								{#if platform}
+									<span
+										title={platform.label}
+										aria-label={platform.label}
+										class="pointer-events-auto flex h-8 w-8 items-center justify-center rounded-lg bg-badge text-badge-text"
+									>
+										<Fa icon={platform.icon} class="h-4 w-4" />
+									</span>
+								{/if}
+							{/each}
+						</div>
+					{/if}
+					{#if work.link}
+						{@const host = linkHost(work.link)}
+						<CardAction>{host ? `Visit ${host}` : 'Visit'}</CardAction>
+					{/if}
 				</div>
 			</div>
 		{/each}

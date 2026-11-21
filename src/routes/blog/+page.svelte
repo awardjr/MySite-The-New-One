@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CardAction from '#lib/components/CardAction.svelte';
 	import CardImage from '#lib/components/CardImage.svelte';
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
@@ -6,7 +7,7 @@
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
-	import { faArrowRight, faRss } from '@fortawesome/free-solid-svg-icons';
+	import { faRss } from '@fortawesome/free-solid-svg-icons';
 
 	let { data }: PageProps = $props();
 	let { posts, siteName, headline, subtitle } = $derived(data);
@@ -51,14 +52,7 @@
 						{post.preview}
 					</p>
 
-					<span
-						class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-card-action transition-colors group-hover:text-card-heading"
-					>
-						Read more
-						<span class="transition-transform duration-200 motion-safe:group-hover:translate-x-1">
-							<Fa icon={faArrowRight} class="h-3 w-3" />
-						</span>
-					</span>
+					<CardAction class="mt-4">Read more</CardAction>
 				</div>
 			</a>
 		{/each}

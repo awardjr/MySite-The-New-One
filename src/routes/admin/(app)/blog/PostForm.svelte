@@ -85,10 +85,9 @@
 		Save as draft (hidden from the public blog)
 	</label>
 
-	<FormStatus error={form?.error} />
-
-	<div class="flex items-center gap-3">
+	<div class="flex flex-wrap items-center gap-3">
 		<SubmitButton pending={saveForm.pending} label={submitLabel} {pendingLabel} />
 		<a class="btn-secondary" href={resolve('admin/blog')}>Cancel</a>
+		<FormStatus error={form?.error} />
 	</div>
 </form>

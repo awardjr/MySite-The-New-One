@@ -2,28 +2,22 @@
 	import { slide } from 'svelte/transition';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { adminSections } from '#lib/adminSections.js';
 	import MenuButton from './MenuButton.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 
 	let { menuOpen = $bindable() }: { menuOpen: boolean } = $props();
 
-	const adminNavItems = [
-		{ href: resolve('admin'), label: 'Dashboard' },
-		{ href: resolve('admin/home'), label: 'Home' },
-		{ href: resolve('admin/blog'), label: 'Blog' },
-		{ href: resolve('admin/contact'), label: 'Contact' },
-		{ href: resolve('admin/works'), label: 'Works' },
-		{ href: resolve('admin/press'), label: 'Press' },
-		{ href: resolve('admin/pinball'), label: 'Pinball' },
-		{ href: resolve('admin/settings'), label: 'Settings' }
-	];
+	const adminNavItems = [{ href: resolve('admin'), label: 'Dashboard' }, ...adminSections];
 
-	let isAuthPage = $derived(
-		page.url.pathname === resolve('admin/login') ||
-			page.url.pathname === resolve('admin/setup') ||
-			page.url.pathname === resolve('admin/forgot-password') ||
-			page.url.pathname === resolve('admin/reset')
-	);
+	// The sign-in pages show no admin menu.
+	const authPages = new Set<string>([
+		resolve('admin/login'),
+		resolve('admin/setup'),
+		resolve('admin/forgot-password'),
+		resolve('admin/reset')
+	]);
+	let isAuthPage = $derived(authPages.has(page.url.pathname));
 
 	function isAdminItemActive(href: string): boolean {
 		return href === resolve('admin')

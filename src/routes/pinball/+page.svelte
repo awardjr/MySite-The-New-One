@@ -1,19 +1,11 @@
 <script lang="ts">
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
-	import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
-	import Fa from 'svelte-fa';
 	import Thumbnail from '#lib/components/Thumbnail.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 	let { machines, headline, subtitle } = $derived(data);
-
-	let expanded: Record<number, boolean> = $state({});
-
-	function toggle(index: number) {
-		expanded[index] = !expanded[index];
-	}
 </script>
 
 <PageMeta title="Pinball" description="Pinball high scores" />
@@ -21,22 +13,17 @@
 <section class="py-6 sm:py-10">
 	<PageHeading {headline} {subtitle} />
 
-	<div class="mt-8 space-y-6">
+	<!-- One machine per row on phones, more on wider screens. Each card lays out by its own width
+	     (the @ classes), putting the image beside the text only when there is room. -->
+	<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 		{#each machines as machine, i (i)}
-			{@const isExpanded = !!expanded[i]}
-			{@const hasMore = !!machine.modeScores && machine.modeScores.length > 0}
-			<div class="card p-5">
-				<div class="flex flex-col gap-5 sm:flex-row sm:items-start">
-					<!-- Image Section -->
-					<div class="flex shrink-0 justify-center sm:justify-start">
-						<Thumbnail src={machine.image} alt={machine.name} />
-					</div>
-
-					<!-- Text Section -->
+			<div class="@container card p-5">
+				<div
+					class="flex flex-col items-center gap-5 text-center @xs:flex-row @xs:items-start @xs:text-left"
+				>
+					<Thumbnail src={machine.image} alt={machine.name} />
 					<div class="flex-1 space-y-3">
-						<h2 class="text-lg font-semibold text-card-heading">
-							{machine.name}
-						</h2>
+						<h2 class="text-lg font-semibold text-card-heading">{machine.name}</h2>
 						<dl>
 							<dt class="text-xs font-semibold tracking-wider text-card-meta uppercase">
 								High Score
@@ -46,44 +33,22 @@
 							</dd>
 						</dl>
 					</div>
-
-					<!-- Expand Toggle -->
-					{#if hasMore}
-						<div class="flex shrink-0 justify-end sm:justify-start">
-							<button
-								type="button"
-								onclick={() => toggle(i)}
-								aria-expanded={isExpanded}
-								class="inline-flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-card-action transition-colors hover:border-card-border-hover hover:bg-card-border"
-							>
-								{isExpanded ? 'Hide Mode High Scores' : 'Show Mode High Scores'}
-								<span
-									class={[
-										'transition-transform duration-200 motion-reduce:transition-none',
-										isExpanded && 'rotate-180'
-									]}
-								>
-									<Fa icon={faChevronDown} class="h-3 w-3" />
-								</span>
-							</button>
-						</div>
-					{/if}
 				</div>
 
-				{#if hasMore && isExpanded}
+				{#if machine.modeScores.length}
 					<div class="mt-4 border-t border-card-border pt-4">
 						<h3 class="text-base font-semibold tracking-wide text-score-label uppercase">
 							Mode High Scores
 						</h3>
-						<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-							{#each machine.modeScores ?? [] as modeScore, j (j)}
+						<div class="mt-3 grid gap-2 @md:grid-cols-2">
+							{#each machine.modeScores as modeScore, j (j)}
 								<div
-									class="flex items-center justify-between rounded-lg bg-badge px-3 py-2 text-sm text-score-caption"
+									class="flex items-center justify-between gap-3 rounded-lg bg-badge px-3 py-2 text-sm text-score-caption"
 								>
 									<span class="text-muted">{modeScore.mode}</span>
-									<span class="font-semibold text-score-value lining-nums tabular-nums"
-										>{modeScore.score}</span
-									>
+									<span class="font-semibold text-score-value lining-nums tabular-nums">
+										{modeScore.score}
+									</span>
 								</div>
 							{/each}
 						</div>

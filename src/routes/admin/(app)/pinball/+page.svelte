@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import type { PinballMachine } from '#lib/server/content.js';
@@ -18,14 +19,9 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Admin - Pinball</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">Pinball</h1>
-<p class="mt-1 text-sm text-muted">
+<AdminHeading title="Pinball">
 	Edit the headline, subtitle, and pinball machines shown on the pinball page.
-</p>
+</AdminHeading>
 
 <ListEditor
 	field="machines"

@@ -10,18 +10,8 @@
 	let { data }: PageProps = $props();
 	let { links, siteName, headline, subtitle } = $derived(data);
 
-	const iconColors: Record<string, string> = {
-		resume: '#475569',
-		email: '#dc2626',
-		phone: '#16a34a',
-		link: '#0d9488',
-		linkedin: '#0a66c2',
-		github: '#24292f',
-		twitch: '#9146ff',
-		youtube: '#e11d48'
-	};
-
 	let hoveredIndex: number | null = $state(null);
+	let hovered = $derived(hoveredIndex === null ? undefined : links[hoveredIndex]);
 </script>
 
 <PageMeta title="Contact" description={siteName ? `Contact ${siteName}` : undefined} />
@@ -36,18 +26,19 @@
 			onmouseleave={() => (hoveredIndex = null)}
 		>
 			{#each links as link, i (i)}
+				{@const { icon, color } = getIcon(link.icon)}
 				<a
 					href={link.href}
 					target={link.href.startsWith('http') ? '_blank' : undefined}
 					rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
-					style:--link-color={iconColors[link.icon] ?? iconColors.link}
+					style:--link-color={color}
 					onmouseenter={() => (hoveredIndex = i)}
 					class="group card card-interactive flex items-center gap-3 px-4 py-3 text-card-label hover:border-transparent hover:bg-(--link-color) hover:text-white"
 				>
 					<span
 						class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-(--link-color) text-white ring-1 ring-white/15 transition-colors duration-200 ring-inset group-hover:bg-white/20"
 					>
-						<Fa icon={getIcon(link.icon)} class="h-4 w-4" />
+						<Fa {icon} class="h-4 w-4" />
 					</span>
 					<span class="font-medium">{link.label}</span>
 					<span
@@ -61,14 +52,14 @@
 
 		<!-- Hover description panel - desktop only -->
 		<div class="hidden lg:block lg:w-2/5 lg:pl-8">
-			{#if hoveredIndex !== null && links[hoveredIndex]?.description}
+			{#if hovered?.description}
 				<div
 					transition:fly={{ duration: 200, x: -40, y: 0 }}
-					style:--link-color={iconColors[links[hoveredIndex].icon] ?? iconColors.link}
+					style:--link-color={getIcon(hovered.icon).color}
 					class="sticky top-24 rounded-xl bg-(--link-color) p-6 text-white shadow-md transition-colors duration-200"
 				>
 					<p class="text-base leading-relaxed">
-						{links[hoveredIndex].description}
+						{hovered.description}
 					</p>
 				</div>
 			{/if}

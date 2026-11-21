@@ -1,14 +1,14 @@
 <script lang="ts">
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import PostForm from '../PostForm.svelte';
 	import type { PageProps } from './$types';
 
 	let { form }: PageProps = $props();
 
-	const today = new Date();
-	const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 	const emptyPost = {
 		title: '',
-		date: todayString,
+		// Today's date in the visitor's time zone; Canadian English writes dates as YYYY-MM-DD.
+		date: new Date().toLocaleDateString('en-CA'),
 		image: '',
 		preview: '',
 		content: '',
@@ -16,11 +16,6 @@
 	};
 </script>
 
-<svelte:head>
-	<title>Admin - New Post</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">New Post</h1>
-<p class="mt-1 text-sm text-muted">Create a new blog post.</p>
+<AdminHeading title="New Post">Create a new blog post.</AdminHeading>
 
 <PostForm post={emptyPost} {form} showSlug submitLabel="Create Post" pendingLabel="Creating…" />

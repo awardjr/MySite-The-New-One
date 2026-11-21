@@ -152,9 +152,8 @@
 
 	<button type="button" onclick={add} class="btn-add">{addLabel}</button>
 
-	<FormStatus error={form?.error} saved={showSaved && (form?.notice ?? true)} />
-
-	<div>
+	<div class="flex flex-wrap items-center gap-3">
 		<SubmitButton pending={saveForm.pending} />
+		<FormStatus error={form?.error} saved={showSaved && (form?.notice ?? true)} />
 	</div>
 </form>

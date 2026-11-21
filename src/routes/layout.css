@@ -21,6 +21,11 @@
 .page-scroller {
 	--footer-height: 0px;
 	--footer-visible: 0px;
+	/*
+	 * Always keeps room for the scrollbar, so content doesn't shift sideways when a page starts or
+	 * stops scrolling. Reserving it on both sides keeps the content centred under the header.
+	 */
+	scrollbar-gutter: stable both-edges;
 	background: linear-gradient(
 			to top,
 			var(--color-footer) calc(var(--footer-height) - 1px),
@@ -100,6 +105,10 @@
 
 @utility input-auth {
 	@apply w-full rounded-lg border border-field-border bg-field px-3 py-2 text-field-text-explicit focus:border-field-focus focus:outline-none;
+}
+
+@utility input-lg {
+	@apply w-full rounded-lg border border-field-border bg-field px-4 py-2.5 text-base text-field-text focus:outline-none;
 }
 
 @utility btn-primary {

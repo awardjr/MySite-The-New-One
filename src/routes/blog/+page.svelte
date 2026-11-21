@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CardImage from '#lib/components/CardImage.svelte';
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { formatDate } from '#lib/formatDate.js';
@@ -35,15 +36,7 @@
 				class="group card card-interactive block overflow-hidden"
 			>
 				{#if post.image}
-					<div class="h-48 overflow-hidden border-b border-card-border sm:h-64">
-						<img
-							src={post.image}
-							loading="lazy"
-							decoding="async"
-							alt={post.title}
-							class="h-full w-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
-						/>
-					</div>
+					<CardImage src={post.image} alt={post.title} class="sm:h-64" />
 				{/if}
 
 				<div class="p-5 sm:p-6">

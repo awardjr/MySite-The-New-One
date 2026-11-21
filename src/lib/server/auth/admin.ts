@@ -2,7 +2,7 @@ import { db } from '../db';
 import { generateRecoveryKey, hashSecret, normalizeRecoveryKey, verifySecret } from './secrets';
 
 /** The single admin account (row id 1) and the secrets that unlock it. */
-export interface AdminUserRow {
+interface AdminUserRow {
 	username: string;
 	email: string;
 	password_hash: string;
@@ -123,18 +123,13 @@ export async function checkCredentials(
 	return idMatches && passwordMatches;
 }
 
-/** Sets (or updates) the stored recovery key for the admin user. */
-export async function setRecoveryKey(key: string): Promise<void> {
+/** Replaces the recovery key with a freshly generated one and returns it, to be shown once. */
+export async function rotateRecoveryKey(): Promise<string> {
+	const key = generateRecoveryKey();
 	updateRecoveryKeyStmt.run({
 		recoveryKeyHash: await hashSecret(normalizeRecoveryKey(key)),
 		updatedAt: new Date().toISOString()
 	});
-}
-
-/** Replaces the recovery key with a freshly generated one and returns it, to be shown once. */
-export async function rotateRecoveryKey(): Promise<string> {
-	const key = generateRecoveryKey();
-	await setRecoveryKey(key);
 	return key;
 }
 

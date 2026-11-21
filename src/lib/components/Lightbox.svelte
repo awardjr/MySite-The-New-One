@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { faXmark } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
-	import { getLightbox, closeLightbox } from '#lib/lightbox.svelte.js';
+	import { closeLightbox, lightbox } from '#lib/lightbox.svelte.js';
 
-	const lightbox = getLightbox();
 	let dialog: HTMLDialogElement | undefined = $state();
 
 	// A modal <dialog> keeps keyboard focus inside, closes on Escape, and returns focus afterwards.

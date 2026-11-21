@@ -1,76 +1,45 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 
-export interface SendEmailOptions {
+/** An environment variable, with a blank value treated as unset. */
+function env(key: string): string | undefined {
+	return process.env[key] || undefined;
+}
+
+/** A true/false environment variable ("true" or "1" is true), or undefined when unset. */
+function envFlag(key: string): boolean | undefined {
+	const value = env(key);
+	return value === undefined ? undefined : value === 'true' || value === '1';
+}
+
+/** A mail transport built from the SMTP_* environment variables, or null if SMTP isn't set up. */
+export function getEmailTransporter(): Transporter | null {
+	const service = env('SMTP_SERVICE');
+	const host = env('SMTP_HOST');
+	if (!service && !host) return null;
+
+	const port = Number.parseInt(env('SMTP_PORT') ?? '', 10) || 587;
+	const user = env('SMTP_USER');
+	const pass = env('SMTP_PASS');
+	return nodemailer.createTransport({
+		// A named service (such as "gmail") brings its own host, port and TLS settings.
+		...(service ? { service } : { host, port, secure: envFlag('SMTP_SECURE') ?? port === 465 }),
+		...(user || pass ? { auth: { user: user ?? '', pass: pass ?? '' } } : {}),
+		requireTLS: envFlag('SMTP_REQUIRE_TLS'),
+		ignoreTLS: envFlag('SMTP_IGNORE_TLS')
+	});
+}
+
+/** Sends an email over SMTP, or prints it to the server log when SMTP isn't set up. */
+export async function sendEmail(options: {
 	to: string;
 	subject: string;
 	text: string;
 	html?: string;
-}
-
-/**
- * Returns an environment variable from process.env.
- */
-function getEnv(key: string): string | undefined {
-	return process.env[key] || undefined;
-}
-
-/**
- * Creates and returns a Nodemailer transporter instance if SMTP is configured.
- */
-export function getEmailTransporter(): Transporter | null {
-	const host = getEnv('SMTP_HOST');
-	const service = getEnv('SMTP_SERVICE');
-	const user = getEnv('SMTP_USER');
-	const pass = getEnv('SMTP_PASS');
-	const portRaw = getEnv('SMTP_PORT');
-	const secureRaw = getEnv('SMTP_SECURE');
-
-	if (!host && !service) {
-		return null;
-	}
-
-	const port = portRaw ? Number.parseInt(portRaw, 10) : 587;
-	const secure = secureRaw !== undefined ? secureRaw === 'true' || secureRaw === '1' : port === 465;
-
-	const config: Record<string, unknown> = {};
-
-	if (service) {
-		config.service = service;
-	} else if (host) {
-		config.host = host;
-		config.port = Number.isNaN(port) ? 587 : port;
-		config.secure = secure;
-	}
-
-	if (user || pass) {
-		config.auth = {
-			user: user ?? '',
-			pass: pass ?? ''
-		};
-	}
-
-	const requireTlsRaw = getEnv('SMTP_REQUIRE_TLS');
-	if (requireTlsRaw !== undefined) {
-		config.requireTLS = requireTlsRaw === 'true' || requireTlsRaw === '1';
-	}
-
-	const ignoreTlsRaw = getEnv('SMTP_IGNORE_TLS');
-	if (ignoreTlsRaw !== undefined) {
-		config.ignoreTLS = ignoreTlsRaw === 'true' || ignoreTlsRaw === '1';
-	}
-
-	return nodemailer.createTransport(config);
-}
-
-/**
- * Sends an email using SMTP transport when configured, or logs to console when no SMTP server is configured.
- */
-export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
+}): Promise<boolean> {
 	const transporter = getEmailTransporter();
 
 	if (!transporter) {
-		// Standardized email delivery notification in server logs for local dev/testing
 		console.info(
 			`\n============================================================\n` +
 				`[EMAIL DISPATCH (LOCAL / NO SMTP)]\n` +
@@ -83,15 +52,10 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
 		return true;
 	}
 
-	const from = getEnv('SMTP_FROM') || getEnv('SMTP_USER') || 'noreply@localhost';
-
 	try {
 		await transporter.sendMail({
-			from,
-			to: options.to,
-			subject: options.subject,
-			text: options.text,
-			html: options.html
+			from: env('SMTP_FROM') || env('SMTP_USER') || 'noreply@localhost',
+			...options
 		});
 		return true;
 	} catch (error) {
@@ -100,11 +64,8 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
 	}
 }
 
-/**
- * Sends a password reset link to the specified admin email address.
- */
+/** Sends a password reset link to the admin's email address. */
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<boolean> {
-	const subject = 'Password Reset Request';
 	const text =
 		`Hello,\n\n` +
 		`A request was received to reset your admin password.\n\n` +
@@ -121,5 +82,5 @@ export async function sendPasswordResetEmail(to: string, resetUrl: string): Prom
 		`<p>This link will expire in 15 minutes and can only be used once.</p>` +
 		`<p>If you did not request a password reset, you can safely ignore this message.</p>`;
 
-	return sendEmail({ to, subject, text, html });
+	return sendEmail({ to, subject: 'Password Reset Request', text, html });
 }

@@ -1,28 +1,32 @@
-import type { Editor, EditorConfig, FileLoader, UploadAdapter } from 'ckeditor5';
+import type { Editor, EditorConfig } from 'ckeditor5';
 import { uploadImage } from '#lib/uploadImage.js';
 
-class ImageUploadAdapter implements UploadAdapter {
-	private loader: FileLoader;
+// Toolbar buttons in order; `|` separates groups.
+const compactToolbar =
+	'undo redo | heading | bold italic | bulletedList numberedList | link insertImage';
+const fullToolbar =
+	'undo redo | sourceEditing showBlocks findAndReplace selectAll | heading | ' +
+	'bold italic underline strikethrough subscript superscript code removeFormat | alignment | ' +
+	'bulletedList numberedList | outdent indent | link insertImage insertTable blockQuote ' +
+	'codeBlock horizontalLine specialCharacters emoji highlight';
+const imageToolbar =
+	'imageTextAlternative toggleImageCaption | ' +
+	'imageStyle:inline imageStyle:wrapText imageStyle:breakText | resizeImage | linkImage';
 
-	constructor(loader: FileLoader) {
-		this.loader = loader;
-	}
-
-	async upload(): Promise<{ default: string }> {
-		const file = await this.loader.file;
-		if (!file) throw new Error('No file provided.');
-		try {
-			return { default: await uploadImage(file) };
-		} catch (err) {
-			// CKEditor shows the rejection value itself as the warning, so it must be a string.
-			throw err instanceof Error ? err.message : 'Upload failed.';
-		}
-	}
-}
-
+/** Sends images added in the editor through the site's own upload endpoint. */
 function uploadPlugin(editor: Editor) {
-	editor.plugins.get('FileRepository').createUploadAdapter = (loader) =>
-		new ImageUploadAdapter(loader);
+	editor.plugins.get('FileRepository').createUploadAdapter = (loader) => ({
+		async upload() {
+			const file = await loader.file;
+			if (!file) throw new Error('No file provided.');
+			try {
+				return { default: await uploadImage(file) };
+			} catch (err) {
+				// CKEditor shows the rejection value itself as the warning, so it must be a string.
+				throw err instanceof Error ? err.message : 'Upload failed.';
+			}
+		}
+	});
 }
 
 /** Builds the editor's settings. `compact` gives phones a smaller feature set and toolbar. */
@@ -91,60 +95,7 @@ export function buildEditorConfig(
 		root: { placeholder },
 		plugins: compact ? compactPlugins : fullPlugins,
 		toolbar: {
-			items: compact
-				? [
-						'undo',
-						'redo',
-						'|',
-						'heading',
-						'|',
-						'bold',
-						'italic',
-						'|',
-						'bulletedList',
-						'numberedList',
-						'|',
-						'link',
-						'insertImage'
-					]
-				: [
-						'undo',
-						'redo',
-						'|',
-						'sourceEditing',
-						'showBlocks',
-						'findAndReplace',
-						'selectAll',
-						'|',
-						'heading',
-						'|',
-						'bold',
-						'italic',
-						'underline',
-						'strikethrough',
-						'subscript',
-						'superscript',
-						'code',
-						'removeFormat',
-						'|',
-						'alignment',
-						'|',
-						'bulletedList',
-						'numberedList',
-						'|',
-						'outdent',
-						'indent',
-						'|',
-						'link',
-						'insertImage',
-						'insertTable',
-						'blockQuote',
-						'codeBlock',
-						'horizontalLine',
-						'specialCharacters',
-						'emoji',
-						'highlight'
-					],
+			items: (compact ? compactToolbar : fullToolbar).split(' '),
 			shouldNotGroupWhenFull: true
 		},
 		heading: {
@@ -156,18 +107,7 @@ export function buildEditorConfig(
 			]
 		},
 		image: {
-			toolbar: [
-				'imageTextAlternative',
-				'toggleImageCaption',
-				'|',
-				'imageStyle:inline',
-				'imageStyle:wrapText',
-				'imageStyle:breakText',
-				'|',
-				'resizeImage',
-				'|',
-				'linkImage'
-			],
+			toolbar: imageToolbar.split(' '),
 			insert: {
 				integrations: ['upload', 'url']
 			}

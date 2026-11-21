@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { pendingForm } from '#lib/pendingForm.svelte.js';
-	import FormStatus from '#lib/components/admin/FormStatus.svelte';
-	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import { resolve } from '$app/paths';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import Field from '#lib/components/admin/Field.svelte';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -51,23 +52,17 @@
 		</p>
 
 		<form method="POST" class="mt-6 space-y-4" use:enhance={loginForm.submit}>
-			<div class="space-y-1">
-				<label for="code" class="text-sm font-medium text-copy"> Authentication code </label>
-				<!-- svelte-ignore a11y_autofocus -->
-				<input
-					id="code"
-					name="code"
-					type="text"
-					required
-					autofocus
-					autocomplete="one-time-code"
-					autocapitalize="characters"
-					spellcheck="false"
-					maxlength="32"
-					class="input-auth font-mono tracking-widest"
-				/>
-			</div>
-
+			<Field
+				id="code"
+				label="Authentication code"
+				required
+				autofocus
+				autocomplete="one-time-code"
+				autocapitalize="characters"
+				spellcheck="false"
+				maxlength={32}
+				class="font-mono tracking-widest"
+			/>
 			<FormStatus error={form?.error} />
 
 			<SubmitButton
@@ -95,18 +90,13 @@
 		{/if}
 
 		<form method="POST" class="mt-6 space-y-4" use:enhance={loginForm.submit}>
-			<div class="space-y-1">
-				<label for="username" class="text-sm font-medium text-copy"> Username or Email </label>
-				<input
-					id="username"
-					name="username"
-					type="text"
-					required
-					autocomplete="username"
-					value={form?.username ?? ''}
-					class="input-auth"
-				/>
-			</div>
+			<Field
+				id="username"
+				label="Username or Email"
+				required
+				autocomplete="username"
+				value={form?.username ?? ''}
+			/>
 
 			<div class="space-y-1">
 				<div class="flex items-center justify-between">

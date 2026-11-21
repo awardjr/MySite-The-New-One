@@ -19,14 +19,6 @@ export function verifyResetToken(token: string | undefined | null): boolean {
 	return resetTokens.isValid(token);
 }
 
-/** Consumes (deletes) a valid password reset token. */
-export function consumePasswordResetToken(token: string): boolean {
-	if (!resetTokens.isValid(token)) return false;
-	resetTokens.remove(token);
-	resetTokens.removeExpired();
-	return true;
-}
-
 /** Deletes all pending reset tokens. */
 export function invalidateAllResetTokens(): void {
 	resetTokens.removeAll();
@@ -63,9 +55,9 @@ export async function requestEmailPasswordReset(
  * goes through the normal login afterwards, so two-factor authentication still applies.
  */
 export async function resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
-	// Consume the token before the slow hash, so the same link can't be redeemed twice at once.
-	if (!consumePasswordResetToken(token)) return false;
-	// A newer link may be on its way while an earlier one is used; neither should work afterwards.
+	if (!resetTokens.isValid(token)) return false;
+	// Every link is used up before the slow hash, so the same link can't be redeemed twice at once.
+	// That includes newer ones: a link may still be on its way while an earlier one is used.
 	invalidateAllResetTokens();
 	await setAdminPassword(newPassword);
 	invalidateAllSessions();

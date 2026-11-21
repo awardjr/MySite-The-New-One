@@ -18,7 +18,7 @@ const ALLOWED_MIME_TO_EXTENSION: Record<string, string> = {
 	'image/svg+xml': 'svg'
 };
 
-export const EXTENSION_TO_MIME: Record<string, string> = {
+const EXTENSION_TO_MIME: Record<string, string> = {
 	...Object.fromEntries(
 		Object.entries(ALLOWED_MIME_TO_EXTENSION).map(([mime, extension]) => [extension, mime])
 	),
@@ -57,69 +57,17 @@ export function resolveUploadPath(
 // uploaded SVG is run through a strict allowlist before it's written to
 // static/uploads/, which is served from the same origin.
 const svgSanitizeOptions: sanitizeHtml.IOptions = {
-	allowedTags: [
-		'svg',
-		'g',
-		'path',
-		'circle',
-		'ellipse',
-		'line',
-		'polyline',
-		'polygon',
-		'rect',
-		'text',
-		'tspan',
-		'defs',
-		'clipPath',
-		'linearGradient',
-		'radialGradient',
-		'stop',
-		'title',
-		'desc',
-		'use',
-		'symbol',
-		'mask',
-		'pattern'
-	],
+	allowedTags: (
+		'svg g path circle ellipse line polyline polygon rect text tspan defs clipPath ' +
+		'linearGradient radialGradient stop title desc use symbol mask pattern'
+	).split(' '),
 	allowedAttributes: {
-		'*': [
-			'id',
-			'class',
-			'viewBox',
-			'width',
-			'height',
-			'fill',
-			'fill-rule',
-			'fill-opacity',
-			'stroke',
-			'stroke-width',
-			'stroke-linecap',
-			'stroke-linejoin',
-			'stroke-opacity',
-			'clip-rule',
-			'opacity',
-			'transform',
-			'd',
-			'cx',
-			'cy',
-			'r',
-			'rx',
-			'ry',
-			'x',
-			'y',
-			'x1',
-			'x2',
-			'y1',
-			'y2',
-			'points',
-			'offset',
-			'stop-color',
-			'stop-opacity',
-			'gradientUnits',
-			'gradientTransform',
-			'preserveAspectRatio',
-			'xmlns'
-		]
+		'*': (
+			'id class viewBox width height fill fill-rule fill-opacity stroke stroke-width ' +
+			'stroke-linecap stroke-linejoin stroke-opacity clip-rule opacity transform d cx cy r ' +
+			'rx ry x y x1 x2 y1 y2 points offset stop-color stop-opacity gradientUnits ' +
+			'gradientTransform preserveAspectRatio xmlns'
+		).split(' ')
 	},
 	// No href/xlink:href support at all, which also removes any javascript: URI vector.
 	allowedSchemes: [],

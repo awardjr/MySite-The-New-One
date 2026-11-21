@@ -3,6 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import { trackChanges } from '#lib/unsavedChanges.js';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
@@ -21,21 +22,16 @@
 	let featuredWorks = $state(untrack(() => [...data.home.featuredWorks]));
 
 	const saveForm = pendingForm({ reset: false });
-	let showSaved = $derived(!!(form && form.success));
+	let showSaved = $derived(!!form?.success);
 
 	function clearSaved() {
 		showSaved = false;
 	}
 </script>
 
-<svelte:head>
-	<title>Admin - Home</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">Home Page</h1>
-<p class="mt-1 text-sm text-muted">
+<AdminHeading title="Home Page">
 	Edit the headline, photo, name, tagline, and intro text shown on the homepage.
-</p>
+</AdminHeading>
 
 <HeadlineForm
 	headline={data.headline}
@@ -114,7 +110,8 @@
 		emptyText="No works yet."
 	/>
 
-	<FormStatus error={form?.error} saved={showSaved} />
-
-	<SubmitButton pending={saveForm.pending} />
+	<div class="flex flex-wrap items-center gap-3">
+		<SubmitButton pending={saveForm.pending} />
+		<FormStatus error={form?.error} saved={showSaved} />
+	</div>
 </form>

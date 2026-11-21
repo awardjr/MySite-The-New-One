@@ -1,17 +1,23 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import { pendingForm } from '#lib/pendingForm.svelte.js';
-	import FormStatus from '#lib/components/admin/FormStatus.svelte';
-	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import { resolve } from '$app/paths';
+	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import Field from '#lib/components/admin/Field.svelte';
+	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import NewPasswordFields from '#lib/components/admin/NewPasswordFields.svelte';
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import type { PageProps } from './$types';
 
 	let { form }: PageProps = $props();
 
 	const emailForm = pendingForm();
 	const codeForm = pendingForm();
-	let activeTab = $state<'email' | 'code'>('email');
+	const tabs = [
+		{ id: 'email', label: 'Email Reset Link' },
+		{ id: 'code', label: 'Emergency Code' }
+	] as const;
+	let activeTab: (typeof tabs)[number]['id'] = $state('email');
 </script>
 
 <svelte:head>
@@ -20,33 +26,24 @@
 
 <section class="mx-auto flex max-w-md flex-col justify-center py-16">
 	<h1 class="text-2xl font-bold tracking-tight text-heading">Reset Password</h1>
-
 	<p class="mt-1 text-sm text-muted">Choose how you would like to reset your admin password.</p>
-	<!-- Tabs for selecting recovery method -->
+
 	<div class="mt-6 grid grid-cols-2 gap-2 rounded-lg border border-card-border bg-page p-1">
-		<button
-			type="button"
-			onclick={() => (activeTab = 'email')}
-			class="rounded-md py-1.5 text-sm font-medium transition-colors {activeTab === 'email'
-				? 'bg-card font-semibold text-heading shadow-sm'
-				: 'text-muted hover:text-heading'}"
-		>
-			Email Reset Link
-		</button>
-		<button
-			type="button"
-			onclick={() => (activeTab = 'code')}
-			class="rounded-md py-1.5 text-sm font-medium transition-colors {activeTab === 'code'
-				? 'bg-card font-semibold text-heading shadow-sm'
-				: 'text-muted hover:text-heading'}"
-		>
-			Emergency Code
-		</button>
+		{#each tabs as tab (tab.id)}
+			<button
+				type="button"
+				onclick={() => (activeTab = tab.id)}
+				class="rounded-md py-1.5 text-sm transition-colors {activeTab === tab.id
+					? 'bg-card font-semibold text-heading shadow-sm'
+					: 'font-medium text-muted hover:text-heading'}"
+			>
+				{tab.label}
+			</button>
+		{/each}
 	</div>
 
-	<!-- Option 1: Email Reset Link -->
-	{#if activeTab === 'email'}
-		<div class="card mt-6 p-6">
+	<div class="card mt-6 p-6">
+		{#if activeTab === 'email'}
 			<h2 class="text-base font-semibold text-heading">Email a Reset Link</h2>
 			<p class="mt-1 text-xs text-muted">
 				Enter your admin username or email address and we will send a password reset link to your
@@ -65,23 +62,14 @@
 					class="mt-4 space-y-4"
 					use:enhance={emailForm.submit}
 				>
-					<div class="space-y-1">
-						<label for="identifier" class="text-sm font-medium text-copy">
-							Username or Email
-						</label>
-						<input
-							id="identifier"
-							name="identifier"
-							type="text"
-							required
-							autocomplete="username"
-							placeholder="admin or admin@example.com"
-							class="input-auth"
-						/>
-					</div>
-
+					<Field
+						id="identifier"
+						label="Username or Email"
+						required
+						autocomplete="username"
+						placeholder="admin or admin@example.com"
+					/>
 					<FormStatus error={form?.emailError} />
-
 					<SubmitButton
 						pending={emailForm.pending}
 						label="Send Reset Link"
@@ -90,12 +78,7 @@
 					/>
 				</form>
 			{/if}
-		</div>
-	{/if}
-
-	<!-- Option 2: Emergency Code -->
-	{#if activeTab === 'code'}
-		<div class="card mt-6 p-6">
+		{:else}
 			<h2 class="text-base font-semibold text-heading">Reset with Emergency Code</h2>
 			<p class="mt-1 text-xs text-muted">
 				Enter the 16-character recovery code generated when your account was configured.
@@ -125,51 +108,16 @@
 					class="mt-4 space-y-4"
 					use:enhance={codeForm.submit}
 				>
-					<div class="space-y-1">
-						<label for="recoveryKey" class="text-sm font-medium text-copy">
-							Emergency recovery code
-						</label>
-						<input
-							id="recoveryKey"
-							name="recoveryKey"
-							type="text"
-							required
-							placeholder="XXXX-XXXX-XXXX-XXXX"
-							autocomplete="off"
-							class="input-auth font-mono uppercase"
-						/>
-					</div>
-
-					<div class="space-y-1">
-						<label for="newPassword" class="text-sm font-medium text-copy"> New password </label>
-						<input
-							id="newPassword"
-							name="newPassword"
-							type="password"
-							required
-							minlength="8"
-							autocomplete="new-password"
-							class="input-auth"
-						/>
-					</div>
-
-					<div class="space-y-1">
-						<label for="confirmPassword" class="text-sm font-medium text-copy">
-							Confirm new password
-						</label>
-						<input
-							id="confirmPassword"
-							name="confirmPassword"
-							type="password"
-							required
-							minlength="8"
-							autocomplete="new-password"
-							class="input-auth"
-						/>
-					</div>
-
+					<Field
+						id="recoveryKey"
+						label="Emergency recovery code"
+						required
+						placeholder="XXXX-XXXX-XXXX-XXXX"
+						autocomplete="off"
+						class="font-mono uppercase"
+					/>
+					<NewPasswordFields />
 					<FormStatus error={form?.error} />
-
 					<SubmitButton
 						pending={codeForm.pending}
 						label="Reset Password"
@@ -178,15 +126,13 @@
 					/>
 				</form>
 			{/if}
-		</div>
-	{/if}
-
-	<div class="mt-6 text-center">
-		<a
-			href={resolve('admin/login')}
-			class="text-xs text-muted transition-colors hover:text-heading hover:underline"
-		>
-			← Return to Login
-		</a>
+		{/if}
 	</div>
+
+	<a
+		href={resolve('admin/login')}
+		class="mx-auto mt-6 text-xs text-muted transition-colors hover:text-heading hover:underline"
+	>
+		← Return to Login
+	</a>
 </section>

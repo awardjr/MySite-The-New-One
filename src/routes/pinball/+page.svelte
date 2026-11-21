@@ -2,6 +2,7 @@
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import Thumbnail from '#lib/components/Thumbnail.svelte';
+	import Flippers from './Flippers.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -13,16 +14,16 @@
 <section class="py-6 sm:py-10">
 	<PageHeading {headline} {subtitle} />
 
-	<!-- One machine per row on phones, more on wider screens. Each card lays out by its own width
-	     (the @ classes), putting the image beside the text only when there is room. -->
-	<div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+	<!-- Each card starts at the width of its content, and the cards on a row grow to fill it, so
+	     widths vary. Large screens use three equal columns instead. Either way, every card is only
+	     as tall as its own content. -->
+	<div class="mt-8 flex flex-wrap items-start gap-6 lg:grid lg:grid-cols-3">
 		{#each machines as machine, i (i)}
-			<div class="@container card p-5">
-				<div
-					class="flex flex-col items-center gap-5 text-center @xs:flex-row @xs:items-start @xs:text-left"
-				>
+			<div class="card max-w-xl flex-auto p-5">
+				<!-- The text drops below the image when the card is too narrow for both. -->
+				<div class="flex flex-wrap justify-center gap-5">
 					<Thumbnail src={machine.image} alt={machine.name} />
-					<div class="flex-1 space-y-3">
+					<div class="min-w-48 flex-auto space-y-3">
 						<h2 class="text-lg font-semibold text-card-heading">{machine.name}</h2>
 						<dl>
 							<dt class="text-xs font-semibold tracking-wider text-card-meta uppercase">
@@ -40,7 +41,7 @@
 						<h3 class="text-base font-semibold tracking-wide text-score-label uppercase">
 							Mode High Scores
 						</h3>
-						<div class="mt-3 grid gap-2 @md:grid-cols-2">
+						<div class="mt-3 grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-2">
 							{#each machine.modeScores as modeScore, j (j)}
 								<div
 									class="flex items-center justify-between gap-3 rounded-lg bg-badge px-3 py-2 text-sm text-score-caption"
@@ -57,4 +58,6 @@
 			</div>
 		{/each}
 	</div>
+
+	<Flippers />
 </section>

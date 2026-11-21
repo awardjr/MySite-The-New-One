@@ -15,6 +15,9 @@ const https =
 export default defineConfig({
 	server: { https },
 	preview: { https },
+	build: {
+		rolldownOptions: { output: { comments: { legal: true } } }
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({
@@ -35,7 +38,17 @@ export default defineConfig({
 					'style-src': ['self', 'unsafe-inline'],
 					'img-src': ['self', 'data:', 'https:'],
 					'font-src': ['self', 'data:'],
-					'connect-src': ['self'],
+					'connect-src': ['self', 'https://public.api.bsky.app'],
+					'frame-src': [
+						'https://www.youtube.com',
+						'https://player.vimeo.com',
+						'https://www.dailymotion.com',
+						'https://geo.dailymotion.com',
+						'https://open.spotify.com',
+						'https://player.twitch.tv',
+						'https://clips.twitch.tv',
+						'https://embed.bsky.app'
+					],
 					'frame-ancestors': ['none'],
 					'base-uri': ['self'],
 					'form-action': ['self']

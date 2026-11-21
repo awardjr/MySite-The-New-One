@@ -237,6 +237,15 @@
 		margin-right: 0;
 	}
 
+	.post-content :global(figure.media) {
+		clear: both;
+		margin: 1.25rem 0;
+	}
+
+	.post-content :global(figure.media iframe) {
+		border-radius: 0.5rem;
+	}
+
 	.post-content::after {
 		content: '';
 		display: block;

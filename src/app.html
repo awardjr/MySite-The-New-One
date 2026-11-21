@@ -15,6 +15,15 @@
 				if (theme !== 'light') document.documentElement.classList.add(theme);
 			} catch {}
 		</script>
+		<script nonce="%sveltekit.nonce%">
+			addEventListener('message', (event) => {
+				const height = event.data?.height;
+				if (event.origin !== 'https://embed.bsky.app' || typeof height !== 'number') return;
+				for (const frame of document.querySelectorAll('iframe')) {
+					if (frame.contentWindow === event.source) frame.style.height = `${height}px`;
+				}
+			});
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover" class="bg-page text-body antialiased min-h-screen">

@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { readContent } from '#lib/server/content.js';
+import { readContent, renderPostHtml } from '#lib/server/content.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ params, locals }) => {
+export const load: PageServerLoad = ({ params, locals, url }) => {
 	const post = readContent().blog.find((p) => p.slug === params.slug);
 
 	// Draft posts are only visible to the logged-in admin, so they can be previewed
@@ -11,5 +11,5 @@ export const load: PageServerLoad = ({ params, locals }) => {
 		error(404, 'Post not found');
 	}
 
-	return { post };
+	return { post: { ...post, content: renderPostHtml(post.content, url.hostname) } };
 };

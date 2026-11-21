@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import { iconOptions } from '#lib/icons.js';
 	import type { ContactLink } from '#lib/server/content.js';
@@ -8,14 +9,9 @@
 	let { data, form }: PageProps = $props();
 </script>
 
-<svelte:head>
-	<title>Admin - Contact</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">Contact Links</h1>
-<p class="mt-1 text-sm text-muted">
+<AdminHeading title="Contact Links">
 	Edit the headline, subtitle, and links shown on the contact page.
-</p>
+</AdminHeading>
 
 <ListEditor
 	field="links"

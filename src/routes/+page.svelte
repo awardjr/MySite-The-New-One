@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CardImage from '#lib/components/CardImage.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
 	import { formatDate } from '#lib/formatDate.js';
@@ -61,15 +62,7 @@
 )}
 	<a {href} class="group card card-interactive flex flex-col overflow-hidden">
 		{#if image}
-			<div class="h-48 overflow-hidden border-b border-card-border">
-				<img
-					src={image}
-					loading="lazy"
-					decoding="async"
-					alt={title}
-					class="h-full w-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-[1.03]"
-				/>
-			</div>
+			<CardImage src={image} alt={title} />
 		{/if}
 		<div class="p-5">
 			{#if meta}

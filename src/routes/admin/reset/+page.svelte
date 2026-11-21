@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { resolve } from '$app/paths';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
+	import NewPasswordFields from '#lib/components/admin/NewPasswordFields.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
-	import { resolve } from '$app/paths';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -22,49 +23,18 @@
 	{#if !data.valid}
 		<div class="card mt-6 p-6">
 			<p class="text-sm text-error">This password reset link is invalid or has expired.</p>
-			<div class="mt-4">
-				<a
-					href={resolve('admin/forgot-password')}
-					class="btn-primary inline-block w-full text-center"
-				>
-					Request New Reset Link
-				</a>
-			</div>
+			<a
+				href={resolve('admin/forgot-password')}
+				class="btn-primary mt-4 inline-block w-full text-center"
+			>
+				Request New Reset Link
+			</a>
 		</div>
 	{:else}
 		<form method="POST" class="mt-6 space-y-4" use:enhance={resetForm.submit}>
 			<input type="hidden" name="token" value={data.token} />
-
-			<div class="space-y-1">
-				<label for="newPassword" class="text-sm font-medium text-copy"> New password </label>
-				<input
-					id="newPassword"
-					name="newPassword"
-					type="password"
-					required
-					minlength="8"
-					autocomplete="new-password"
-					class="input-auth"
-				/>
-			</div>
-
-			<div class="space-y-1">
-				<label for="confirmPassword" class="text-sm font-medium text-copy">
-					Confirm new password
-				</label>
-				<input
-					id="confirmPassword"
-					name="confirmPassword"
-					type="password"
-					required
-					minlength="8"
-					autocomplete="new-password"
-					class="input-auth"
-				/>
-			</div>
-
+			<NewPasswordFields />
 			<FormStatus error={form?.error} />
-
 			<SubmitButton
 				pending={resetForm.pending}
 				label="Update Password"
@@ -74,12 +44,10 @@
 		</form>
 	{/if}
 
-	<div class="mt-6 text-center">
-		<a
-			href={resolve('admin/login')}
-			class="text-xs text-muted transition-colors hover:text-heading hover:underline"
-		>
-			← Return to Login
-		</a>
-	</div>
+	<a
+		href={resolve('admin/login')}
+		class="mx-auto mt-6 text-xs text-muted transition-colors hover:text-heading hover:underline"
+	>
+		← Return to Login
+	</a>
 </section>

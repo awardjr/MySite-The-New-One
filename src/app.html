@@ -1,25 +1,20 @@
 <!doctype html>
 <html lang="en">
 	<head>
+		<title>Arthur Ward Jr</title>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="text-scale" content="scale" />
 		<script nonce="%sveltekit.nonce%">
 			try {
-				const storedTheme = localStorage.getItem('theme');
-				const theme =
-					storedTheme === 'dark' || storedTheme === 'hotdog'
-						? storedTheme
-						: storedTheme === 'light'
-							? 'light'
-							: window.matchMedia('(prefers-color-scheme: dark)').matches
-								? 'dark'
-								: 'light';
-				document.documentElement.classList.remove('dark', 'hotdog');
-				if (theme !== 'light') {
-					document.documentElement.classList.add(theme);
-				}
-			} catch (_) {}
+				const saved = localStorage.getItem('theme');
+				const theme = ['light', 'dark', 'hotdog'].includes(saved)
+					? saved
+					: matchMedia('(prefers-color-scheme: dark)').matches
+						? 'dark'
+						: 'light';
+				if (theme !== 'light') document.documentElement.classList.add(theme);
+			} catch {}
 		</script>
 		%sveltekit.head%
 	</head>

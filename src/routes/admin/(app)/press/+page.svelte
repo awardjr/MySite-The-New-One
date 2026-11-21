@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import type { PressItem } from '#lib/server/content.js';
 	import type { PageProps } from './$types';
@@ -7,14 +8,9 @@
 	let { data, form }: PageProps = $props();
 </script>
 
-<svelte:head>
-	<title>Admin - Press</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">Press</h1>
-<p class="mt-1 text-sm text-muted">
+<AdminHeading title="Press">
 	Edit the headline, subtitle, and press mentions shown on the press page.
-</p>
+</AdminHeading>
 
 <ListEditor
 	field="items"

@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import PostForm from '../PostForm.svelte';
 	import type { PageProps } from './$types';
@@ -11,12 +12,7 @@
 	const deleteForm = pendingForm();
 </script>
 
-<svelte:head>
-	<title>Admin - Edit Post</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">Edit Post</h1>
-<p class="mt-1 text-sm text-muted">/{data.post.slug}</p>
+<AdminHeading title="Edit Post">/{data.post.slug}</AdminHeading>
 <a
 	class="mt-2 inline-block text-sm font-medium text-link hover:underline"
 	href={resolve('/blog/[slug]', { slug: data.post.slug })}

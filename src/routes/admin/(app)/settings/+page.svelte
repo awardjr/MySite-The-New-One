@@ -2,9 +2,10 @@
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
-	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
-	import SettingsField from './SettingsField.svelte';
+	import Field from '#lib/components/admin/Field.svelte';
+	import NewPasswordFields from '#lib/components/admin/NewPasswordFields.svelte';
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
+	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -14,6 +15,34 @@
 	const recoveryForm = pendingForm({ reset: false });
 	const twoFactorForm = pendingForm();
 </script>
+
+<!-- The proofs of identity the forms below ask for before a sensitive change. -->
+{#snippet currentPassword(id: string, label = 'Current password', className = '')}
+	<Field
+		{id}
+		name="currentPassword"
+		{label}
+		large
+		type="password"
+		required
+		autocomplete="current-password"
+		class={className}
+	/>
+{/snippet}
+
+{#snippet secondFactorCode(id: string, label = 'Authentication or recovery code', className = '')}
+	<Field
+		{id}
+		name="code"
+		{label}
+		large
+		required
+		autocomplete="one-time-code"
+		spellcheck="false"
+		maxlength={32}
+		class={['font-mono tracking-widest', className]}
+	/>
+{/snippet}
 
 <svelte:head>
 	<title>Admin - Settings</title>
@@ -40,20 +69,18 @@
 			use:enhance={profileForm.submit}
 		>
 			<div class="grid gap-5 sm:grid-cols-2">
-				<SettingsField
-					label="Username"
+				<Field
 					id="username"
-					name="username"
-					type="text"
+					label="Username"
+					large
 					required
 					autocomplete="username"
 					value={data.username}
 				/>
-
-				<SettingsField
-					label="Email address"
+				<Field
 					id="email"
-					name="email"
+					label="Email address"
+					large
 					type="email"
 					required
 					autocomplete="email"
@@ -62,38 +89,22 @@
 			</div>
 
 			<div class="grid gap-5 sm:grid-cols-2">
-				<SettingsField
-					label="Current password (required to change your profile)"
-					id="profileCurrentPassword"
-					name="currentPassword"
-					type="password"
-					required
-					autocomplete="current-password"
-				/>
-
+				{@render currentPassword(
+					'profileCurrentPassword',
+					'Current password (required to change your profile)'
+				)}
 				{#if data.twoFactorEnabled}
-					<SettingsField
-						label="Authentication or recovery code"
-						id="profileTwoFactorCode"
-						name="code"
-						type="text"
-						required
-						autocomplete="one-time-code"
-						spellcheck="false"
-						maxlength={32}
-						class="font-mono tracking-widest"
-					/>
+					{@render secondFactorCode('profileTwoFactorCode')}
 				{/if}
 			</div>
 
-			<FormStatus
-				large
-				error={form?.profileError}
-				saved={form?.profileSuccess && 'Profile updated successfully.'}
-			/>
-
-			<div>
+			<div class="flex flex-wrap items-center gap-3">
 				<SubmitButton pending={profileForm.pending} label="Save Profile" class="btn-primary-lg" />
+				<FormStatus
+					large
+					error={form?.profileError}
+					saved={form?.profileSuccess && 'Profile updated successfully.'}
+				/>
 			</div>
 		</form>
 	</section>
@@ -113,49 +124,22 @@
 			class="mt-6 space-y-5"
 			use:enhance={passwordForm.submit}
 		>
-			<SettingsField
-				label="Current password"
-				id="currentPassword"
-				name="currentPassword"
-				type="password"
-				required
-				autocomplete="current-password"
-			/>
-
+			{@render currentPassword('currentPassword')}
 			<div class="grid gap-5 sm:grid-cols-2">
-				<SettingsField
-					label="New password"
-					id="newPassword"
-					name="newPassword"
-					type="password"
-					required
-					minlength={8}
-					autocomplete="new-password"
-				/>
-
-				<SettingsField
-					label="Confirm new password"
-					id="confirmPassword"
-					name="confirmPassword"
-					type="password"
-					required
-					minlength={8}
-					autocomplete="new-password"
-				/>
+				<NewPasswordFields large />
 			</div>
 
-			<FormStatus
-				large
-				error={form?.passwordError}
-				saved={form?.passwordSuccess && 'Password updated successfully.'}
-			/>
-
-			<div>
+			<div class="flex flex-wrap items-center gap-3">
 				<SubmitButton
 					pending={passwordForm.pending}
 					label="Update Password"
 					pendingLabel="Updating…"
 					class="btn-primary-lg"
+				/>
+				<FormStatus
+					large
+					error={form?.passwordError}
+					saved={form?.passwordSuccess && 'Password updated successfully.'}
 				/>
 			</div>
 		</form>
@@ -204,36 +188,18 @@
 				use:enhance={twoFactorForm.submit}
 			>
 				<div class="grid gap-5 sm:grid-cols-2">
-					<SettingsField
-						label="Current password"
-						id="disableTwoFactorPassword"
-						name="currentPassword"
-						type="password"
-						required
-						autocomplete="current-password"
-					/>
-					<SettingsField
-						label="Authentication or recovery code"
-						id="disableTwoFactorCode"
-						name="code"
-						type="text"
-						required
-						autocomplete="one-time-code"
-						spellcheck="false"
-						maxlength={32}
-						class="font-mono tracking-widest"
-					/>
+					{@render currentPassword('disableTwoFactorPassword')}
+					{@render secondFactorCode('disableTwoFactorCode')}
 				</div>
 
-				<FormStatus large error={form?.twoFactorError} saved={form?.twoFactorSuccess} />
-
-				<div>
+				<div class="flex flex-wrap items-center gap-3">
 					<SubmitButton
 						pending={twoFactorForm.pending}
 						label="Turn Off Two-Factor Authentication"
 						pendingLabel="Turning off…"
 						class="btn-secondary-lg"
 					/>
+					<FormStatus large error={form?.twoFactorError} saved={form?.twoFactorSuccess} />
 				</div>
 			</form>
 		{:else if data.twoFactorSetup}
@@ -265,11 +231,11 @@
 				class="mt-6 space-y-5"
 				use:enhance={twoFactorForm.submit}
 			>
-				<SettingsField
-					label="Authentication code"
+				<Field
 					id="confirmTwoFactorCode"
 					name="code"
-					type="text"
+					label="Authentication code"
+					large
 					required
 					inputmode="numeric"
 					autocomplete="one-time-code"
@@ -277,8 +243,6 @@
 					maxlength={32}
 					class="max-w-xs font-mono tracking-widest"
 				/>
-
-				<FormStatus large error={form?.twoFactorError} />
 
 				<div class="flex flex-wrap items-center gap-3">
 					<SubmitButton
@@ -297,6 +261,7 @@
 					>
 						Cancel
 					</button>
+					<FormStatus large error={form?.twoFactorError} />
 				</div>
 			</form>
 		{:else}
@@ -306,19 +271,13 @@
 				class="mt-6 space-y-5"
 				use:enhance={twoFactorForm.submit}
 			>
-				<SettingsField
-					label="Current password (required to set up two-factor authentication)"
-					id="startTwoFactorPassword"
-					name="currentPassword"
-					type="password"
-					required
-					autocomplete="current-password"
-					class="max-w-md"
-				/>
+				{@render currentPassword(
+					'startTwoFactorPassword',
+					'Current password (required to set up two-factor authentication)',
+					'max-w-md'
+				)}
 
-				<FormStatus large error={form?.twoFactorError} saved={form?.twoFactorSuccess} />
-
-				<div>
+				<div class="flex flex-wrap items-center gap-3">
 					<SubmitButton
 						pending={twoFactorForm.pending}
 						label="Set Up Two-Factor Authentication"
@@ -326,6 +285,7 @@
 						disabled={!data.twoFactorKeyConfigured}
 						class="btn-primary-lg"
 					/>
+					<FormStatus large error={form?.twoFactorError} saved={form?.twoFactorSuccess} />
 				</div>
 			</form>
 		{/if}
@@ -357,38 +317,27 @@
 			class="mt-6 space-y-5"
 			use:enhance={recoveryForm.submit}
 		>
-			<SettingsField
-				label="Current password (required to generate new code)"
-				id="recoveryCurrentPassword"
-				name="currentPassword"
-				type="password"
-				required
-				autocomplete="current-password"
-				class="max-w-md"
-			/>
-
+			{@render currentPassword(
+				'recoveryCurrentPassword',
+				'Current password (required to generate new code)',
+				'max-w-md'
+			)}
 			{#if data.twoFactorEnabled}
-				<SettingsField
-					label="Authentication code (required because two-factor authentication is on)"
-					id="recoveryTwoFactorCode"
-					name="code"
-					type="text"
-					required
-					inputmode="text"
-					autocomplete="one-time-code"
-					class="max-w-xs font-mono tracking-widest"
-				/>
+				{@render secondFactorCode(
+					'recoveryTwoFactorCode',
+					'Authentication code (required because two-factor authentication is on)',
+					'max-w-xs'
+				)}
 			{/if}
 
-			<FormStatus large error={form?.recoveryError} />
-
-			<div>
+			<div class="flex flex-wrap items-center gap-3">
 				<SubmitButton
 					pending={recoveryForm.pending}
 					label="Generate New Recovery Code"
 					pendingLabel="Generating…"
 					class="btn-secondary-lg"
 				/>
+				<FormStatus large error={form?.recoveryError} />
 			</div>
 		</form>
 	</section>

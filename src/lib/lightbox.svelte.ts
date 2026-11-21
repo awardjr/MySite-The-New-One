@@ -1,23 +1,11 @@
-let src = $state('');
-let alt = $state('');
+/** The image shown enlarged over the page; an empty `src` means the lightbox is closed. */
+export const lightbox = $state({ src: '', alt: '' });
 
-export function openLightbox(imageSrc: string, imageAlt: string = '') {
-	src = imageSrc;
-	alt = imageAlt;
+export function openLightbox(src: string, alt: string = '') {
+	lightbox.src = src;
+	lightbox.alt = alt;
 }
 
 export function closeLightbox() {
-	src = '';
-	alt = '';
-}
-
-export function getLightbox() {
-	return {
-		get src() {
-			return src;
-		},
-		get alt() {
-			return alt;
-		}
-	};
+	openLightbox('');
 }

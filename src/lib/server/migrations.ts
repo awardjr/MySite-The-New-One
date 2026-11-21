@@ -6,17 +6,7 @@ const migrationModules = import.meta.glob('./migrations/*.sql', {
 	import: 'default'
 }) as Record<string, string>;
 
-interface Migration {
-	name: string;
-	sql: string;
-}
-
-function loadMigrations(): Migration[] {
-	return Object.entries(migrationModules)
-		.map(([filePath, sql]) => ({ name: filePath.split('/').pop() ?? filePath, sql }))
-		.sort((a, b) => a.name.localeCompare(b.name));
-}
-
+/** Applies, in file name order, each migration in ./migrations that hasn't been applied yet. */
 export function runMigrations(db: Database.Database): void {
 	db.exec(`
 		CREATE TABLE IF NOT EXISTS migrations (
@@ -25,22 +15,17 @@ export function runMigrations(db: Database.Database): void {
 		);
 	`);
 
-	const applied = new Set(
-		db
-			.prepare('SELECT name FROM migrations')
-			.all()
-			.map((row) => (row as { name: string }).name)
-	);
-
+	const applied = new Set(db.prepare('SELECT name FROM migrations').pluck().all());
 	const markApplied = db.prepare('INSERT INTO migrations (name, applied_at) VALUES (?, ?)');
+	const migrations = Object.entries(migrationModules)
+		.map(([filePath, sql]) => ({ name: filePath.split('/').pop() ?? filePath, sql }))
+		.sort((a, b) => a.name.localeCompare(b.name));
 
-	for (const migration of loadMigrations()) {
-		if (applied.has(migration.name)) continue;
-
-		const applyMigration = db.transaction(() => {
-			db.exec(migration.sql);
-			markApplied.run(migration.name, new Date().toISOString());
-		});
-		applyMigration();
+	for (const { name, sql } of migrations) {
+		if (applied.has(name)) continue;
+		db.transaction(() => {
+			db.exec(sql);
+			markApplied.run(name, new Date().toISOString());
+		})();
 	}
 }

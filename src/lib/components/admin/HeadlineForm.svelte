@@ -81,9 +81,8 @@
 		</div>
 	{/if}
 
-	<div>
+	<div class="flex flex-wrap items-center gap-3">
 		<SubmitButton pending={saveForm.pending} />
+		<FormStatus saved={showSaved} />
 	</div>
 </form>
-
-<FormStatus saved={showSaved} class="mt-2" />

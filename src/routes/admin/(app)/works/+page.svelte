@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import ListEditor from '#lib/components/admin/ListEditor.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import { platforms } from '#lib/platforms.js';
@@ -9,27 +10,14 @@
 	let { data, form }: PageProps = $props();
 
 	function togglePlatform(item: WorkItem, key: string, checked: boolean) {
-		if (checked) {
-			if (!item.platforms.includes(key)) {
-				item.platforms.push(key);
-			}
-		} else {
-			const idx = item.platforms.indexOf(key);
-			if (idx !== -1) {
-				item.platforms.splice(idx, 1);
-			}
-		}
+		const others = item.platforms.filter((platform) => platform !== key);
+		item.platforms = checked ? [...others, key] : others;
 	}
 </script>
 
-<svelte:head>
-	<title>Admin - Works</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">Works</h1>
-<p class="mt-1 text-sm text-muted">
+<AdminHeading title="Works">
 	Edit the headline, subtitle, and works shown on the works page.
-</p>
+</AdminHeading>
 
 <ListEditor
 	field="items"

@@ -14,10 +14,29 @@ import {
 } from './content/blog';
 import { getPageHeadlines, upsertPageHeadline } from './content/pageheadlines';
 import type { PressItem } from './content/press';
-import type { SiteContent } from './content/types';
 
-export type * from './content/types';
+export type * from './content/home';
+export type * from './content/contact';
+export type * from './content/works';
+export type * from './content/press';
+export type * from './content/pinball';
+export type * from './content/blog';
+export type * from './content/pageheadlines';
 export { sanitizePostHtml } from './content/utils';
+
+function loadContent() {
+	return {
+		home: getHome(),
+		contact: getContact(),
+		works: getWorks(),
+		press: getPress(),
+		pinball: getPinball(),
+		blog: getBlog(),
+		pageHeadlines: getPageHeadlines()
+	};
+}
+
+export type SiteContent = ReturnType<typeof loadContent>;
 
 /** Sections saved as a whole. Blog posts and page headlines are saved one at a time. */
 type SectionKey = Exclude<keyof SiteContent, 'blog' | 'pageHeadlines'>;
@@ -35,18 +54,7 @@ const sectionSetters: { [K in SectionKey]: (value: SiteContent[K]) => void } = {
 let cache: SiteContent | null = null;
 
 export function readContent(): SiteContent {
-	if (cache) return cache;
-
-	cache = {
-		home: getHome(),
-		contact: getContact(),
-		works: getWorks(),
-		press: getPress(),
-		pinball: getPinball(),
-		blog: getBlog(),
-		pageHeadlines: getPageHeadlines()
-	};
-
+	cache ??= loadContent();
 	return cache;
 }
 

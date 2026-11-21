@@ -10,13 +10,15 @@ const KEY_LENGTH = 32;
 let cachedPassphrase: string | undefined;
 let cachedKey: Buffer | undefined;
 
-function getEncryptionPassphrase(): string | undefined {
-	return process.env[ENCRYPTION_KEY_ENV] || undefined;
+/** The configured passphrase, if it is long enough to use. */
+function usablePassphrase(): string | undefined {
+	const passphrase = process.env[ENCRYPTION_KEY_ENV];
+	return passphrase && Buffer.byteLength(passphrase) >= KEY_LENGTH ? passphrase : undefined;
 }
 
 function getEncryptionKey(): Buffer {
-	const passphrase = getEncryptionPassphrase();
-	if (!passphrase || Buffer.byteLength(passphrase) < KEY_LENGTH) {
+	const passphrase = usablePassphrase();
+	if (!passphrase) {
 		throw new Error(`${ENCRYPTION_KEY_ENV} must be set to at least 32 bytes.`);
 	}
 
@@ -29,8 +31,7 @@ function getEncryptionKey(): Buffer {
 
 /** Returns whether a sufficiently long encryption passphrase is available. */
 export function isEncryptionKeyConfigured(): boolean {
-	const passphrase = getEncryptionPassphrase();
-	return Boolean(passphrase && Buffer.byteLength(passphrase) >= KEY_LENGTH);
+	return usablePassphrase() !== undefined;
 }
 
 /** Encrypts a secret using AES-256-GCM with a fresh random nonce. */

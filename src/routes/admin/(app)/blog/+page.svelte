@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
 	import { enhance } from '$app/forms';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import HeadlineForm from '#lib/components/admin/HeadlineForm.svelte';
@@ -12,14 +13,9 @@
 	const deletingSlugs = new SvelteSet<string>();
 </script>
 
-<svelte:head>
-	<title>Admin - Posts</title>
-</svelte:head>
-
-<h1 class="text-2xl font-bold tracking-tight text-heading">Blog Posts</h1>
-<p class="mt-1 text-sm text-muted">
+<AdminHeading title="Blog Posts">
 	Edit the page headline, subtitle, and posts shown on the public blog.
-</p>
+</AdminHeading>
 
 <HeadlineForm
 	headline={data.headline}

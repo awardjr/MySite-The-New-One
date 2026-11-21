@@ -1,4 +1,5 @@
 import sanitizeHtml from 'sanitize-html';
+import { mediaPlayer, playerHtml } from '#lib/mediaEmbed.js';
 
 export function parseJsonArray<T>(raw: string): T[] {
 	try {
@@ -14,10 +15,12 @@ const CSS_TEXT_ALIGN = /^(left|right|center|justify)$/;
 
 const postSanitizeOptions: sanitizeHtml.IOptions = {
 	// Everything else the editor can produce (headings, u, s, figure, tables, ...) is
-	// already part of the sanitize-html defaults.
-	allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img'],
+	// already part of the sanitize-html defaults. `oembed` is the editor's placeholder for
+	// embedded media, which `renderPostHtml` turns into the player.
+	allowedTags: [...sanitizeHtml.defaults.allowedTags, 'img', 'oembed'],
 	allowedAttributes: {
 		...sanitizeHtml.defaults.allowedAttributes,
+		oembed: ['url'],
 		img: ['src', 'alt', 'title', 'class', 'width', 'height', 'loading', 'decoding', 'style'],
 		a: ['href', 'name', 'target', 'rel', 'class'],
 		ol: ['class', 'start', 'reversed', 'style'],
@@ -65,4 +68,18 @@ const postSanitizeOptions: sanitizeHtml.IOptions = {
 
 export function sanitizePostHtml(dirty: string): string {
 	return sanitizeHtml(dirty, postSanitizeOptions);
+}
+
+// `sanitizePostHtml` writes every `<oembed>` in exactly this form.
+const OEMBED = /<oembed url="([^"]*)"><\/oembed>/g;
+
+/**
+ * Saved post HTML as the public page shows it: each `<oembed>` becomes its provider's player.
+ * `hostname` is the site's own, which some players (Twitch) need to agree to load.
+ */
+export function renderPostHtml(html: string, hostname: string): string {
+	return html.replace(OEMBED, (_tag, url: string) => {
+		const player = mediaPlayer(url.replaceAll('&amp;', '&'), hostname);
+		return player ? playerHtml(player) : '';
+	});
 }

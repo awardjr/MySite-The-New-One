@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseJsonArray, sanitizePostHtml } from '#lib/server/content/utils.js';
+import { parseJsonArray, renderPostHtml, sanitizePostHtml } from '#lib/server/content/utils.js';
 
 describe('parseJsonArray', () => {
 	it('parses a valid JSON array', () => {
@@ -123,9 +123,75 @@ describe('sanitizePostHtml', () => {
 	});
 
 	it('strips editor features the public page cannot render', () => {
-		expect(
-			sanitizePostHtml('<figure class="media"><oembed url="https://x.test"></oembed></figure>')
-		).toBe('<figure class="media"></figure>');
 		expect(sanitizePostHtml('<label><input type="checkbox">Task</label>')).toBe('Task');
+	});
+
+	it('keeps media embeds for the post page to render', () => {
+		const html = '<figure class="media"><oembed url="https://youtu.be/abc"></oembed></figure>';
+		expect(sanitizePostHtml(html)).toBe(html);
+		expect(sanitizePostHtml('<oembed url="https://youtu.be/abc" onload="alert(1)"></oembed>')).toBe(
+			'<oembed url="https://youtu.be/abc"></oembed>'
+		);
+	});
+});
+
+describe('renderPostHtml', () => {
+	const render = (url: string) =>
+		renderPostHtml(sanitizePostHtml(`<oembed url="${url}"></oembed>`), 'example.com');
+
+	it.each([
+		[
+			'https://www.youtube.com/watch?v=abc_-1&t=42',
+			'https://www.youtube.com/embed/abc_-1?start=42'
+		],
+		['https://youtu.be/abc', 'https://www.youtube.com/embed/abc'],
+		['https://www.youtube.com/shorts/abc', 'https://www.youtube.com/embed/abc'],
+		['https://vimeo.com/123456', 'https://player.vimeo.com/video/123456'],
+		['https://www.dailymotion.com/video/x8abc', 'https://www.dailymotion.com/embed/video/x8abc'],
+		['https://open.spotify.com/track/abc', 'https://open.spotify.com/embed/track/abc'],
+		[
+			'https://www.twitch.tv/some_channel',
+			'https://player.twitch.tv/?channel=some_channel&amp;parent=example.com&amp;autoplay=false'
+		],
+		[
+			'https://www.twitch.tv/videos/123456',
+			'https://player.twitch.tv/?video=123456&amp;parent=example.com&amp;autoplay=false'
+		],
+		[
+			'https://www.twitch.tv/some_channel/clip/Funny-Clip_1',
+			'https://clips.twitch.tv/embed?clip=Funny-Clip_1&amp;parent=example.com&amp;autoplay=false'
+		],
+		[
+			'https://bsky.app/profile/did:plc:z72i7hdynmk6r22z27h6tvur/post/3n2ozugncr22j',
+			'https://embed.bsky.app/embed/did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3n2ozugncr22j?colorMode=system'
+		],
+		[
+			'https://clips.twitch.tv/Funny-Clip_1',
+			'https://clips.twitch.tv/embed?clip=Funny-Clip_1&amp;parent=example.com&amp;autoplay=false'
+		]
+	])('turns %s into its player', (url, src) => {
+		const html = render(url);
+		expect(html).toMatch(/^<iframe [^>]*><\/iframe>$/);
+		expect(html).toContain(`src="${src}"`);
+		expect(html).toContain('allowfullscreen=""');
+	});
+
+	it.each([
+		'https://evil.test/video',
+		'javascript:alert(1)',
+		'https://www.youtube.com.evil.test/watch?v=a',
+		'https://www.twitch.tv/directory/category/chess',
+		// By handle: the editor swaps in the DID before saving, which the embed needs.
+		'https://bsky.app/profile/bsky.app/post/3n2ozugncr22j'
+	])('removes the unsupported embed %s', (url) => {
+		expect(render(url)).toBe('');
+	});
+
+	it('leaves the rest of the post untouched', () => {
+		const html =
+			'<p>a &amp; b</p><figure class="media"><oembed url="https://vimeo.com/1"></oembed></figure>';
+		expect(renderPostHtml(html, 'example.com')).toMatch(
+			/^<p>a &amp; b<\/p><figure class="media"><iframe [^>]*><\/iframe><\/figure>$/
+		);
 	});
 });

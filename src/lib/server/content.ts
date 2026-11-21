@@ -22,7 +22,7 @@ export type * from './content/press';
 export type * from './content/pinball';
 export type * from './content/blog';
 export type * from './content/pageheadlines';
-export { sanitizePostHtml } from './content/utils';
+export { renderPostHtml, sanitizePostHtml } from './content/utils';
 
 function loadContent() {
 	return {

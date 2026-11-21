@@ -1,14 +1,15 @@
 import type { Editor, EditorConfig } from 'ckeditor5';
+import { mediaProviders, playerAttributes, playerHtml } from '#lib/mediaEmbed.js';
 import { uploadImage } from '#lib/uploadImage.js';
 
 // Toolbar buttons in order; `|` separates groups.
 const compactToolbar =
-	'undo redo | heading | bold italic | bulletedList numberedList | link insertImage';
+	'undo redo | heading | bold italic | bulletedList numberedList | link insertImage mediaEmbed';
 const fullToolbar =
 	'undo redo | sourceEditing showBlocks findAndReplace selectAll | heading | ' +
 	'bold italic underline strikethrough subscript superscript code removeFormat | alignment | ' +
-	'bulletedList numberedList | outdent indent | link insertImage insertTable blockQuote ' +
-	'codeBlock horizontalLine specialCharacters emoji highlight';
+	'bulletedList numberedList | outdent indent | link insertImage mediaEmbed insertTable blockQuote ' +
+	'codeBlock horizontalLine highlight';
 const imageToolbar =
 	'imageTextAlternative toggleImageCaption | ' +
 	'imageStyle:inline imageStyle:wrapText imageStyle:breakText | resizeImage | linkImage';
@@ -24,6 +25,62 @@ function uploadPlugin(editor: Editor) {
 			} catch (err) {
 				// CKEditor shows the rejection value itself as the warning, so it must be a string.
 				throw err instanceof Error ? err.message : 'Upload failed.';
+			}
+		}
+	});
+}
+
+// Shared Bluesky links name the author's handle, but the embed needs their DID.
+const BLUESKY_HANDLE_URL = /^(?:https?:\/\/)?(?:www\.)?bsky\.app\/profile\/([\w.-]+)\/post\/(\w+)/;
+const didForHandle = new Map<string, Promise<string>>();
+
+function resolveBlueskyHandle(handle: string): Promise<string> {
+	let did = didForHandle.get(handle);
+	if (!did) {
+		did = fetch(
+			`https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(handle)}`
+		)
+			.then((res) => (res.ok ? res.json() : Promise.reject(new Error(`HTTP ${res.status}`))))
+			.then(({ did }: { did?: unknown }) => {
+				if (typeof did !== 'string' || !did.startsWith('did:')) throw new Error('No DID returned');
+				return did;
+			});
+		// Forget failures, so the next time the post is opened tries again.
+		did.catch(() => didForHandle.delete(handle));
+		didForHandle.set(handle, did);
+	}
+	return did;
+}
+
+/**
+ * Rewrites embedded Bluesky links from the author's handle to their DID, which the embed needs
+ * (and which, unlike a handle, never changes). Runs for media inserted, edited or loaded.
+ */
+function blueskyDidPlugin(editor: Editor) {
+	const { model } = editor;
+	model.document.on('change:data', () => {
+		for (const change of model.document.differ.getChanges()) {
+			const range =
+				change.type === 'insert'
+					? model.createRange(change.position, change.position.getShiftedBy(change.length))
+					: change.type === 'attribute' && change.attributeKey === 'url'
+						? change.range
+						: null;
+			for (const item of range?.getItems() ?? []) {
+				if (!item.is('element', 'media')) continue;
+				const url = item.getAttribute('url');
+				const match = typeof url === 'string' ? url.match(BLUESKY_HANDLE_URL) : null;
+				if (!match) continue;
+				const [, handle, rkey] = match;
+				resolveBlueskyHandle(handle).then(
+					(did) => {
+						if (!item.isAttached() || item.getAttribute('url') !== url) return;
+						model.enqueueChange({ isUndoable: false }, (writer) => {
+							writer.setAttribute('url', `https://bsky.app/profile/${did}/post/${rkey}`, item);
+						});
+					},
+					(err) => console.error(`Could not look up the Bluesky account ${handle}:`, err)
+				);
 			}
 		}
 	});
@@ -48,6 +105,8 @@ export function buildEditorConfig(
 		ck.Italic,
 		ck.Link,
 		ck.List,
+		ck.MediaEmbed,
+		blueskyDidPlugin,
 		ck.Paragraph,
 		ck.RemoveFormat,
 		ck.WordCount,
@@ -61,7 +120,6 @@ export function buildEditorConfig(
 		ck.BlockQuote,
 		ck.Code,
 		ck.CodeBlock,
-		ck.Emoji,
 		ck.FindAndReplace,
 		ck.Highlight,
 		ck.HorizontalLine,
@@ -77,8 +135,6 @@ export function buildEditorConfig(
 		ck.SelectAll,
 		ck.ShowBlocks,
 		ck.SourceEditing,
-		ck.SpecialCharacters,
-		ck.SpecialCharactersEssentials,
 		ck.Strikethrough,
 		ck.Subscript,
 		ck.Superscript,
@@ -111,6 +167,19 @@ export function buildEditorConfig(
 			insert: {
 				integrations: ['upload', 'url']
 			}
+		},
+		// Replaces CKEditor's own list, so URLs the post page could not play are refused. A
+		// Bluesky link by handle is accepted too, and shows a placeholder until its DID is in.
+		mediaEmbed: {
+			providers: [
+				...mediaProviders.map((provider) => ({
+					name: provider.name,
+					url: provider.url,
+					html: (match: RegExpMatchArray) =>
+						playerHtml(playerAttributes(provider, match, location.hostname))
+				})),
+				{ name: 'Bluesky', url: BLUESKY_HANDLE_URL }
+			]
 		},
 		table: {
 			contentToolbar: ['tableColumn', 'tableRow', 'mergeTableCells']

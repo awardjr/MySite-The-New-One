@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 
-	/** The result line of an admin form: an error, or a brief confirmation. */
 	let {
 		error,
 		saved,
@@ -9,9 +8,7 @@
 		class: className
 	}: {
 		error?: string;
-		/** Shows a confirmation: "Saved." when true, or this text. */
 		saved?: boolean | string;
-		/** Matches the larger text of the settings page. */
 		large?: boolean;
 		class?: string;
 	} = $props();

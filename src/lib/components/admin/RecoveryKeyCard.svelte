@@ -10,7 +10,6 @@
 		recoveryKey: string;
 		title?: string;
 		class?: string;
-		/** Optional explanation shown under the code. */
 		children?: Snippet;
 	} = $props();
 
@@ -24,7 +23,7 @@
 				copied = false;
 			}, 2000);
 		} catch {
-			// Clipboard API not available
+			copied = false;
 		}
 	}
 </script>

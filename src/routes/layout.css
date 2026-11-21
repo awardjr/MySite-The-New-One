@@ -21,10 +21,6 @@
 .page-scroller {
 	--footer-height: 0px;
 	--footer-visible: 0px;
-	/*
-	 * Always keeps room for the scrollbar, so content doesn't shift sideways when a page starts or
-	 * stops scrolling. Reserving it on both sides keeps the content centred under the header.
-	 */
 	scrollbar-gutter: stable both-edges;
 	background: linear-gradient(
 			to top,
@@ -35,12 +31,6 @@
 		local;
 }
 
-/*
- * Chromium paints a `local` background only inside the scrollbar, so the version above doesn't
- * reach under it there. In browsers other than Firefox the layout adds this class and keeps
- * `--footer-visible` at the height of the footer currently on screen, painted on a background
- * that stays put.
- */
 .page-scroller.footer-band {
 	background: linear-gradient(
 		to top,
@@ -129,6 +119,14 @@
 
 @utility btn-remove {
 	@apply rounded-lg border border-field-border px-3 py-1.5 text-sm text-danger-text transition-colors hover:bg-danger-hover disabled:opacity-60;
+}
+
+@utility card-header {
+	@apply text-xs font-semibold tracking-wider text-card-meta uppercase;
+}
+
+@utility link-subtle {
+	@apply text-xs text-muted transition-colors hover:text-heading hover:underline;
 }
 
 @utility btn-add {

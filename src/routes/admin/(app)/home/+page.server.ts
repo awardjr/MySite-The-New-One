@@ -1,7 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { readContent, updateSection, getHeadlineForPage } from '#lib/server/content.js';
 import { saveHeadlineAction } from '#lib/server/headlineAction.js';
-import { text } from '#lib/server/forms.js';
+import { raw, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -28,7 +28,7 @@ export const actions: Actions = {
 		const name = text(formData.get('name'));
 		const tagline = text(formData.get('tagline'));
 		const photoSrc = text(formData.get('photoSrc'));
-		const introParagraphs = String(formData.get('introParagraphs') ?? '')
+		const introParagraphs = raw(formData, 'introParagraphs')
 			.split(/\n\s*\n/)
 			.map((paragraph) => paragraph.trim())
 			.filter(Boolean);

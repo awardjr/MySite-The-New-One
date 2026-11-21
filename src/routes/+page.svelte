@@ -66,7 +66,7 @@
 		{/if}
 		<div class="p-5">
 			{#if meta}
-				<p class="mb-1 text-xs font-semibold tracking-wider text-card-meta uppercase">{meta}</p>
+				<p class="mb-1 card-header">{meta}</p>
 			{/if}
 			<h3 class="line-clamp-2 text-lg font-semibold text-card-heading">{title}</h3>
 			<p class="mt-2 line-clamp-3 text-base text-card-copy">{body}</p>

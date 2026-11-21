@@ -1,4 +1,6 @@
 const MAX_ATTEMPTS = 5;
+
+export const LOCKED_MESSAGE = 'Too many attempts. Please try again later.';
 const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
 // Above this many tracked addresses, expired records are swept to limit memory use.
 const MAX_TRACKED_ADDRESSES = 1000;

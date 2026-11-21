@@ -11,13 +11,14 @@ import {
 	invalidateAllResetTokens,
 	invalidateAllSessions,
 	isTotpEnabled,
-	isValidEmail,
+	LOCKED_MESSAGE,
 	rotateRecoveryKey,
 	setAdminPassword,
 	startSession,
 	startTotpSetup,
 	updateAdminProfile,
 	validateNewPassword,
+	validateProfile,
 	verifySecondFactor
 } from '#lib/server/auth.js';
 import { readContent } from '#lib/server/content.js';
@@ -102,12 +103,9 @@ export const actions: Actions = {
 		const username = text(formData.get('username'));
 		const email = text(formData.get('email'));
 
-		if (!username) {
-			return fail(400, { profileError: 'Username cannot be blank.' });
-		}
-
-		if (!email || !isValidEmail(email)) {
-			return fail(400, { profileError: 'Please provide a valid email address.' });
+		const profileError = validateProfile(username, email);
+		if (profileError) {
+			return fail(400, { profileError });
 		}
 
 		// The email address receives password reset links, so changing it needs the same proof of
@@ -189,7 +187,7 @@ export const actions: Actions = {
 			confirmTotpSetup(raw(formData, 'code'))
 		);
 		if (confirmed === 'locked') {
-			return fail(429, { twoFactorError: 'Too many failed attempts. Please try again later.' });
+			return fail(429, { twoFactorError: LOCKED_MESSAGE });
 		}
 		if (!confirmed) {
 			return fail(400, {

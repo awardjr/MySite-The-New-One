@@ -14,21 +14,15 @@
 <section class="py-6 sm:py-10">
 	<PageHeading {headline} {subtitle} />
 
-	<!-- Each card starts at the width of its content, and the cards on a row grow to fill it, so
-	     widths vary. Large screens use three equal columns instead. Either way, every card is only
-	     as tall as its own content. -->
 	<div class="mt-8 flex flex-wrap items-start gap-6 lg:grid lg:grid-cols-3">
 		{#each machines as machine, i (i)}
 			<div class="card max-w-xl flex-auto p-5">
-				<!-- The text drops below the image when the card is too narrow for both. -->
 				<div class="flex flex-wrap justify-center gap-5">
 					<Thumbnail src={machine.image} alt={machine.name} />
 					<div class="min-w-48 flex-auto space-y-3">
 						<h2 class="text-lg font-semibold text-card-heading">{machine.name}</h2>
 						<dl>
-							<dt class="text-xs font-semibold tracking-wider text-card-meta uppercase">
-								High Score
-							</dt>
+							<dt class="card-header">High Score</dt>
 							<dd class="text-2xl font-bold text-card-heading lining-nums tabular-nums">
 								{machine.highScore}
 							</dd>

@@ -3,10 +3,10 @@ import {
 	createAdmin,
 	generateRecoveryKey,
 	isAdminConfigured,
-	isValidEmail,
 	safeEqual,
 	startSession,
-	validateNewPassword
+	validateNewPassword,
+	validateProfile
 } from '#lib/server/auth.js';
 import { raw, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
@@ -49,12 +49,9 @@ export const actions: Actions = {
 			return invalid('The setup token is incorrect.');
 		}
 
-		if (!username) {
-			return invalid('Username is required.');
-		}
-
-		if (!email || !isValidEmail(email)) {
-			return invalid('A valid email address is required.');
+		const profileError = validateProfile(username, email);
+		if (profileError) {
+			return invalid(profileError);
 		}
 
 		const passwordError = validateNewPassword(password, raw(formData, 'confirmPassword'));

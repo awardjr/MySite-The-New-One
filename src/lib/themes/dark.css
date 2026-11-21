@@ -1,5 +1,4 @@
 :root.dark {
-	/* Page and typography */
 	--theme-page: var(--color-gray-950);
 	--theme-body: var(--color-gray-100);
 	--theme-heading: var(--color-gray-50);
@@ -9,7 +8,6 @@
 	--theme-eyebrow: var(--color-gray-400);
 	--theme-link: var(--color-blue-400);
 
-	/* Header, footer, and navigation */
 	--theme-chrome-border: var(--color-gray-800);
 	--theme-footer: var(--color-gray-900);
 	--theme-header: var(--color-gray-900);
@@ -24,7 +22,6 @@
 
 	--theme-menu-border: var(--color-gray-700);
 
-	/* Cards and badges */
 	--theme-card-border: var(--color-gray-800);
 	--theme-card: var(--color-gray-900);
 	--theme-card-border-hover: var(--color-gray-700);
@@ -45,12 +42,10 @@
 	--theme-badge: var(--color-gray-700);
 	--theme-badge-text: var(--color-gray-300);
 
-	/* Primary buttons */
 	--theme-primary: var(--color-gray-50);
 	--theme-primary-text: var(--color-gray-950);
 	--theme-primary-hover: var(--color-gray-200);
 
-	/* Forms and secondary buttons */
 	--theme-field-label: var(--color-gray-300);
 	--theme-field-border: var(--color-gray-700);
 	--theme-field: var(--color-gray-900);
@@ -68,7 +63,6 @@
 	--theme-file-button-text: var(--color-gray-200);
 	--theme-file-button-hover: var(--color-gray-700);
 
-	/* Status and destructive actions */
 	--theme-error: var(--color-red-400);
 	--theme-success: var(--color-green-400);
 	--theme-danger-text: var(--color-red-600);
@@ -77,18 +71,15 @@
 	--theme-danger-heading: var(--color-red-400);
 	--theme-danger-button-border: var(--color-red-900);
 
-	/* Photos and image placeholders */
 	--theme-photo-ring: var(--color-gray-800);
 	--theme-image-placeholder-border: var(--color-gray-700);
 	--theme-image-placeholder: var(--color-gray-900);
 	--theme-image-placeholder-text: var(--color-gray-500);
 
-	/* Pinball scores */
 	--theme-score-label: var(--color-gray-400);
 	--theme-score-caption: currentColor;
 	--theme-score-value: var(--color-gray-50);
 
-	/* Lightbox */
 	--theme-overlay: color-mix(in oklab, var(--color-black) 80%, transparent);
 	--theme-overlay-button: color-mix(in oklab, var(--color-white) 10%, transparent);
 	--theme-overlay-text: var(--color-white);

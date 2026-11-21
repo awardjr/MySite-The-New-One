@@ -4,6 +4,7 @@
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import { trackChanges } from '#lib/unsavedChanges.js';
 	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
+	import FormRow from '#lib/components/admin/FormRow.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
@@ -49,20 +50,19 @@
 	use:enhance={saveForm.submit}
 	use:trackChanges
 >
-	<div class="space-y-1">
-		<label for="name" class="text-sm font-medium text-field-label">Name</label>
+	<FormRow
+		id="name"
+		label="Name"
+		hint="This name is used any place we require name outside of custom content (for now)"
+	>
 		<input id="name" name="name" bind:value={name} oninput={clearSaved} required class="input" />
-		<p class="text-xs text-form-hint">
-			This name is used any place we require name outside of custom content (for now)
-		</p>
-	</div>
+	</FormRow>
 
-	<div class="space-y-1">
-		<label for="tagline" class="text-sm font-medium text-field-label">Tagline</label>
+	<FormRow id="tagline" label="Tagline">
 		<input id="tagline" name="tagline" bind:value={tagline} oninput={clearSaved} class="input" />
-	</div>
+	</FormRow>
 
-	<div class="space-y-1">
+	<FormRow hint="Leave empty to show no photo.">
 		<ImageUploadField
 			id="photoSrc"
 			name="photoSrc"
@@ -71,13 +71,9 @@
 			bind:value={photoSrc}
 			onchange={clearSaved}
 		/>
-		<p class="text-xs text-form-hint">Leave empty to show no photo.</p>
-	</div>
+	</FormRow>
 
-	<div class="space-y-1">
-		<label for="introParagraphs" class="text-sm font-medium text-field-label">
-			Intro text (separate paragraphs with a blank line)
-		</label>
+	<FormRow id="introParagraphs" label="Intro text (separate paragraphs with a blank line)">
 		<textarea
 			id="introParagraphs"
 			name="introParagraphs"
@@ -85,7 +81,7 @@
 			oninput={clearSaved}
 			rows="8"
 			class="input font-mono text-sm"></textarea>
-	</div>
+	</FormRow>
 
 	<FeaturedPicker
 		label="Featured posts"

@@ -2,10 +2,6 @@
 	import type { Snippet } from 'svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
-	/**
-	 * A labelled input for the sign-in and settings pages. `name` defaults to `id`, and any other
-	 * input attribute is passed through. Children become a hint under the input.
-	 */
 	let {
 		id,
 		label,
@@ -16,7 +12,6 @@
 	}: HTMLInputAttributes & {
 		id: string;
 		label: string;
-		/** Matches the larger text of the settings page. */
 		large?: boolean;
 		children?: Snippet;
 	} = $props();

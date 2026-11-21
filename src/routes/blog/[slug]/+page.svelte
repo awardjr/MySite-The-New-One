@@ -237,14 +237,12 @@
 		margin-right: 0;
 	}
 
-	/* Keeps floated images inside the post. */
 	.post-content::after {
 		content: '';
 		display: block;
 		clear: both;
 	}
 
-	/* Wide tables scroll sideways instead of stretching the page. */
 	.post-content :global(figure.table) {
 		display: block;
 		margin: 1.25rem 0;

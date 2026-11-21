@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	/** The page title plus the description and tags search engines and link previews read. */
 	let {
 		title,
 		description,
@@ -10,11 +9,8 @@
 		noindex = false
 	}: {
 		title: string;
-		/** Defaults to the full page title. */
 		description?: string;
-		/** Falls back to the site's home page photo. */
 		image?: string;
-		/** Marks the page as an article published on this date. */
 		publishedDate?: string;
 		noindex?: boolean;
 	} = $props();
@@ -24,7 +20,6 @@
 	let summary = $derived(description || fullTitle);
 	let url = $derived(new URL(page.url.pathname, site.origin).href);
 
-	// Link previews don't support SVG, so an SVG is treated as no image.
 	let imageUrl = $derived.by(() => {
 		const path = [image, site.shareImage].find((src) => src && !/\.svg$/i.test(src));
 		return path ? new URL(path, site.origin).href : undefined;

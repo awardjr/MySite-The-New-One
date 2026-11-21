@@ -10,7 +10,6 @@
 
 	let menuOpen = $state(false);
 
-	// Which navigation to show. This is about the URL only; access is enforced in hooks.server.ts.
 	let inAdminArea = $derived(
 		page.url.pathname === resolve('admin') || page.url.pathname.startsWith(`${resolve('admin')}/`)
 	);

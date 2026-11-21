@@ -38,3 +38,13 @@ export const adminSections = [
 		description: 'Profile, password, two-factor authentication, and recovery code.'
 	}
 ];
+
+export const SETUP_ROUTE = '/admin/setup';
+
+/** Route ids of the admin pages that work without signing in. They show no admin menu. */
+export const signInRoutes = new Set<string>([
+	'/admin/login',
+	SETUP_ROUTE,
+	'/admin/forgot-password',
+	'/admin/reset'
+]);

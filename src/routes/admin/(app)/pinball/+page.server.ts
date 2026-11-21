@@ -11,9 +11,7 @@ import { text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	const machines = readContent().pinball;
-	const { headline, subtitle } = getHeadlineForPage('pinball');
-	return { machines, headline, subtitle };
+	return { machines: readContent().pinball, ...getHeadlineForPage('pinball') };
 };
 
 function toModeScores(value: unknown): ModeScore[] {

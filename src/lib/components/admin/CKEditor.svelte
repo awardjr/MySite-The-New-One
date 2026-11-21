@@ -1,4 +1,5 @@
 <script lang="ts">
+	import FormRow from './FormRow.svelte';
 	import { onMount, tick } from 'svelte';
 	import type { ClassicEditor, WordCountUpdateEvent } from 'ckeditor5';
 	import 'ckeditor5/ckeditor5.css';
@@ -28,7 +29,6 @@
 		let unmounted = false;
 
 		async function startEditor(host: HTMLElement) {
-			// The editor is large and needs a browser, so it only loads with this component.
 			const ck = await import('ckeditor5');
 			const created = await ck.ClassicEditor.create(
 				buildEditorConfig(ck, { host, placeholder, compact: window.innerWidth < 768 })
@@ -52,7 +52,6 @@
 				characters = data.characters;
 			});
 
-			// The editor tidies the HTML it loads, which isn't an edit by the admin.
 			await tick();
 			const form = host.closest('form');
 			if (form && name) acceptCurrentValue(form, name);
@@ -73,11 +72,7 @@
 	});
 </script>
 
-<div class="space-y-1">
-	{#if label}
-		<label for={id} class="text-sm font-medium text-field-label">{label}</label>
-	{/if}
-
+<FormRow {id} {label}>
 	<div class="ckeditor-wrapper overflow-hidden rounded-lg border border-field-border bg-field">
 		<div bind:this={hostElement}></div>
 		<div
@@ -89,7 +84,7 @@
 	</div>
 
 	<input type="hidden" {id} {name} {value} />
-</div>
+</FormRow>
 
 <style>
 	.ckeditor-wrapper,

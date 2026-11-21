@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
+	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import Field from '#lib/components/admin/Field.svelte';
 	import NewPasswordFields from '#lib/components/admin/NewPasswordFields.svelte';
 	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
+	import SettingsSection from './SettingsSection.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
@@ -16,7 +18,6 @@
 	const twoFactorForm = pendingForm();
 </script>
 
-<!-- The proofs of identity the forms below ask for before a sensitive change. -->
 {#snippet currentPassword(id: string, label = 'Current password', className = '')}
 	<Field
 		{id}
@@ -44,23 +45,16 @@
 	/>
 {/snippet}
 
-<svelte:head>
-	<title>Admin - Settings</title>
-</svelte:head>
-
-<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">Settings</h1>
-<p class="mt-2 text-base text-muted sm:text-lg">
+<AdminHeading title="Settings">
 	Manage your admin profile, credentials, and emergency account recovery options.
-</p>
+</AdminHeading>
 
-<div class="mt-8 space-y-10">
-	<!-- Profile Settings -->
-	<section class="rounded-xl border border-form-border bg-page p-6 sm:p-8 shadow-sm">
-		<h2 class="text-xl font-bold text-heading sm:text-2xl">Account Profile</h2>
-		<p class="mt-1.5 text-base text-muted">
+<div class="mt-6 space-y-10">
+	<SettingsSection title="Account Profile">
+		{#snippet description()}
 			Update your admin username and email address used for notifications and password recovery.
 			Because password reset links are sent to this address, changes need your current password.
-		</p>
+		{/snippet}
 
 		<form
 			method="POST"
@@ -107,16 +101,14 @@
 				/>
 			</div>
 		</form>
-	</section>
+	</SettingsSection>
 
-	<!-- Change Password -->
-	<section class="rounded-xl border border-form-border bg-page p-6 sm:p-8 shadow-sm">
-		<h2 class="text-xl font-bold text-heading sm:text-2xl">Change Password</h2>
-		<p class="mt-1.5 text-base text-muted">
+	<SettingsSection title="Change Password">
+		{#snippet description()}
 			Update the password used to sign in to <code
 				class="rounded bg-code px-1.5 py-0.5 font-mono text-sm text-heading">/admin</code
 			>.
-		</p>
+		{/snippet}
 
 		<form
 			method="POST"
@@ -143,12 +135,10 @@
 				/>
 			</div>
 		</form>
-	</section>
+	</SettingsSection>
 
-	<!-- Two-Factor Authentication -->
-	<section class="rounded-xl border border-form-border bg-page p-6 sm:p-8 shadow-sm">
-		<div class="flex flex-wrap items-center gap-3">
-			<h2 class="text-xl font-bold text-heading sm:text-2xl">Two-Factor Authentication</h2>
+	<SettingsSection title="Two-Factor Authentication">
+		{#snippet badge()}
 			<span
 				class="rounded-full bg-badge px-2.5 py-0.5 text-sm font-semibold {data.twoFactorEnabled
 					? 'text-success'
@@ -156,12 +146,12 @@
 			>
 				{data.twoFactorEnabled ? 'On' : 'Off'}
 			</span>
-		</div>
-		<p class="mt-1.5 text-base text-muted">
+		{/snippet}
+		{#snippet description()}
 			When on, signing in also needs a 6-digit code from an authenticator app such as Google
 			Authenticator, 1Password or Authy. If you lose access to the app, you can sign in with your
 			emergency recovery code instead.
-		</p>
+		{/snippet}
 		{#if !data.twoFactorKeyConfigured}
 			<p class="mt-3 text-base text-error">
 				TOTP_ENCRYPTION_KEY is not configured. New two-factor setups are unavailable; if your
@@ -289,15 +279,13 @@
 				</div>
 			</form>
 		{/if}
-	</section>
+	</SettingsSection>
 
-	<!-- Emergency Recovery Code -->
-	<section class="rounded-xl border border-form-border bg-page p-6 sm:p-8 shadow-sm">
-		<h2 class="text-xl font-bold text-heading sm:text-2xl">Emergency Recovery Code</h2>
-		<p class="mt-1.5 text-base text-muted">
+	<SettingsSection title="Emergency Recovery Code">
+		{#snippet description()}
 			An emergency recovery code allows you to regain access to your admin account if you forget
 			your password and cannot receive reset emails.
-		</p>
+		{/snippet}
 
 		{#if form?.recoverySuccess && form.newRecoveryKey}
 			<RecoveryKeyCard
@@ -340,5 +328,5 @@
 				<FormStatus large error={form?.recoveryError} />
 			</div>
 		</form>
-	</section>
+	</SettingsSection>
 </div>

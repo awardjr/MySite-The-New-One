@@ -5,12 +5,12 @@
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import { trackChanges } from '#lib/unsavedChanges.js';
 	import CKEditor from '#lib/components/admin/CKEditor.svelte';
+	import FormRow from '#lib/components/admin/FormRow.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import ImageUploadField from '#lib/components/admin/ImageUploadField.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import type { PostFields } from '#lib/server/content.js';
 
-	/** The editor shared by the "new post" and "edit post" pages. */
 	let {
 		post,
 		form,
@@ -20,7 +20,6 @@
 		pendingLabel
 	}: {
 		post: PostFields;
-		/** The last submission; what was typed takes priority over `post`. */
 		form?: (Partial<PostFields> & { slug?: string; error?: string }) | null;
 		action?: string;
 		showSlug?: boolean;
@@ -33,14 +32,16 @@
 </script>
 
 <form {action} class="mt-6 space-y-5" method="POST" use:enhance={saveForm.submit} use:trackChanges>
-	<div class="space-y-1">
-		<label class="text-sm font-medium text-field-label" for="title">Title</label>
+	<FormRow id="title" label="Title">
 		<input bind:value={fields.title} class="input" id="title" name="title" required />
-	</div>
+	</FormRow>
 
 	{#if showSlug}
-		<div class="space-y-1">
-			<label class="text-sm font-medium text-field-label" for="slug">Slug</label>
+		<FormRow
+			id="slug"
+			label="Slug"
+			hint="Used in the post's URL. Lowercase letters, numbers, and hyphens only."
+		>
 			<input
 				bind:value={fields.slug}
 				class="input"
@@ -48,16 +49,12 @@
 				name="slug"
 				placeholder="Leave empty to generate from the title"
 			/>
-			<p class="text-xs text-form-hint">
-				Used in the post's URL. Lowercase letters, numbers, and hyphens only.
-			</p>
-		</div>
+		</FormRow>
 	{/if}
 
-	<div class="space-y-1">
-		<label class="text-sm font-medium text-field-label" for="date">Date</label>
+	<FormRow id="date" label="Date">
 		<input bind:value={fields.date} class="input-date" id="date" name="date" required type="date" />
-	</div>
+	</FormRow>
 
 	<ImageUploadField
 		bind:value={fields.image}
@@ -67,11 +64,10 @@
 		placeholder="/blog/my-post.jpg (put the file in static/, or upload below) or a full URL"
 	/>
 
-	<div class="space-y-1">
-		<label class="text-sm font-medium text-field-label" for="preview">Preview</label>
+	<FormRow id="preview" label="Preview">
 		<textarea bind:value={fields.preview} class="input" id="preview" name="preview" rows="3"
 		></textarea>
-	</div>
+	</FormRow>
 
 	<CKEditor bind:value={fields.content} id="content" label="Content" name="content" />
 

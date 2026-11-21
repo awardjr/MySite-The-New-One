@@ -1,4 +1,6 @@
 <script lang="ts">
+	import FormRow from './FormRow.svelte';
+	import { UPLOAD_IMAGE_TYPES } from '#lib/imageTypes.js';
 	import { uploadImage } from '#lib/uploadImage.js';
 
 	let {
@@ -14,7 +16,6 @@
 		placeholder?: string;
 		id?: string;
 		name?: string;
-		/** Called whenever the image changes, by typing a path or by uploading a file. */
 		onchange?: () => void;
 	} = $props();
 
@@ -41,17 +42,14 @@
 	}
 </script>
 
-<div class="space-y-1">
-	{#if label}
-		<label for={id} class="text-sm font-medium text-field-label">{label}</label>
-	{/if}
+<FormRow {id} {label}>
 	<input {id} {name} bind:value oninput={() => onchange?.()} {placeholder} class="input text-sm" />
 
 	<div class="flex flex-wrap items-center gap-3">
 		<input
 			bind:this={fileInput}
 			type="file"
-			accept="image/jpeg,image/png,image/gif,image/webp,image/svg+xml"
+			accept={Object.keys(UPLOAD_IMAGE_TYPES).join(',')}
 			onchange={handleFileChange}
 			class="text-xs text-form-muted file:mr-3 file:rounded-lg file:border-0 file:bg-file-button file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-file-button-text hover:file:bg-file-button-hover"
 		/>
@@ -71,4 +69,4 @@
 			class="mt-1 h-20 w-20 rounded-lg border border-form-border object-cover"
 		/>
 	{/if}
-</div>
+</FormRow>

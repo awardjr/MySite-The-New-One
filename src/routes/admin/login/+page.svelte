@@ -11,8 +11,6 @@
 	let { data, form }: PageProps = $props();
 
 	const loginForm = pendingForm({
-		// Signed in with a recovery code: show its replacement instead of reloading the page,
-		// which would redirect straight to the dashboard now that a session exists.
 		refreshAll: (result) => result.type === 'success' && !result.data?.newRecoveryKey
 	});
 	let twoFactor = $derived(form?.twoFactor ?? data.twoFactor);
@@ -38,7 +36,6 @@
 			used.
 		</RecoveryKeyCard>
 
-		<!-- A full page load, so the new session is picked up. -->
 		<a
 			href={form.continueTo ?? resolve('admin')}
 			data-sveltekit-reload
@@ -75,12 +72,7 @@
 
 		<form method="POST" class="mt-3 text-center" use:enhance={loginForm.submit}>
 			<input type="hidden" name="cancel" value="1" />
-			<button
-				type="submit"
-				class="text-xs text-muted transition-colors hover:text-heading hover:underline"
-			>
-				← Back to password
-			</button>
+			<button type="submit" class="link-subtle"> ← Back to password </button>
 		</form>
 	{:else}
 		<p class="mt-1 text-sm text-muted">Sign in to edit this site</p>
@@ -101,12 +93,7 @@
 			<div class="space-y-1">
 				<div class="flex items-center justify-between">
 					<label for="password" class="text-sm font-medium text-copy"> Password </label>
-					<a
-						href={resolve('admin/forgot-password')}
-						class="text-xs text-muted transition-colors hover:text-heading hover:underline"
-					>
-						Forgot password?
-					</a>
+					<a href={resolve('admin/forgot-password')} class="link-subtle"> Forgot password? </a>
 				</div>
 				<input
 					id="password"

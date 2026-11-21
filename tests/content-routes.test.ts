@@ -238,6 +238,7 @@ describe('search engine files', () => {
 		expect(response.headers.get('Content-Type')).toBe('application/xml; charset=utf-8');
 		expect(xml).toContain('<url><loc>https://configured.test/</loc></url>');
 		expect(xml).toContain('<url><loc>https://configured.test/blog</loc></url>');
+		expect(xml).toContain('<url><loc>https://configured.test/privacy</loc></url>');
 		expect(xml).toContain(
 			'<url><loc>https://configured.test/blog/published</loc><lastmod>2024-01-02</lastmod></url>'
 		);

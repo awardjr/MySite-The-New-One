@@ -18,6 +18,7 @@ export const GET: RequestHandler = ({ url }) => {
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>${origin}/</loc></url>
 ${[...sections, ...posts].join('\n')}
+<url><loc>${origin}/privacy</loc></url>
 </urlset>`;
 	return new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
 };

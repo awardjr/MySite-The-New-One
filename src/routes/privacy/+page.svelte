@@ -17,8 +17,9 @@
 
 	<div class="mt-8 max-w-3xl space-y-8 text-lg leading-relaxed text-copy">
 		<p>
-			This site does not use analytics, advertising or any kind of tracking, and it does not set
-			cookies for visitors.
+			There is no analytics, tracking, or advertising of any kind used on this site. If you see
+			something that resembles analytics, tracking, or advertising, and there has not been any change
+			to this privacy policy, there is a chance your browser or device may be infected with malware.
 		</p>
 
 		<div class="space-y-2">

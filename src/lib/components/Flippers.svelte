@@ -18,7 +18,7 @@
 		flipped[side] = false;
 	}
 
-	function on_key_down(event: Event) {
+	function on_key_down(event: KeyboardEvent) {
 		switch (event.key) {
 			case leftArrow:
 				flip('left', true);
@@ -30,7 +30,7 @@
 		}
 	}
 
-	function on_key_up(event: Event) {
+	function on_key_up(event: KeyboardEvent) {
 		switch (event.key) {
 			case 'ArrowLeft':
 				unflip('left');

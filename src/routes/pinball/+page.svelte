@@ -2,7 +2,7 @@
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import Thumbnail from '#lib/components/Thumbnail.svelte';
-	import Flippers from './Flippers.svelte';
+	import Flippers from '#lib/components/Flippers.svelte';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();

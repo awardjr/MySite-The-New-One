@@ -5,7 +5,7 @@
 	let flipped = $state({ left: false, right: false });
 	const timers: Record<string, ReturnType<typeof setTimeout>> = {};
 
-	function flip(side: (typeof sides)[number], keys: boolean) {
+	function flip(side: (typeof sides)[number], keys: boolean = false) {
 		flipped[side] = true;
 		if (keys) {
 			return;

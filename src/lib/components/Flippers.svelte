@@ -1,26 +1,24 @@
 <script lang="ts">
 	const sides = ['left', 'right'] as const;
-	const leftArrow = "ArrowLeft";
-	const rightArrow = "ArrowRight";
+	const leftArrow = 'ArrowLeft';
+	const rightArrow = 'ArrowRight';
 	let flipped = $state({ left: false, right: false });
 	const timers: Record<string, ReturnType<typeof setTimeout>> = {};
 
-	function flip(side: (typeof sides)[number], keys : boolean) {
+	function flip(side: (typeof sides)[number], keys: boolean) {
 		flipped[side] = true;
-		if(keys) {
+		if (keys) {
 			return;
 		}
 		clearTimeout(timers[side]);
-		timers[side] = setTimeout(() => (unflip(side)), 69);
+		timers[side] = setTimeout(() => unflip(side), 69);
 	}
 
 	function unflip(side: (typeof sides)[number]) {
 		flipped[side] = false;
 	}
 
-
-	function on_key_down(event) {
-
+	function on_key_down(event: Event) {
 		switch (event.key) {
 			case leftArrow:
 				flip('left', true);
@@ -32,13 +30,13 @@
 		}
 	}
 
-	function on_key_up(event) {
+	function on_key_up(event: Event) {
 		switch (event.key) {
-			case "ArrowLeft":
+			case 'ArrowLeft':
 				unflip('left');
 				break;
 
-			case "ArrowRight":
+			case 'ArrowRight':
 				unflip('right');
 				break;
 		}
@@ -68,7 +66,4 @@
 	{/each}
 </div>
 
-<svelte:window
-	on:keydown={on_key_down}
-	on:keyup={on_key_up}
-/>
+<svelte:window on:keydown={on_key_down} on:keyup={on_key_up} />

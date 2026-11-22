@@ -18,8 +18,9 @@
 	<div class="mt-8 max-w-3xl space-y-8 text-lg leading-relaxed text-copy">
 		<p>
 			There is no analytics, tracking, or advertising of any kind used on this site. If you see
-			something that resembles analytics, tracking, or advertising, and there has not been any change
-			to this privacy policy, there is a chance your browser or device may be infected with malware.
+			something that resembles analytics, tracking, or advertising, and there has not been any
+			change to this privacy policy, there is a chance your browser or device may be infected with
+			malware.
 		</p>
 
 		<div class="space-y-2">
@@ -54,8 +55,12 @@
 			<div class="space-y-2">
 				<h2 class="text-xl font-bold text-heading">Questions</h2>
 				<p>
-					If you have any questions about this, <a href={resolve('contact')} class="text-link underline">
-					visit the contact page</a> and send me an E-mail.
+					If you have any questions about this, <a
+						href={resolve('contact')}
+						class="text-link underline"
+					>
+						visit the contact page</a
+					> and send me an E-mail.
 				</p>
 			</div>
 		{/if}

@@ -4,7 +4,6 @@ import { pendingForm } from '#lib/pendingForm.svelte.js';
 
 const success: ActionResult = { type: 'success', status: 200, location: '/admin' };
 
-/** Starts a submit and returns what finishes it, with the mocks SvelteKit would pass in. */
 function startSubmit(form: ReturnType<typeof pendingForm>) {
 	const update = vi.fn(async () => undefined);
 	const finish = form.submit({} as never) as unknown as (input: unknown) => Promise<void>;

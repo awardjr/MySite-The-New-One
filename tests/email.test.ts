@@ -25,7 +25,6 @@ function fakeTransport(sendMail = vi.fn<SendMail>().mockResolvedValue({ messageI
 	return { createTransport, sendMail };
 }
 
-/** The options the transport is created with under the current environment. */
 function transportConfig(): unknown {
 	const { createTransport } = fakeTransport();
 	getEmailTransporter();

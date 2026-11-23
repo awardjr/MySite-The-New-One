@@ -13,7 +13,6 @@ export type PinballMachine = {
 	modeScores: ModeScore[];
 };
 
-/** A machine as stored: the mode scores are a JSON string. */
 type PinballMachineRow = Omit<PinballMachine, 'modeScores'> & { modeScores: string };
 
 const getPinballMachinesStmt = db.prepare(

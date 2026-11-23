@@ -1,8 +1,9 @@
+import { JSDOM } from 'jsdom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('#lib/server/db.js', async () => {
-	const { getTestDb } = await import('./test-db');
-	return { db: getTestDb() };
+	const { migratedTestDb } = await import('./test-db');
+	return { db: await migratedTestDb() };
 });
 
 import { loadPage, outcome, submit } from './route-helpers';
@@ -232,7 +233,7 @@ describe('search engine files', () => {
 		createPost(post('undated', { date: 'soon' }));
 		createPost(post('secret', { draft: true }));
 
-		const response = sitemap(request) as Response;
+		const response = await sitemap(request);
 		const xml = await response.text();
 
 		expect(response.headers.get('Content-Type')).toBe('application/xml; charset=utf-8');
@@ -308,13 +309,19 @@ describe('RSS feed', () => {
 	it('escapes markup in titles, previews and the site name', async () => {
 		updateSection('home', { ...emptyHome, name: 'A&B' });
 		createPost(post('p', { title: '<b>T</b> & "q"', preview: '</description><evil>' }));
+		createPost(post('q', { title: 'a]]>b]]><evil/>', preview: 'x]]>y]]><evil/>' }));
 
 		const { xml } = await feed();
+		const doc = new JSDOM(xml, { contentType: 'text/xml' }).window.document;
+		const texts = (selector: string) =>
+			[...doc.querySelectorAll(selector)].map((node) => node.textContent);
 
-		expect(xml).toContain('<title>&lt;b&gt;T&lt;/b&gt; &amp; &quot;q&quot;</title>');
-		expect(xml).toContain('<description>&lt;/description&gt;&lt;evil&gt;</description>');
-		expect(xml).toContain('<title>A&amp;B – Blog</title>');
-		expect(xml).not.toContain('<evil>');
+		expect(doc.querySelector('parsererror')).toBeNull();
+		expect(doc.querySelectorAll('evil')).toHaveLength(0);
+		expect(doc.querySelector('channel > title')?.textContent).toBe('A&B – Blog');
+		expect(texts('item > title')).toContain('<b>T</b> & "q"');
+		expect(texts('item > description')).toContain('</description><evil>');
+		expect(texts('item > title')).toContain('a]] >b]] ><evil/>');
 	});
 
 	it('builds links from ORIGIN instead of the request host', async () => {
@@ -347,7 +354,6 @@ describe('admin list editors', () => {
 		{ name: 'pinball', action: adminPinball.actions.save, field: 'machines' }
 	];
 
-	// Which payloads count as malformed is covered by the `readJsonRows` tests.
 	it('rejects a malformed payload, leaving stored rows alone', async () => {
 		updateSection('press', [{ outlet: 'O', title: 'Kept', summary: '', href: '', date: '' }]);
 
@@ -393,13 +399,11 @@ describe('admin list editors', () => {
 			platforms: ['PC', 'Mac']
 		});
 
-		// Saving keeps a row's id, because featured works on the home page point at it.
 		const { id } = items[0];
 		const saveAgain = await submit(adminWorks.actions.save, {
 			fields: { items: json([{ id, title: 'Game' }]) }
 		});
 		expect(readContent().works[0].id).toBe(id);
-		// A row that simply has no link isn't reported as having lost one.
 		expect(saveAgain.data.notice).toBeUndefined();
 	});
 
@@ -492,7 +496,6 @@ describe('admin home editor', () => {
 			name: 'Ada',
 			tagline: 'Engineer',
 			photoSrc: '/me.png',
-			// Form encoding may turn the single line break into CRLF.
 			introParagraphs: [expect.stringMatching(/^First\r?\nstill first$/), 'Second'],
 			featuredPosts: ['a', 'b'],
 			featuredWorks: ['7']
@@ -530,7 +533,8 @@ describe('admin blog editor', () => {
 			['Hello, World!', '', 'hello-world'],
 			['  --Spaced  Out--  ', '', 'spaced-out'],
 			['Ignored title', ' My Custom/Slug ', 'my-custom-slug'],
-			['Café Ünï', '', 'caf-n'],
+			['Café Ünï', '', 'cafe-ueni'],
+			['iPhone & Mac', '', 'iphone-and-mac'],
 			['New features', '', 'new-features']
 		]) {
 			expect(await create({ title, slug })).toMatchObject({

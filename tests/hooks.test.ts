@@ -1,33 +1,34 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('#lib/server/db.js', async () => {
-	const { getTestDb } = await import('./test-db');
-	return { db: getTestDb() };
+	const { migratedTestDb } = await import('./test-db');
+	return { db: await migratedTestDb() };
 });
 
-// Run the hook as it runs in production; the dev server skips the HSTS header.
-vi.mock('$app/env', () => ({ dev: false, browser: false }));
+vi.mock('$app/env', () => ({ dev: false, browser: false, building: false }));
 
-import { seedAdmin } from './auth-helpers';
-import { getTestDb } from './test-db';
-import { createSession } from '#lib/server/auth.js';
+import { clearAuth, seedAdmin, signIn } from './auth-helpers';
+import { setActiveEvent } from './request-event';
+import { cookieHeader, fakeCookies } from './route-helpers';
 import { handle } from '../src/hooks.server';
 
-const testDb = getTestDb();
+const PASSWORD = 'supersecret123';
 
-/** Runs the hook for a request and reports what happened: a redirect, or the resolved response. */
 async function run(
 	pathname: string,
 	routeId: string | null,
-	sessionToken?: string,
+	cookies = fakeCookies(),
 	origin = 'https://example.test'
 ) {
+	const url = new URL(`${origin}${pathname}`);
 	const event = {
-		url: new URL(`${origin}${pathname}`),
+		url,
+		request: new Request(url, { headers: { cookie: cookieHeader(cookies) } }),
 		route: { id: routeId },
-		cookies: { get: () => sessionToken },
+		cookies,
 		locals: {} as App.Locals
 	};
+	setActiveEvent(event);
 	const resolve = vi.fn(async () => new Response('ok'));
 	try {
 		const response = await handle({ event, resolve } as unknown as Parameters<typeof handle>[0]);
@@ -49,9 +50,7 @@ async function run(
 }
 
 beforeEach(async () => {
-	testDb.exec('DELETE FROM admin_user');
-	testDb.exec('DELETE FROM sessions');
-	await seedAdmin('admin', 'admin@example.com', 'supersecret123');
+	await seedAdmin('admin', 'admin@example.com', PASSWORD);
 });
 
 afterEach(() => {
@@ -73,8 +72,6 @@ describe('admin route guard', () => {
 		expect(result.redirect?.location).toBe('/admin/login?redirectTo=%2Fadmin%2Fblog%3Fpage%3D2');
 	});
 
-	// SvelteKit matches routes against the decoded path, so the raw pathname can differ from
-	// the route that will actually run. The guard has to follow the matched route.
 	it('guards every matched admin route, however its path is written', async () => {
 		for (const [pathname, route] of [
 			['/admin', '/admin/(app)'],
@@ -101,19 +98,20 @@ describe('admin route guard', () => {
 	});
 
 	it('lets a signed-in admin through and marks the request', async () => {
-		const result = await run('/admin/settings', '/admin/(app)/settings', createSession());
+		const result = await run('/admin/settings', '/admin/(app)/settings', await signIn(PASSWORD));
 		expect(result.resolved).toBe(true);
 		expect(result.locals.isAdmin).toBe(true);
 	});
 
-	it('rejects an unknown or expired session', async () => {
-		const expired = createSession();
-		testDb
-			.prepare('UPDATE sessions SET expires_at = ?')
-			.run(new Date(Date.now() - 1000).toISOString());
+	it('rejects a forged or expired session', async () => {
+		const cookies = await signIn(PASSWORD);
+		const forged = fakeCookies(
+			Object.fromEntries([...cookies.values].map(([name, value]) => [name, `${value}x`]))
+		);
+		vi.useFakeTimers({ toFake: ['Date'], now: Date.now() + 8 * 24 * 60 * 60 * 1000 });
 
-		for (const token of ['forged-token', expired]) {
-			const result = await run('/admin/settings', '/admin/(app)/settings', token);
+		for (const jar of [forged, cookies]) {
+			const result = await run('/admin/settings', '/admin/(app)/settings', jar);
 			expect(result.redirect?.status).toBe(303);
 			expect(result.locals.isAdmin).toBe(false);
 		}
@@ -139,7 +137,7 @@ describe('admin route guard', () => {
 	});
 
 	it('sends every admin route to setup until an account exists', async () => {
-		testDb.exec('DELETE FROM admin_user');
+		clearAuth();
 
 		expect((await run('/%61dmin/settings', '/admin/(app)/settings')).redirect?.location).toBe(
 			'/admin/setup'
@@ -166,7 +164,7 @@ describe('security headers', () => {
 			'https://127.0.0.1:3000',
 			'https://[::1]:3000'
 		]) {
-			const { response } = await run('/', '/', undefined, origin);
+			const { response } = await run('/', '/', fakeCookies(), origin);
 			expect(response?.headers.has('Strict-Transport-Security'), origin).toBe(false);
 		}
 	});

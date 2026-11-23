@@ -7,7 +7,6 @@ After=network-online.target
 ContainerName=mysite
 Image=ghcr.io/awardjr/mysite-the-new-one:latest
 Network=mysite.network
-# Only reachable through Caddy on the mysite network; no published ports.
 Volume=mysite-data.volume:/app/data
 Volume=mysite-uploads.volume:/app/uploads
 EnvironmentFile=%h/.config/mysite/mysite.env
@@ -19,7 +18,6 @@ HealthRetries=3
 
 [Service]
 Restart=always
-# The first start may need to pull the image.
 TimeoutStartSec=300
 
 [Install]

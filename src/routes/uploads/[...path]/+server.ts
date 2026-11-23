@@ -2,6 +2,8 @@ import { createReadStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { error } from '@sveltejs/kit';
+import etag from 'etag';
+import fresh from 'fresh';
 import { resolveUploadPath } from '#lib/server/uploads.js';
 import type { RequestHandler } from './$types';
 
@@ -12,12 +14,10 @@ export const GET: RequestHandler = async ({ params, request }) => {
 		error(404, 'Not found');
 	}
 
-	// Upload names are unique and never rewritten, so size and modification time identify the file.
-	const etag = `"${stats.size.toString(16)}-${Math.floor(stats.mtimeMs).toString(16)}"`;
 	const headers: Record<string, string> = {
 		'Content-Type': resolved.contentType,
 		'Cache-Control': 'public, max-age=31536000, immutable',
-		ETag: etag,
+		ETag: etag(stats, { weak: false }),
 		'Last-Modified': stats.mtime.toUTCString(),
 		'X-Content-Type-Options': 'nosniff'
 	};
@@ -25,12 +25,15 @@ export const GET: RequestHandler = async ({ params, request }) => {
 		headers['Content-Security-Policy'] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
 	}
 
-	const cachedEtags = request.headers.get('if-none-match')?.split(',') ?? [];
-	if (cachedEtags.some((cached) => cached.trim().replace(/^W\//, '') === etag)) {
+	if (
+		fresh(Object.fromEntries(request.headers), {
+			etag: headers.ETag,
+			'last-modified': headers['Last-Modified']
+		})
+	) {
 		return new Response(null, { status: 304, headers });
 	}
 
-	// Stream the file instead of buffering it, so a large image never sits fully in memory.
 	const body = Readable.toWeb(createReadStream(resolved.filePath)) as ReadableStream<Uint8Array>;
 	return new Response(body, {
 		headers: { ...headers, 'Content-Length': String(stats.size) }

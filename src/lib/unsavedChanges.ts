@@ -1,6 +1,5 @@
 type FormValues = [name: string, value: string][];
 
-/** What each tracked form last loaded or saved, to compare its current fields against. */
 const savedValues = new Map<HTMLFormElement, FormValues>();
 
 function sortedByName(values: FormValues): FormValues {
@@ -13,7 +12,6 @@ function valuesOf(data: FormData): FormValues {
 	);
 }
 
-/** Svelte action: warns before leaving the page while this form has unsaved edits. */
 export function trackChanges(form: HTMLFormElement) {
 	savedValues.set(form, valuesOf(new FormData(form)));
 	return {
@@ -23,12 +21,10 @@ export function trackChanges(form: HTMLFormElement) {
 	};
 }
 
-/** Records what was just saved. Does nothing for a form that isn't tracked. */
 export function markSaved(form: HTMLFormElement, submitted: FormData): void {
 	if (savedValues.has(form)) savedValues.set(form, valuesOf(submitted));
 }
 
-/** Accepts a field's current value as saved, for a value the page itself just changed. */
 export function acceptCurrentValue(form: HTMLFormElement, field: string): void {
 	const saved = savedValues.get(form);
 	if (!saved) return;

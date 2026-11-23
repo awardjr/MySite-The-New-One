@@ -1,81 +1,62 @@
-const MAX_ATTEMPTS = 5;
+import { RateLimiterRes, RateLimiterSQLite } from 'rate-limiter-flexible';
+import { db } from '../db';
 
 export const LOCKED_MESSAGE = 'Too many attempts. Please try again later.';
-const LOCKOUT_MS = 15 * 60 * 1000; // 15 minutes
-// Above this many tracked addresses, expired records are swept to limit memory use.
-const MAX_TRACKED_ADDRESSES = 1000;
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_SECONDS = 15 * 60;
 
-interface AttemptState {
-	failures: number;
-	/** When this record stops counting: end of the lockout, or end of the failure window. */
-	expiresAt: number;
+function sqliteLimiter(tableName: string): Promise<RateLimiterSQLite> {
+	return new Promise((resolve, reject) => {
+		const limiter: RateLimiterSQLite = new RateLimiterSQLite(
+			{
+				storeClient: db,
+				storeType: 'better-sqlite3',
+				tableName,
+				points: MAX_ATTEMPTS,
+				duration: LOCKOUT_SECONDS,
+				blockDuration: LOCKOUT_SECONDS,
+				clearExpiredByTimeout: true
+			},
+			(error?: Error) => queueMicrotask(() => (error ? reject(error) : resolve(limiter)))
+		);
+	});
 }
 
-// Secret checks hash off the event loop, so several could otherwise be in flight at once and all
-// pass the lockout check before any of them records its failure. Running them one at a time keeps
-// the limit exact.
-let checkQueue: Promise<unknown> = Promise.resolve();
-
-function runInTurn<T>(task: () => Promise<T>): Promise<T> {
-	const run = checkQueue.then(task);
-	checkQueue = run.catch(() => undefined);
-	return run;
+async function take(limiter: RateLimiterSQLite, address: string): Promise<boolean> {
+	try {
+		await limiter.consume(address);
+		return true;
+	} catch (error) {
+		if (error instanceof RateLimiterRes) return false;
+		throw error;
+	}
 }
 
-/** In-memory brute-force guard keyed by client address. Failures older than LOCKOUT_MS are forgotten. */
-function createAttemptLimiter() {
-	const attempts = new Map<string, AttemptState>();
-
-	function current(address: string, now: number): AttemptState | undefined {
-		const state = attempts.get(address);
-		if (state && state.expiresAt <= now) {
-			attempts.delete(address);
-			return undefined;
-		}
-		return state;
-	}
-
-	function isLocked(address: string): boolean {
-		return (current(address, Date.now())?.failures ?? 0) >= MAX_ATTEMPTS;
-	}
-
-	function recordFailure(address: string): void {
-		const now = Date.now();
-		if (attempts.size >= MAX_TRACKED_ADDRESSES) {
-			for (const [key, state] of attempts) {
-				if (state.expiresAt <= now) attempts.delete(key);
-			}
-		}
-		const state = current(address, now) ?? { failures: 0, expiresAt: now + LOCKOUT_MS };
-		state.failures += 1;
-		// The lockout runs for its full length from the failure that started it.
-		if (state.failures === MAX_ATTEMPTS) state.expiresAt = now + LOCKOUT_MS;
-		attempts.set(address, state);
-	}
-
+function attemptLimiter(limiter: RateLimiterSQLite) {
 	return {
-		isLocked,
-		recordFailure,
-		clear(address: string): void {
-			attempts.delete(address);
+		take: (address: string) => take(limiter, address),
+		async clear(address: string): Promise<void> {
+			await limiter.delete(address);
 		},
-		/**
-		 * Runs a secret check for an address. Resolves to `'locked'` without running it while the
-		 * address is locked out; any falsy result counts as a failed attempt.
-		 */
-		guard<T>(address: string, check: () => T | Promise<T>): Promise<T | 'locked'> {
-			return runInTurn(async () => {
-				if (isLocked(address)) return 'locked' as const;
-				const result = await check();
-				if (!result) recordFailure(address);
-				return result;
-			});
+		async guard<T>(
+			address: string,
+			check: () => T | Promise<T>,
+			succeeded: (result: T) => boolean = Boolean
+		): Promise<T | 'locked'> {
+			if (!(await take(limiter, address))) return 'locked';
+			let result: T;
+			try {
+				result = await check();
+			} catch (error) {
+				await limiter.reward(address, 1);
+				throw error;
+			}
+			if (succeeded(result)) await limiter.reward(address, 1);
+			return result;
 		}
 	};
 }
 
-/** Password and second-factor checks, at login and when confirming sensitive changes. */
-export const loginAttempts = createAttemptLimiter();
+export const loginAttempts = attemptLimiter(await sqliteLimiter('login_attempts'));
 
-/** Password reset requests and attempts. */
-export const resetAttempts = createAttemptLimiter();
+export const resetAttempts = attemptLimiter(await sqliteLimiter('reset_attempts'));

@@ -1,24 +1,26 @@
+import { Readable } from 'node:stream';
+import { isValid, parseISO } from 'date-fns';
+import { SitemapStream, streamToPromise } from 'sitemap';
 import { getPublishedPosts, getSectionsWithContent } from '#lib/server/content.js';
 import { siteOrigin } from '#lib/server/origin.js';
 import type { RequestHandler } from './$types';
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-
-export const GET: RequestHandler = ({ url }) => {
-	const origin = siteOrigin(url);
+export const GET: RequestHandler = async ({ url }) => {
 	const sections = Object.entries(getSectionsWithContent())
 		.filter(([, hasContent]) => hasContent)
-		.map(([section]) => `<url><loc>${origin}/${section}</loc></url>`);
-	const posts = getPublishedPosts().map(({ slug, date }) => {
-		const lastModified = ISO_DATE.test(date) ? `<lastmod>${date}</lastmod>` : '';
-		return `<url><loc>${origin}/blog/${encodeURIComponent(slug)}</loc>${lastModified}</url>`;
+		.map(([section]) => ({ url: `/${section}` }));
+	const posts = getPublishedPosts().map(({ slug, date }) => ({
+		url: `/blog/${encodeURIComponent(slug)}`,
+		...(isValid(parseISO(`${date}T00:00:00Z`)) && { lastmod: date })
+	}));
+	const sitemap = new SitemapStream({
+		hostname: siteOrigin(url),
+		lastmodDateOnly: true,
+		xmlns: { news: false, xhtml: false, image: false, video: false }
 	});
-
-	const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>${origin}/</loc></url>
-${[...sections, ...posts].join('\n')}
-<url><loc>${origin}/privacy</loc></url>
-</urlset>`;
-	return new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8' } });
+	const links = [{ url: '/' }, ...sections, ...posts, { url: '/privacy' }];
+	const xml = await streamToPromise(Readable.from(links).pipe(sitemap));
+	return new Response(xml.toString(), {
+		headers: { 'Content-Type': 'application/xml; charset=utf-8' }
+	});
 };

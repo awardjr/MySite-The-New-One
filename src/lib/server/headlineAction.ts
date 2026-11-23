@@ -2,10 +2,6 @@ import type { RequestEvent } from '@sveltejs/kit';
 import { saveHeadlineForPage } from './content';
 import { text } from './forms';
 
-/**
- * Builds the `saveHeadline` form action for an admin page.
- * Pass `{ subtitle: false }` for pages that only have a headline.
- */
 export function saveHeadlineAction(page: string, options: { subtitle?: boolean } = {}) {
 	const { subtitle: hasSubtitle = true } = options;
 	return async ({ request }: RequestEvent): Promise<{ headlineSuccess: true }> => {

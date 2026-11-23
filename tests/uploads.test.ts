@@ -4,7 +4,6 @@ import path from 'node:path';
 import sharp from 'sharp';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// UPLOAD_DIR is read when the module loads, so point it at a throwaway directory first.
 const { uploadDir } = await vi.hoisted(async () => {
 	const { mkdtempSync } = await import('node:fs');
 	const { tmpdir } = await import('node:os');
@@ -173,7 +172,6 @@ describe('saveUploadedImage', () => {
 		const atLimit = image('a.png', 'image/png', new Uint8Array(MAX_SIZE));
 		const overLimit = image('a.png', 'image/png', new Uint8Array(MAX_SIZE + 1));
 
-		// Getting as far as reading the file shows it passed the size check.
 		await expect(saveUploadedImage(atLimit)).rejects.toThrow('could not be read');
 		await expect(saveUploadedImage(overLimit)).rejects.toThrow('too large');
 	});
@@ -190,9 +188,26 @@ describe('saveUploadedImage', () => {
 				'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">' +
 				'<defs><clipPath id="c"><rect width="1" height="1"></rect></clipPath>' +
 				'<linearGradient id="g" gradientUnits="userSpaceOnUse"></linearGradient></defs>' +
-				'<text x="1">Hi</text></svg>';
+				'<text x="1">Hi\u00a0there</text></svg>';
 
-			expect(await saveSvg(svg)).toBe(svg);
+			expect(await saveSvg(svg)).toBe(
+				'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">' +
+					'<defs><clipPath id="c"><rect width="1" height="1"/></clipPath>' +
+					'<linearGradient id="g" gradientUnits="userSpaceOnUse"/></defs>' +
+					'<text x="1">Hi\u00a0there</text></svg>'
+			);
+		});
+
+		it('adds the SVG namespace so the file renders on its own', async () => {
+			expect(await saveSvg('<svg><rect width="1"></rect></svg>')).toBe(
+				'<svg xmlns="http://www.w3.org/2000/svg"><rect width="1"/></svg>'
+			);
+		});
+
+		it('rejects files that are not SVG images', async () => {
+			await expect(
+				saveUploadedImage(image('a.svg', 'image/svg+xml', '<p>not a drawing</p>'))
+			).rejects.toThrow('could not be read as an SVG image');
 		});
 
 		it.each([
@@ -204,7 +219,7 @@ describe('saveUploadedImage', () => {
 				/on\w+=/i
 			],
 			['uppercase event handlers', '<svg ONLOAD="alert(1)"></svg>', /onload/i],
-			['links', '<svg><a href="javascript:alert(1)"><text>x</text></a></svg>', /<a|href/i],
+			['script links', '<svg><a href="javascript:alert(1)"><text>x</text></a></svg>', /href/i],
 			['internal references', '<svg><use href="#shape"></use></svg>', /href/],
 			['external references', '<svg><use href="https://x.test/a.svg#b"></use></svg>', /href/],
 			['xlink references', '<svg><use xlink:href="https://x.test/a.svg#b"></use></svg>', /href/],

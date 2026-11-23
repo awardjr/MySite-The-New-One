@@ -4,15 +4,12 @@
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import Field from '#lib/components/admin/Field.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
-	import RecoveryKeyCard from '#lib/components/admin/RecoveryKeyCard.svelte';
 	import SubmitButton from '#lib/components/admin/SubmitButton.svelte';
 	import type { PageProps } from './$types';
 
 	let { data, form }: PageProps = $props();
 
-	const loginForm = pendingForm({
-		refreshAll: (result) => result.type === 'success' && !result.data?.newRecoveryKey
-	});
+	const loginForm = pendingForm({ refreshAll: (result) => result.type === 'success' });
 	let twoFactor = $derived(form?.twoFactor ?? data.twoFactor);
 </script>
 
@@ -22,30 +19,9 @@
 
 <section class="mx-auto flex max-w-sm flex-col justify-center py-16">
 	<h1 class="text-2xl font-bold tracking-tight text-heading">Admin Login</h1>
-	{#if form?.newRecoveryKey}
+	{#if twoFactor}
 		<p class="mt-1 text-sm text-muted">
-			You are signed in. The recovery code you used no longer works.
-		</p>
-
-		<RecoveryKeyCard
-			recoveryKey={form.newRecoveryKey}
-			title="New Emergency Recovery Code"
-			class="mt-6"
-		>
-			Save this code somewhere safe now. It won't be shown again, and it replaces the one you just
-			used.
-		</RecoveryKeyCard>
-
-		<a
-			href={form.continueTo ?? resolve('admin')}
-			data-sveltekit-reload
-			class="btn-primary mt-6 inline-block w-full text-center"
-		>
-			Continue to Admin Dashboard
-		</a>
-	{:else if twoFactor}
-		<p class="mt-1 text-sm text-muted">
-			Enter the 6-digit code from your authenticator app, or your emergency recovery code.
+			Enter the 6-digit code from your authenticator app, or one of your backup codes.
 		</p>
 
 		<form method="POST" class="mt-6 space-y-4" use:enhance={loginForm.submit}>
@@ -55,7 +31,7 @@
 				required
 				autofocus
 				autocomplete="one-time-code"
-				autocapitalize="characters"
+				autocapitalize="off"
 				spellcheck="false"
 				maxlength={32}
 				class="font-mono tracking-widest"

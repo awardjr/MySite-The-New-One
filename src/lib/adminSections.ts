@@ -1,6 +1,5 @@
 import { resolve } from '$app/paths';
 
-/** The admin area's sections in menu order, with the description the dashboard shows for each. */
 export const adminSections = [
 	{
 		href: resolve('admin/home'),
@@ -41,7 +40,6 @@ export const adminSections = [
 
 export const SETUP_ROUTE = '/admin/setup';
 
-/** Route ids of the admin pages that work without signing in. They show no admin menu. */
 export const signInRoutes = new Set<string>([
 	'/admin/login',
 	SETUP_ROUTE,

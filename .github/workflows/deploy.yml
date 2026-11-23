@@ -48,7 +48,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # GHCR image names must be lowercase.
       - name: Compute image name
         id: image
         run: echo "image=${REGISTRY}/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
@@ -56,9 +55,6 @@ jobs:
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | podman login "$REGISTRY" -u "${{ github.actor }}" --password-stdin
 
-      # --format docker keeps the Containerfile HEALTHCHECK (OCI format drops it).
-      # SITE_ORIGIN is an optional repository variable (e.g. https://example.com). When set, the
-      # origin is baked into the build so the app never trusts the request's Host header.
       - name: Build image with Podman
         env:
           IMAGE: ${{ steps.image.outputs.image }}
@@ -96,8 +92,6 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
           chmod 600 ~/.ssh/id_deploy
-          # The host key must be pinned. Fetching it here with ssh-keyscan would trust whatever
-          # machine answers, which defeats the check that protects the deploy key.
           if [ -z "$VPS_KNOWN_HOSTS" ]; then
             echo "::error::Set the VPS_KNOWN_HOSTS secret to the server's host key line(s). Get them with: ssh-keyscan -H <host>, and verify the fingerprint against the server."
             exit 1

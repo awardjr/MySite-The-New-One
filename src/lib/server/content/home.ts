@@ -12,7 +12,6 @@ export type HomeContent = {
 
 type ListField = 'introParagraphs' | 'featuredPosts' | 'featuredWorks';
 
-/** The home row as stored: list fields are JSON strings. */
 type HomeRow = Omit<HomeContent, ListField> & Record<ListField, string>;
 
 const getHomeStmt = db.prepare(

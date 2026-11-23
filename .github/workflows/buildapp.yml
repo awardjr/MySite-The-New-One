@@ -1,6 +1,3 @@
-# Checks pull requests: formatting, lint, types, tests and a production build.
-# Pushes to main run the same checks as the first job of deploy.yml.
-
 name: Node.js CI
 
 on:

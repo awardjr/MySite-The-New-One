@@ -22,47 +22,35 @@ describe('runMigrations', () => {
 			.map((row) => row.name)
 			.filter((name) => !name.startsWith('sqlite_'))
 			.sort();
-	const columns = (table: string) =>
-		(db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name);
 
 	beforeEach(() => {
 		db = new Database(':memory:');
 	});
 
-	it('builds the current schema and records every migration', () => {
-		runMigrations(db);
+	it('builds the current schema and records every migration', async () => {
+		await runMigrations(db);
 
 		expect(tableNames()).toEqual([
-			'admin_user',
 			'home',
 			'links',
 			'migrations',
 			'page_headlines',
-			'password_reset_tokens',
 			'pinball_machines',
 			'posts',
 			'press',
-			'sessions',
 			'works'
 		]);
 		expect(appliedNames()).toEqual(migrationFiles);
 	});
 
-	it('stores session and reset tokens under hashed column names', () => {
-		runMigrations(db);
-
-		expect(columns('sessions')).toEqual(['token_hash', 'created_at', 'expires_at']);
-		expect(columns('password_reset_tokens')).toEqual(['token_hash', 'created_at', 'expires_at']);
-	});
-
-	it('does nothing on later runs, keeping data and applied timestamps', () => {
-		runMigrations(db);
+	it('does nothing on later runs, keeping data and applied timestamps', async () => {
+		await runMigrations(db);
 		db.prepare(
 			'INSERT INTO home (id, name, tagline, photo_src, intro_paragraphs) VALUES (1, ?, ?, ?, ?)'
 		).run('Ada', 'Engineer', '/photo.jpg', '[]');
 		db.exec("UPDATE migrations SET applied_at = 'original'");
 
-		runMigrations(db);
+		await runMigrations(db);
 
 		expect(db.prepare('SELECT name FROM home').all()).toEqual([{ name: 'Ada' }]);
 		expect(
@@ -70,27 +58,26 @@ describe('runMigrations', () => {
 		).toEqual({ n: 0 });
 	});
 
-	it('skips a migration already recorded as applied', () => {
+	it('skips a migration already recorded as applied', async () => {
 		db.exec('CREATE TABLE migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL)');
 		const record = db.prepare('INSERT INTO migrations VALUES (?, ?)');
 		for (const file of migrationFiles) record.run(file, 'earlier');
 
-		runMigrations(db);
+		await runMigrations(db);
 
 		expect(tableNames()).toEqual(['migrations']);
 	});
 
-	it('rolls back a failing migration completely and can resume afterwards', () => {
-		// The last table in the migration clashes, so everything before it must be undone.
+	it('rolls back a failing migration completely and can resume afterwards', async () => {
 		db.exec('CREATE TABLE page_headlines (blocker INTEGER)');
 
-		expect(() => runMigrations(db)).toThrow();
+		await expect(runMigrations(db)).rejects.toThrow();
 
 		expect(appliedNames()).toEqual([]);
 		expect(tableNames()).toEqual(['migrations', 'page_headlines']);
 
 		db.exec('DROP TABLE page_headlines');
-		runMigrations(db);
+		await runMigrations(db);
 
 		expect(appliedNames()).toEqual(migrationFiles);
 		expect(tableNames()).toContain('posts');

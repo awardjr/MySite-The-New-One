@@ -1,158 +1,191 @@
-import { db } from '../db';
-import { generateRecoveryKey, hashSecret, normalizeRecoveryKey, verifySecret } from './secrets';
+import { isAPIError } from 'better-auth/api';
+import { generateRandomString } from 'better-auth/crypto';
+import { unlessRejected } from './errors';
+import { auth, RESET_TOKEN_PREFIX } from './instance';
+import { hashSecret, verifySecret } from './passwords';
 
-/** The single admin account (row id 1) and the secrets that unlock it. */
-interface AdminUserRow {
-	username: string;
+export interface AdminUser {
+	id: string;
 	email: string;
-	password_hash: string;
-	recovery_key_hash: string;
-	totp_secret: string | null;
-	totp_pending_secret: string | null;
-	totp_last_step: number | null;
+	username: string;
+	displayUsername: string;
+	twoFactorEnabled: boolean;
+	recoveryKeyHash: string | null;
 }
 
-const getAdminStmt = db.prepare(
-	'SELECT username, email, password_hash, recovery_key_hash, totp_secret, totp_pending_secret, ' +
-		'totp_last_step FROM admin_user WHERE id = 1'
-);
+const context = await auth.$context;
 
-const insertAdminStmt = db.prepare(
-	'INSERT INTO admin_user (id, username, email, password_hash, recovery_key_hash, updated_at) ' +
-		'VALUES (1, @username, @email, @passwordHash, @recoveryKeyHash, @updatedAt)'
-);
-
-const updateAdminProfileStmt = db.prepare(
-	'UPDATE admin_user SET username = @username, email = @email, updated_at = @updatedAt WHERE id = 1'
-);
-
-const updateAdminPasswordStmt = db.prepare(
-	'UPDATE admin_user SET password_hash = @passwordHash, updated_at = @updatedAt WHERE id = 1'
-);
-
-const updateRecoveryKeyStmt = db.prepare(
-	'UPDATE admin_user SET recovery_key_hash = @recoveryKeyHash, updated_at = @updatedAt WHERE id = 1'
-);
-
-export function getAdmin(): AdminUserRow | undefined {
-	return getAdminStmt.get() as AdminUserRow | undefined;
+export async function getAdmin(): Promise<AdminUser | null> {
+	const [admin] = await context.internalAdapter.listUsers(1);
+	return (admin as unknown as AdminUser | undefined) ?? null;
 }
 
-/** Returns true once an admin user has been configured in the database. */
-export function isAdminConfigured(): boolean {
-	return getAdmin() !== undefined;
+export async function isAdminConfigured(): Promise<boolean> {
+	return (await context.internalAdapter.countTotalUsers()) > 0;
 }
 
-/** Returns the stored admin username and email. */
-export function getAdminProfile(): { username: string; email: string } | null {
-	const row = getAdmin();
-	if (!row) return null;
-	return { username: row.username, email: row.email };
+export async function getAdminProfile(): Promise<{ username: string; email: string } | null> {
+	const admin = await getAdmin();
+	return admin && { username: admin.displayUsername || admin.username, email: admin.email };
 }
 
-async function credentialParams(
-	username: string,
-	email: string,
-	password: string,
-	recoveryKey: string
-) {
-	return {
-		username: username.trim(),
-		email: email.trim().toLowerCase(),
-		passwordHash: await hashSecret(password),
-		recoveryKeyHash: await hashSecret(normalizeRecoveryKey(recoveryKey)),
-		updatedAt: new Date().toISOString()
-	};
+export async function isSignedIn(headers: Headers): Promise<boolean> {
+	return (await auth.api.getSession({ headers })) !== null;
 }
 
-/**
- * Creates the admin account during first-time setup. Returns false, changing nothing, if an
- * account already exists, so two racing setup requests can't overwrite each other.
- */
-export async function createAdmin(
-	username: string,
-	email: string,
-	password: string,
-	recoveryKey: string
-): Promise<boolean> {
-	const params = await credentialParams(username, email, password, recoveryKey);
-	// Checked after hashing, in the same synchronous step as the insert.
-	if (isAdminConfigured()) return false;
-	insertAdminStmt.run(params);
-	return true;
+export function generateRecoveryKey(): string {
+	return generateRandomString(16, 'A-Z', '0-9').replace(/(.{4})(?=.)/g, '$1-');
 }
 
-/** Updates the admin username and email address. */
-export function updateAdminProfile(username: string, email: string): void {
-	updateAdminProfileStmt.run({
-		username: username.trim(),
-		email: email.trim().toLowerCase(),
-		updatedAt: new Date().toISOString()
-	});
+export function normalizeRecoveryKey(key: string): string {
+	return key
+		.trim()
+		.toUpperCase()
+		.replace(/[^A-Z0-9]/g, '');
 }
 
-/** Sets (or replaces) the single admin password. */
-export async function setAdminPassword(password: string): Promise<void> {
-	updateAdminPasswordStmt.run({
-		passwordHash: await hashSecret(password),
-		updatedAt: new Date().toISOString()
-	});
-}
-
-/** Checks a submitted password against the stored admin password. */
-export async function checkPassword(candidate: string): Promise<boolean> {
-	if (!candidate) return false;
-	const row = getAdmin();
-	if (!row) return false;
-	return verifySecret(candidate, row.password_hash);
-}
-
-/** Checks submitted login credentials (username/email and password). Both are required. */
-export async function checkCredentials(
-	identifier: string,
-	candidatePassword: string
-): Promise<boolean> {
-	const normId = identifier.trim().toLowerCase();
-	if (!normId || !candidatePassword) return false;
-	const row = getAdmin();
-	if (!row) return false;
-
-	const idMatches = normId === row.username.toLowerCase() || normId === row.email.toLowerCase();
-	// Always hash the password, so response time doesn't reveal whether the identifier matched.
-	const passwordMatches = await verifySecret(candidatePassword, row.password_hash);
-	return idMatches && passwordMatches;
-}
-
-/** Replaces the recovery key with a freshly generated one and returns it, to be shown once. */
-export async function rotateRecoveryKey(): Promise<string> {
+export async function rotateRecoveryKey(userId: string): Promise<string> {
 	const key = generateRecoveryKey();
-	updateRecoveryKeyStmt.run({
-		recoveryKeyHash: await hashSecret(normalizeRecoveryKey(key)),
-		updatedAt: new Date().toISOString()
+	await context.internalAdapter.updateUser(userId, {
+		recoveryKeyHash: await hashSecret(normalizeRecoveryKey(key))
 	});
 	return key;
 }
 
-/**
- * Uses up a recovery key. A key only works once: on a match it is replaced, and the new key is
- * returned so it can be shown to the admin. Returns null if the candidate doesn't match.
- *
- * `canRedeem` runs immediately before the key is replaced. If it returns false the key stays valid
- * and null is returned, so a caller that could not show the new key doesn't lose the old one.
- */
-export async function redeemRecoveryKey(
-	candidate: string,
-	canRedeem: () => boolean = () => true
+export async function createAdmin(
+	username: string,
+	email: string,
+	password: string
 ): Promise<string | null> {
-	const normalized = normalizeRecoveryKey(candidate);
-	if (!normalized) return null;
-	const stored = getAdmin()?.recovery_key_hash;
-	if (!stored || !(await verifySecret(normalized, stored))) return null;
+	try {
+		const { user } = await auth.api.signUpEmail({
+			body: { name: username, username, displayUsername: username, email, password }
+		});
+		return await rotateRecoveryKey(user.id);
+	} catch (error) {
+		if (await isAdminConfigured()) return null;
+		throw error;
+	}
+}
 
-	const newKey = generateRecoveryKey();
-	const newHash = await hashSecret(normalizeRecoveryKey(newKey));
-	// Another request may have redeemed the same key while this one was hashing; only one wins.
-	if (getAdmin()?.recovery_key_hash !== stored || !canRedeem()) return null;
-	updateRecoveryKeyStmt.run({ recoveryKeyHash: newHash, updatedAt: new Date().toISOString() });
-	return newKey;
+export async function signInWithPassword(
+	headers: Headers,
+	identifier: string,
+	password: string
+): Promise<{ twoFactor: boolean } | null> {
+	const id = identifier.trim();
+	if (!id || !password) return null;
+	try {
+		const result = id.includes('@')
+			? await auth.api.signInEmail({ body: { email: id, password }, headers })
+			: await auth.api.signInUsername({ body: { username: id, password }, headers });
+		return { twoFactor: 'twoFactorRedirect' in result && result.twoFactorRedirect === true };
+	} catch (error) {
+		if (isAPIError(error) && error.statusCode < 500) return null;
+		throw error;
+	}
+}
+
+export async function signOut(headers: Headers): Promise<void> {
+	await auth.api.signOut({ headers });
+}
+
+export async function checkPassword(headers: Headers, password: string): Promise<boolean> {
+	if (!password) return false;
+	const verified = await unlessRejected(
+		() => auth.api.verifyPassword({ body: { password }, headers }),
+		['INVALID_PASSWORD']
+	);
+	return verified !== null;
+}
+
+export async function changePassword(
+	headers: Headers,
+	currentPassword: string,
+	newPassword: string
+): Promise<boolean> {
+	const changed = await unlessRejected(
+		() =>
+			auth.api.changePassword({
+				body: { currentPassword, newPassword, revokeOtherSessions: true },
+				headers
+			}),
+		['INVALID_PASSWORD']
+	);
+	if (changed) await deleteResetTokens();
+	return changed !== null;
+}
+
+export async function updateAdminProfile(
+	headers: Headers,
+	username: string,
+	email: string
+): Promise<void> {
+	await auth.api.updateUser({
+		body: { name: username, username, displayUsername: username },
+		headers
+	});
+	const admin = await getAdmin();
+	if (admin && admin.email !== email.toLowerCase()) {
+		await auth.api.changeEmail({ body: { newEmail: email }, headers });
+		await deleteResetTokens();
+	}
+}
+
+async function deleteResetTokens(): Promise<void> {
+	await context.adapter.deleteMany({
+		model: 'verification',
+		where: [{ field: 'identifier', operator: 'starts_with', value: RESET_TOKEN_PREFIX }]
+	});
+}
+
+export async function requestEmailPasswordReset(identifier: string): Promise<void> {
+	const admin = await getAdmin();
+	const id = identifier.trim().toLowerCase();
+	if (!admin || (id !== admin.email.toLowerCase() && id !== admin.username.toLowerCase())) return;
+	await auth.api.requestPasswordReset({ body: { email: admin.email } });
+}
+
+export async function isValidResetToken(token: string | null | undefined): Promise<boolean> {
+	if (!token) return false;
+	const verification = await context.internalAdapter.findVerificationValue(
+		RESET_TOKEN_PREFIX + token
+	);
+	return verification !== null && verification.expiresAt > new Date();
+}
+
+export async function resetPasswordWithToken(token: string, newPassword: string) {
+	const reset = await unlessRejected(
+		() => auth.api.resetPassword({ body: { token, newPassword } }),
+		['INVALID_TOKEN']
+	);
+	if (reset) await deleteResetTokens();
+	return reset !== null;
+}
+
+export async function resetPasswordWithRecoveryKey(
+	recoveryKey: string,
+	newPassword: string
+): Promise<string | null> {
+	const normalized = normalizeRecoveryKey(recoveryKey);
+	const admin = await getAdmin();
+	if (!normalized || !admin || !(await verifySecret(normalized, admin.recoveryKeyHash))) {
+		return null;
+	}
+
+	const newRecoveryKey = generateRecoveryKey();
+	const redeemed = await context.adapter.updateMany({
+		model: 'user',
+		where: [
+			{ field: 'id', value: admin.id },
+			{ field: 'recoveryKeyHash', value: admin.recoveryKeyHash }
+		],
+		update: { recoveryKeyHash: await hashSecret(normalizeRecoveryKey(newRecoveryKey)) }
+	});
+	if (redeemed !== 1) return null;
+
+	await context.internalAdapter.updatePassword(admin.id, await context.password.hash(newPassword));
+	await context.internalAdapter.deleteUserSessions(admin.id);
+	await deleteResetTokens();
+	return newRecoveryKey;
 }

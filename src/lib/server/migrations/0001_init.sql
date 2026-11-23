@@ -1,28 +1,3 @@
-CREATE TABLE admin_user (
-	id INTEGER PRIMARY KEY CHECK (id = 1),
-	username TEXT NOT NULL,
-	email TEXT NOT NULL,
-	password_hash TEXT NOT NULL,
-	recovery_key_hash TEXT NOT NULL,
-	totp_secret TEXT,
-	totp_pending_secret TEXT,
-	totp_last_step INTEGER,
-	updated_at TEXT NOT NULL
-);
-
--- Session ids and password reset tokens are stored only as SHA-256 hashes.
-CREATE TABLE sessions (
-	token_hash TEXT PRIMARY KEY,
-	created_at TEXT NOT NULL,
-	expires_at TEXT NOT NULL
-);
-
-CREATE TABLE password_reset_tokens (
-	token_hash TEXT PRIMARY KEY,
-	created_at TEXT NOT NULL,
-	expires_at TEXT NOT NULL
-);
-
 CREATE TABLE home (
 	id INTEGER PRIMARY KEY CHECK (id = 1),
 	name TEXT NOT NULL DEFAULT '',

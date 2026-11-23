@@ -1,7 +1,6 @@
 import { saveUploadedImage, UploadError } from '#lib/server/uploads.js';
 import type { RequestHandler } from './$types';
 
-// Auth is already enforced globally for every /admin/* route in hooks.server.ts.
 export const POST: RequestHandler = async ({ request }) => {
 	const formData = await request.formData();
 	const file = formData.get('file');

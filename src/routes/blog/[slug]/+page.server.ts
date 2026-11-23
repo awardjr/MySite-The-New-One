@@ -5,8 +5,6 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = ({ params, locals, url }) => {
 	const post = readContent().blog.find((p) => p.slug === params.slug);
 
-	// Draft posts are only visible to the logged-in admin, so they can be previewed
-	// before publishing without being reachable by the public.
 	if (!post || (post.draft && !locals.isAdmin)) {
 		error(404, 'Post not found');
 	}

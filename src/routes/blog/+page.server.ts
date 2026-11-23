@@ -2,7 +2,6 @@ import { getPublishedPosts, getHeadlineForPage } from '#lib/server/content.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
-	// Only send what the cards render; the full post HTML stays on the post page.
 	const posts = getPublishedPosts().map(({ slug, title, date, image, preview }) => ({
 		slug,
 		title,

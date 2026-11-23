@@ -9,10 +9,8 @@ import {
 	faWindows
 } from '@fortawesome/free-brands-svg-icons';
 
-// Nintendo Switch logo from Simple Icons (CC0)
 const faNintendoSwitch: IconDefinition = {
 	prefix: 'fab',
-	// Not in Font Awesome's list of names, which is why this icon is defined here.
 	iconName: 'nintendo-switch' as string as IconDefinition['iconName'],
 	icon: [
 		24,
@@ -23,7 +21,6 @@ const faNintendoSwitch: IconDefinition = {
 	]
 };
 
-/** The platforms a work can be tagged with, in the order the admin page lists them. */
 export const platforms: { key: string; label: string; icon: IconDefinition }[] = [
 	{ key: 'web', label: 'Web', icon: faGlobe },
 	{ key: 'windows', label: 'Windows', icon: faWindows },

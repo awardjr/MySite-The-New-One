@@ -21,7 +21,6 @@ export function getPageHeadlines(): PageHeadline[] {
 	return getPageHeadlinesStmt.all() as PageHeadline[];
 }
 
-/** Inserts or replaces the headline/subtitle for a single page, leaving the other pages alone. */
 export function upsertPageHeadline(item: PageHeadline): void {
 	upsertPageHeadlineStmt.run(item);
 }

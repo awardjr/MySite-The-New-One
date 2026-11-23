@@ -1,184 +1,101 @@
-import { dev } from '$app/env';
-import { db } from '../db';
-import { decryptSecret, encryptSecret, isEncryptionKeyConfigured } from '../secretbox';
-import { generateTotpSecret, normalizeTotpCode, verifyTotp } from '../totp';
-import { getAdmin, redeemRecoveryKey } from './admin';
-import { newToken } from './secrets';
+import { createOTP } from '@better-auth/utils/otp';
+import { symmetricDecrypt } from 'better-auth/crypto';
+import type { AdminUser } from './admin';
+import { authErrorCode, unlessRejected } from './errors';
+import { auth } from './instance';
 
-const MAX_CHALLENGE_FAILURES = 5;
-const TWO_FACTOR_CHALLENGE_MS = 5 * 60 * 1000; // 5 minutes to enter the code after the password
+const context = await auth.$context;
 
-const updateTotpStmt = db.prepare(
-	'UPDATE admin_user SET totp_secret = @secret, totp_pending_secret = @pendingSecret, ' +
-		'totp_last_step = @lastStep, updated_at = @updatedAt WHERE id = 1'
-);
-const updateTotpPendingSecretStmt = db.prepare(
-	'UPDATE admin_user SET totp_pending_secret = ?, updated_at = ? WHERE id = 1'
-);
-const updateTotpLastStepStmt = db.prepare('UPDATE admin_user SET totp_last_step = ? WHERE id = 1');
+export const twoFactorCookie = context.createAuthCookie('two_factor');
 
-function readTotpSecret(value: string | null | undefined): string | null {
-	if (!value) return null;
+export type SecondFactorResult = 'ok' | 'invalid' | 'expired' | 'too-many' | 'locked';
+
+export async function submitSecondFactor(
+	headers: Headers,
+	input: string
+): Promise<SecondFactorResult> {
+	const digits = input.replace(/\s/g, '');
 	try {
-		return decryptSecret(value);
-	} catch {
-		return null;
+		if (/^\d{6}$/.test(digits)) await auth.api.verifyTOTP({ body: { code: digits }, headers });
+		else await auth.api.verifyBackupCode({ body: { code: input.trim() }, headers });
+		return 'ok';
+	} catch (error) {
+		switch (authErrorCode(error)) {
+			case 'INVALID_CODE':
+			case 'INVALID_BACKUP_CODE':
+				return 'invalid';
+			case 'INVALID_TWO_FACTOR_COOKIE':
+				return 'expired';
+			case 'TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE':
+				return 'too-many';
+			case 'ACCOUNT_TEMPORARILY_LOCKED':
+				return 'locked';
+			default:
+				throw error;
+		}
 	}
 }
 
-function saveTotp(secret: string | null, pendingSecret: string | null, lastStep: number | null) {
-	updateTotpStmt.run({
-		secret: secret === null ? null : encryptSecret(secret),
-		pendingSecret: pendingSecret === null ? null : encryptSecret(pendingSecret),
-		lastStep,
-		updatedAt: new Date().toISOString()
+export async function startTotpSetup(headers: Headers, password: string, issuer: string) {
+	if (!password) return false;
+	const started = await unlessRejected(
+		() => auth.api.enableTwoFactor({ body: { password, issuer }, headers }),
+		['INVALID_PASSWORD']
+	);
+	return started !== null;
+}
+
+export async function pendingTotpUri(admin: AdminUser, issuer: string): Promise<string | null> {
+	const pending = await context.adapter.findOne<{ secret: string; verified: boolean }>({
+		model: 'twoFactor',
+		where: [{ field: 'userId', value: admin.id }]
+	});
+	if (!pending || pending.verified) return null;
+	const secret = await symmetricDecrypt({ key: context.secretConfig, data: pending.secret });
+	return createOTP(secret).url(issuer, admin.email);
+}
+
+export async function cancelTotpSetup(userId: string): Promise<void> {
+	await context.adapter.deleteMany({
+		model: 'twoFactor',
+		where: [
+			{ field: 'userId', value: userId },
+			{ field: 'verified', value: false }
+		]
 	});
 }
 
-/** Returns true if two-factor authentication is turned on for the admin account. */
-export function isTotpEnabled(): boolean {
-	return Boolean(getAdmin()?.totp_secret);
+export async function confirmTotpSetup(
+	headers: Headers,
+	userId: string,
+	code: string
+): Promise<string[] | null> {
+	const earlierSessions = await context.internalAdapter.listSessions(userId);
+	const confirmed = await unlessRejected(
+		() => auth.api.verifyTOTP({ body: { code: code.replace(/\s/g, '') }, headers }),
+		['INVALID_CODE', 'TOTP_NOT_ENABLED']
+	);
+	if (!confirmed) return null;
+	await context.internalAdapter.deleteSessions(earlierSessions.map((session) => session.token));
+	return backupCodes(userId);
 }
 
-/** Returns the secret of a 2FA setup that was started but not yet confirmed, if any. */
-export function getPendingTotpSecret(): string | null {
-	return readTotpSecret(getAdmin()?.totp_pending_secret);
+export async function disableTotp(headers: Headers, password: string): Promise<boolean> {
+	const disabled = await unlessRejected(
+		() => auth.api.disableTwoFactor({ body: { password }, headers }),
+		['INVALID_PASSWORD']
+	);
+	return disabled !== null;
 }
 
-/** Starts 2FA setup by generating a new secret. It only takes effect once confirmed with a code. */
-export function startTotpSetup(): string {
-	if (!isEncryptionKeyConfigured()) {
-		throw new Error(
-			'TOTP_ENCRYPTION_KEY must be configured before setting up two-factor authentication.'
-		);
-	}
-	const secret = generateTotpSecret();
-	updateTotpPendingSecretStmt.run(encryptSecret(secret), new Date().toISOString());
-	return secret;
+export async function regenerateBackupCodes(headers: Headers, password: string) {
+	const generated = await unlessRejected(
+		() => auth.api.generateBackupCodes({ body: { password }, headers }),
+		['INVALID_PASSWORD']
+	);
+	return generated?.backupCodes ?? null;
 }
 
-/** Abandons a pending 2FA setup. */
-export function cancelTotpSetup(): void {
-	updateTotpPendingSecretStmt.run(null, new Date().toISOString());
+export async function backupCodes(userId: string): Promise<string[]> {
+	return (await auth.api.viewBackupCodes({ body: { userId } })).backupCodes;
 }
-
-/** Turns 2FA on if the code matches the pending secret, proving the authenticator app is set up. */
-export function confirmTotpSetup(code: string): boolean {
-	const pending = getPendingTotpSecret();
-	if (!pending) return false;
-	const step = verifyTotp(pending, code);
-	if (step === null) return false;
-	saveTotp(pending, null, step);
-	return true;
-}
-
-/** Turns 2FA off and discards its secret. */
-export function disableTotp(): void {
-	saveTotp(null, null, null);
-}
-
-/** Checks a code from the authenticator app. Each code is accepted only once. */
-export function verifyTotpCode(code: string): boolean {
-	const row = getAdmin();
-	const secret = readTotpSecret(row?.totp_secret);
-	if (!secret || !row) return false;
-	const step = verifyTotp(secret, code, row.totp_last_step);
-	if (step === null) return false;
-	updateTotpLastStepStmt.run(step);
-	return true;
-}
-
-/** How a second factor was satisfied. A recovery code is used up and replaced by `newRecoveryKey`. */
-export type SecondFactor = { method: 'totp' } | { method: 'recovery'; newRecoveryKey: string };
-
-/**
- * Checks the second login factor: a 6-digit authenticator code, or the emergency recovery code
- * as a fallback for a lost authenticator. Returns null if the input matches neither.
- * `canRedeemRecoveryKey` can stop a matching recovery code from being used up.
- */
-export async function verifySecondFactor(
-	input: string,
-	canRedeemRecoveryKey?: () => boolean
-): Promise<SecondFactor | null> {
-	if (normalizeTotpCode(input)) {
-		return verifyTotpCode(input) ? { method: 'totp' } : null;
-	}
-	const newRecoveryKey = await redeemRecoveryKey(input, canRedeemRecoveryKey);
-	return newRecoveryKey ? { method: 'recovery', newRecoveryKey } : null;
-}
-
-// Logins that passed the password check and are waiting for a 2FA code, keyed by a random token.
-const twoFactorChallenges = new Map<string, { expiresAt: number; failures: number }>();
-
-function sweepTwoFactorChallenges(now: number): void {
-	for (const [token, challenge] of twoFactorChallenges) {
-		if (challenge.expiresAt <= now) twoFactorChallenges.delete(token);
-	}
-}
-
-/** Records that the password step succeeded and returns a token for the code step. */
-export function createTwoFactorChallenge(): string {
-	const now = Date.now();
-	sweepTwoFactorChallenges(now);
-	const token = newToken();
-	twoFactorChallenges.set(token, { expiresAt: now + TWO_FACTOR_CHALLENGE_MS, failures: 0 });
-	return token;
-}
-
-/** Returns true if the token belongs to a login that is still waiting for its 2FA code. */
-export function hasTwoFactorChallenge(token: string | undefined | null): boolean {
-	if (!token) return false;
-	const challenge = twoFactorChallenges.get(token);
-	if (!challenge) return false;
-	if (challenge.expiresAt <= Date.now()) {
-		twoFactorChallenges.delete(token);
-		return false;
-	}
-	return true;
-}
-
-/**
- * Completes a pending login with a second-factor code. On success the challenge is consumed and
- * the way the factor was satisfied is returned. After too many wrong codes the challenge is
- * discarded and the password is needed again.
- */
-export async function completeTwoFactorChallenge(
-	token: string | undefined | null,
-	input: string
-): Promise<SecondFactor | null> {
-	if (!token || !hasTwoFactorChallenge(token)) return null;
-	// A recovery code is only used up by claiming the challenge in the same step. If the login was
-	// cancelled while the code was being checked, the code stays valid instead of being lost.
-	const factor = await verifySecondFactor(input, () => twoFactorChallenges.delete(token));
-	if (factor?.method === 'recovery') return factor;
-
-	// The challenge may have been cancelled or used while the code was being checked.
-	const challenge = twoFactorChallenges.get(token);
-	if (!challenge) return null;
-	if (factor) {
-		twoFactorChallenges.delete(token);
-		return factor;
-	}
-	if (++challenge.failures >= MAX_CHALLENGE_FAILURES) twoFactorChallenges.delete(token);
-	return null;
-}
-
-/** Discards a pending 2FA login (e.g. when the user goes back to the password step). */
-export function cancelTwoFactorChallenge(token: string | undefined | null): void {
-	if (token) twoFactorChallenges.delete(token);
-}
-
-/** Discards every pending 2FA login. Used whenever all sessions are revoked. */
-export function clearTwoFactorChallenges(): void {
-	twoFactorChallenges.clear();
-}
-
-export const TWO_FACTOR_COOKIE_NAME = 'cms_2fa';
-
-export const twoFactorCookieOptions = {
-	path: '/admin/login',
-	httpOnly: true,
-	secure: !dev,
-	sameSite: 'strict' as const,
-	maxAge: TWO_FACTOR_CHALLENGE_MS / 1000
-};

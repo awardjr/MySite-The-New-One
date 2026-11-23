@@ -3,7 +3,6 @@
 	import CardImage from '#lib/components/CardImage.svelte';
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
-	import { formatDate } from '#lib/formatDate.js';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 	import Fa from 'svelte-fa';
@@ -42,7 +41,7 @@
 
 				<div class="p-5 sm:p-6">
 					<p class="card-header">
-						{formatDate(post.date)}
+						{post.date}
 					</p>
 					<h2 class="mt-1 text-xl font-bold text-card-heading sm:text-2xl">
 						{post.title}

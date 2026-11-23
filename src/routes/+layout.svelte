@@ -69,8 +69,8 @@
 				{#key page.url.pathname}
 					<div
 						class="col-start-1 row-start-1"
-						in:fade={{ duration: reduceMotion ? 0 : 100 }}
-						out:fade={{ duration: reduceMotion ? 0 : 100 }}
+						in:fade={{ duration: reduceMotion ? 0 : 69 }}
+						out:fade={{ duration: reduceMotion ? 0 : 69 }}
 					>
 						{@render children()}
 					</div>

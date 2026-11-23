@@ -5,12 +5,12 @@ import createDOMPurify from 'dompurify';
 import { JSDOM } from 'jsdom';
 import sharp from 'sharp';
 import { UPLOAD_IMAGE_TYPES } from '../imageTypes';
+import { IMAGE_WIDTHS, MAX_IMAGE_WIDTH, uploadedImageName } from '../responsiveImage';
 
 export const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'static', 'uploads');
 const PUBLIC_PREFIX = '/uploads/';
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-const MAX_IMAGE_WIDTH = 1920;
 
 const EXTENSION_TO_MIME: Record<string, string> = {
 	...Object.fromEntries(
@@ -63,32 +63,35 @@ function sanitizeSvg(input: Buffer): Buffer {
 	return Buffer.from(xmlSerializer.serializeToString(svg));
 }
 
-const RASTER_EXTENSIONS: Record<string, string> = {
-	jpeg: 'jpg',
-	png: 'png',
-	webp: 'webp',
-	gif: 'gif'
-};
+const RASTER_FORMATS = new Set(['jpeg', 'png', 'webp', 'gif']);
 
-async function optimizeRasterImage(input: Buffer): Promise<{ data: Buffer; extension: string }> {
+type ImageSize = { width: number; data: Buffer };
+
+async function webpSizes(input: Buffer): Promise<ImageSize[]> {
 	const metadata = await sharp(input)
 		.metadata()
 		.catch(() => null);
-	const originalExtension = metadata && RASTER_EXTENSIONS[metadata.format];
-	if (!originalExtension) {
+	if (!metadata || !RASTER_FORMATS.has(metadata.format)) {
 		throw new UploadError('That file could not be read as an image.');
 	}
-	if ((metadata.pages ?? 1) > 1) {
-		return { data: input, extension: originalExtension };
-	}
+
+	const animated = (metadata.pages ?? 1) > 1;
+	const source = sharp(input, { animated });
+	if (!animated) source.rotate();
+	const options = metadata.format === 'png' ? { nearLossless: true } : { quality: 82 };
+	const encode = async (width: number): Promise<ImageSize> => {
+		const { data, info } = await source
+			.clone()
+			.resize({ width, withoutEnlargement: true })
+			.webp(options)
+			.toBuffer({ resolveWithObject: true });
+		return { width: info.width, data };
+	};
 
 	try {
-		const data = await sharp(input)
-			.rotate()
-			.resize({ width: MAX_IMAGE_WIDTH, withoutEnlargement: true })
-			.webp(metadata.format === 'png' ? { nearLossless: true } : { quality: 82 })
-			.toBuffer();
-		return { data, extension: 'webp' };
+		const full = await encode(MAX_IMAGE_WIDTH);
+		const smaller = IMAGE_WIDTHS.filter((width) => width < full.width);
+		return [full, ...(await Promise.all(smaller.map(encode)))];
 	} catch {
 		throw new UploadError('That file could not be read as an image.');
 	}
@@ -112,13 +115,19 @@ export async function saveUploadedImage(file: File): Promise<string> {
 	await fs.mkdir(UPLOAD_DIR, { recursive: true });
 
 	const buffer = Buffer.from(await file.arrayBuffer());
-	const prepared =
-		file.type === 'image/svg+xml'
-			? { data: sanitizeSvg(buffer), extension }
-			: await optimizeRasterImage(buffer);
+	const id = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}`;
 
-	const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${prepared.extension}`;
-	await fs.writeFile(path.join(UPLOAD_DIR, filename), prepared.data);
+	if (file.type === 'image/svg+xml') {
+		const filename = `${id}.${extension}`;
+		await fs.writeFile(path.join(UPLOAD_DIR, filename), sanitizeSvg(buffer));
+		return `${PUBLIC_PREFIX}${filename}`;
+	}
 
-	return `${PUBLIC_PREFIX}${filename}`;
+	const sizes = await webpSizes(buffer);
+	await Promise.all(
+		sizes.map(({ width, data }) =>
+			fs.writeFile(path.join(UPLOAD_DIR, uploadedImageName(id, width)), data)
+		)
+	);
+	return `${PUBLIC_PREFIX}${uploadedImageName(id, sizes[0].width)}`;
 }

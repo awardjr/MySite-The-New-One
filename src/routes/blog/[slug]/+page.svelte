@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
-	import { formatDate } from '#lib/formatDate.js';
+	import { srcset } from '#lib/responsiveImage.js';
 	import type { PageProps } from './$types';
 	import { resolve } from '$app/paths';
 
@@ -38,6 +38,9 @@
 			>
 				<img
 					src={post.image}
+					srcset={srcset(post.image)}
+					sizes="(min-width: 816px) 768px, 100vw"
+					fetchpriority="high"
 					alt={post.title}
 					class="mb-6 h-56 w-full cursor-pointer rounded-lg object-cover ring-1 ring-photo-ring sm:h-80"
 				/>
@@ -47,7 +50,7 @@
 		<h1 class="text-3xl font-bold tracking-tight text-heading sm:text-4xl">
 			{post.title}
 		</h1>
-		<p class="mt-1 text-eyebrow">{formatDate(post.date)}</p>
+		<p class="mt-1 text-eyebrow">{post.displayDate}</p>
 
 		<div class="post-content mt-6 text-lg leading-relaxed text-copy">
 			<!-- eslint-disable-next-line svelte/no-at-html-tags -->

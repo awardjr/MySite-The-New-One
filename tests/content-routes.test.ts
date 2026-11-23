@@ -36,10 +36,10 @@ import * as adminEditPost from '../src/routes/admin/(app)/blog/[slug]/+page.serv
 const testDb = getTestDb();
 
 type HomeData = {
-	featuredPosts: { slug: string; title: string; preview: string }[];
+	featuredPosts: { slug: string; title: string; preview: string; date: string }[];
 	featuredWorks: { title: string }[];
 };
-type PostData = { post: Post };
+type PostData = { post: Post & { displayDate: string } };
 
 const post = (slug: string, overrides: Partial<Parameters<typeof createPost>[0]> = {}) => ({
 	slug,
@@ -154,9 +154,9 @@ describe('home page', () => {
 		createPost(post('one'));
 		updateSection('home', { ...emptyHome, featuredPosts: ['one'] });
 
-		expect((await loadPage<HomeData>(homePage.load)).data.featuredPosts[0]).not.toHaveProperty(
-			'content'
-		);
+		const [featured] = (await loadPage<HomeData>(homePage.load)).data.featuredPosts;
+		expect(featured).not.toHaveProperty('content');
+		expect(featured.date).toBe('January 2, 2024');
 	});
 });
 
@@ -177,7 +177,7 @@ describe('public blog', () => {
 			{
 				slug: 'published',
 				title: 'Title published',
-				date: '2024-01-02',
+				date: 'January 2, 2024',
 				image: '/published.png',
 				preview: 'Preview published'
 			}
@@ -189,7 +189,11 @@ describe('public blog', () => {
 			params: { slug: 'published' },
 			locals: {}
 		});
-		expect(result.data.post.title).toBe('Title published');
+		expect(result.data.post).toMatchObject({
+			title: 'Title published',
+			date: '2024-01-02',
+			displayDate: 'January 2, 2024'
+		});
 	});
 
 	it('hides drafts from the public but lets the admin preview them', async () => {
@@ -273,9 +277,13 @@ describe('press page', () => {
 			item('Newest', '2024-03-01')
 		]);
 
-		const { data } = await loadPage<{ items: { title: string }[] }>(pressPage.load);
+		const { data } = await loadPage<{ items: { title: string; date: string }[] }>(pressPage.load);
 
-		expect(data.items.map((i) => i.title)).toEqual(['Newest', 'Older', 'Undated']);
+		expect(data.items.map((i) => [i.title, i.date])).toEqual([
+			['Newest', 'March 1, 2024'],
+			['Older', 'December 31, 2023'],
+			['Undated', '']
+		]);
 		expect(readContent().press[0].title).toBe('Undated');
 	});
 });

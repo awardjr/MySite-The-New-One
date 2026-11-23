@@ -73,7 +73,7 @@
 
 {#if menuOpen}
 	<nav
-		transition:slide|global={{ duration: 150 }}
+		transition:slide|global={{ duration: 69 }}
 		class="border-t border-chrome-border px-4 py-3 lg:hidden"
 	>
 		<div class="flex flex-col gap-2">

@@ -3,7 +3,6 @@
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import ExternalLinkIcon from '#lib/components/ExternalLinkIcon.svelte';
-	import { formatDate } from '#lib/formatDate.js';
 	import { linkHost } from '#lib/linkHost.js';
 	import type { PressItem } from '#lib/server/content.js';
 	import type { PageProps } from './$types';
@@ -24,7 +23,7 @@
 				<span>·</span>
 			{/if}
 			{#if item.date}
-				<span class="whitespace-nowrap">{formatDate(item.date)}</span>
+				<span class="whitespace-nowrap">{item.date}</span>
 			{/if}
 		</p>
 	{/if}

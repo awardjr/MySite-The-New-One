@@ -2,18 +2,15 @@
 	import { resolve } from '$app/paths';
 	import PageHeading from '#lib/components/PageHeading.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
-	import { formatDate } from '#lib/formatDate.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
-
-	const lastUpdated = '2026-11-20';
 </script>
 
 <PageMeta title="Privacy" description="How the site handles your information." />
 
 <section class="py-6 sm:py-10">
-	<PageHeading headline="Privacy" subtitle="Last updated {formatDate(lastUpdated)}" />
+	<PageHeading headline="Privacy" subtitle="Last updated November 20, 2026" />
 
 	<div class="mt-8 max-w-3xl space-y-8 text-lg leading-relaxed text-copy">
 		<p>

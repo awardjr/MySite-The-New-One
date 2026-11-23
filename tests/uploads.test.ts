@@ -15,6 +15,7 @@ const { uploadDir } = await vi.hoisted(async () => {
 
 import { outcome } from './route-helpers';
 import { resolveUploadPath, saveUploadedImage, UploadError } from '#lib/server/uploads.js';
+import { srcset } from '#lib/responsiveImage.js';
 import { POST as uploadEndpoint } from '../src/routes/admin/upload/+server';
 import { GET as serveUpload } from '../src/routes/uploads/[...path]/+server';
 
@@ -92,8 +93,25 @@ describe('saveUploadedImage', () => {
 	it('stores a still image as WebP under a generated public name', async () => {
 		const publicPath = await saveUploadedImage(image());
 
-		expect(publicPath).toMatch(/^\/uploads\/\d+-[0-9a-f]{12}\.webp$/);
+		expect(publicPath).toMatch(/^\/uploads\/\d+-[0-9a-f]{12}-4\.webp$/);
 		expect((await sharp(storedPath(publicPath)).metadata()).format).toBe('webp');
+		expect(fs.readdirSync(uploadDir)).toEqual([path.basename(publicPath)]);
+	});
+
+	it('writes smaller copies that the srcset points to', async () => {
+		const content = new Uint8Array(await picture(1000, 500).jpeg().toBuffer());
+		const publicPath = await saveUploadedImage(image('a.jpg', 'image/jpeg', content));
+		const candidates = (srcset(publicPath) ?? '').split(', ').map((entry) => entry.split(' '));
+
+		expect(candidates.map(([, width]) => width)).toEqual(['320w', '640w', '960w', '1000w']);
+		expect(candidates.at(-1)?.[0]).toBe(publicPath);
+		for (const [file, width] of candidates) {
+			expect(await sharp(storedPath(file)).metadata(), file).toMatchObject({
+				format: 'webp',
+				width: Number.parseInt(width)
+			});
+		}
+		expect(fs.readdirSync(uploadDir)).toHaveLength(4);
 	});
 
 	it('shrinks large images without enlarging small ones', async () => {
@@ -119,7 +137,7 @@ describe('saveUploadedImage', () => {
 		expect((await sharp(storedPath(publicPath)).metadata()).exif).toBeUndefined();
 	});
 
-	it('keeps an animated image as it is', async () => {
+	it('converts an animated image to animated WebP, keeping every frame', async () => {
 		const frame = (background: string) =>
 			sharp({ create: { width: 4, height: 4, channels: 3, background } })
 				.png()
@@ -133,8 +151,11 @@ describe('saveUploadedImage', () => {
 
 		const publicPath = await saveUploadedImage(image('a.gif', 'image/gif', animated));
 
-		expect(path.extname(publicPath)).toBe('.gif');
-		expect(new Uint8Array(fs.readFileSync(storedPath(publicPath)))).toEqual(animated);
+		expect(path.extname(publicPath)).toBe('.webp');
+		expect(await sharp(storedPath(publicPath), { animated: true }).metadata()).toMatchObject({
+			format: 'webp',
+			pages: 2
+		});
 	});
 
 	it('rejects a file that is not really an image', async () => {

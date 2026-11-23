@@ -2,8 +2,14 @@
 	import { faImage } from '@fortawesome/free-solid-svg-icons';
 	import Fa from 'svelte-fa';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
+	import { srcset } from '#lib/responsiveImage.js';
 
-	let { src, alt, class: className }: { src: string; alt: string; class?: string } = $props();
+	let {
+		src,
+		alt,
+		sizes = '(min-width: 640px) 128px, 160px',
+		class: className
+	}: { src: string; alt: string; sizes?: string; class?: string } = $props();
 </script>
 
 {#if src}
@@ -15,6 +21,8 @@
 	>
 		<img
 			{src}
+			srcset={srcset(src)}
+			{sizes}
 			{alt}
 			loading="lazy"
 			decoding="async"

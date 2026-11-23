@@ -1,10 +1,19 @@
 <script lang="ts">
-	let { src, alt, class: className }: { src: string; alt: string; class?: string } = $props();
+	import { srcset } from '#lib/responsiveImage.js';
+
+	let {
+		src,
+		alt,
+		sizes = '(min-width: 1024px) 976px, 100vw',
+		class: className
+	}: { src: string; alt: string; sizes?: string; class?: string } = $props();
 </script>
 
 <div class={['h-48 overflow-hidden border-b border-card-border', className]}>
 	<img
 		{src}
+		srcset={srcset(src)}
+		{sizes}
 		{alt}
 		loading="lazy"
 		decoding="async"

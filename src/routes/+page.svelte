@@ -2,7 +2,7 @@
 	import CardImage from '#lib/components/CardImage.svelte';
 	import PageMeta from '#lib/components/PageMeta.svelte';
 	import { openLightbox } from '#lib/lightbox.svelte.js';
-	import { formatDate } from '#lib/formatDate.js';
+	import { srcset } from '#lib/responsiveImage.js';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -46,6 +46,9 @@
 						alt={name}
 						class="h-72 w-72 cursor-pointer rounded-2xl object-cover shadow-md sm:h-96 sm:w-96"
 						src={photoSrc}
+						srcset={srcset(photoSrc)}
+						sizes="(min-width: 640px) 384px, 288px"
+						fetchpriority="high"
 					/>
 				</button>
 			</div>
@@ -62,7 +65,11 @@
 )}
 	<a {href} class="group card card-interactive flex flex-col overflow-hidden">
 		{#if image}
-			<CardImage src={image} alt={title} />
+			<CardImage
+				src={image}
+				alt={title}
+				sizes="(min-width: 1024px) 478px, (min-width: 640px) 50vw, 100vw"
+			/>
 		{/if}
 		<div class="p-5">
 			{#if meta}
@@ -79,13 +86,7 @@
 		<h2 class="text-2xl font-bold tracking-tight text-heading">Featured Posts</h2>
 		<div class="mt-4 grid gap-5 sm:grid-cols-2">
 			{#each data.featuredPosts as post (post.slug)}
-				{@render featureCard(
-					`/blog/${post.slug}`,
-					post.image,
-					post.title,
-					post.preview,
-					formatDate(post.date)
-				)}
+				{@render featureCard(`/blog/${post.slug}`, post.image, post.title, post.preview, post.date)}
 			{/each}
 		</div>
 	</section>

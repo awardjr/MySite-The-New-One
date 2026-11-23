@@ -10,6 +10,7 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 
 export const db = new Database(DB_FILE);
 db.pragma('journal_mode = WAL');
+db.pragma('synchronous = NORMAL');
 db.pragma('foreign_keys = ON');
 
 await runMigrations(db);

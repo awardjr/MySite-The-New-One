@@ -1,4 +1,5 @@
 import { readContent, getHeadlineForPage } from '#lib/server/content.js';
+import { formatDate } from '#lib/server/formatDate.js';
 import type { PageServerLoad } from './$types';
 
 function truncate(text: string, max: number): string {
@@ -21,7 +22,7 @@ export const load: PageServerLoad = () => {
 			slug: p.slug,
 			image: p.image,
 			title: truncate(p.title, 100),
-			date: p.date,
+			date: formatDate(p.date),
 			preview: truncate(p.preview, 200)
 		}));
 	const featuredWorks = home.featuredWorks

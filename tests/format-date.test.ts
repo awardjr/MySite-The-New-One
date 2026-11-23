@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate } from '#lib/formatDate.js';
+import { formatDate } from '#lib/server/formatDate.js';
 
 describe('formatDate', () => {
 	it('spells out a stored date without shifting the day', () => {

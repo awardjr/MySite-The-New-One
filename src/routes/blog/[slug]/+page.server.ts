@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { readContent, renderPostHtml } from '#lib/server/content.js';
+import { formatDate } from '#lib/server/formatDate.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params, locals, url }) => {
@@ -9,5 +10,11 @@ export const load: PageServerLoad = ({ params, locals, url }) => {
 		error(404, 'Post not found');
 	}
 
-	return { post: { ...post, content: renderPostHtml(post.content, url.hostname) } };
+	return {
+		post: {
+			...post,
+			displayDate: formatDate(post.date),
+			content: renderPostHtml(post.content, url.hostname)
+		}
+	};
 };

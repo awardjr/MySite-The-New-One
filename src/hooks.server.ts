@@ -5,6 +5,7 @@ import { SETUP_ROUTE, signInRoutes } from '#lib/adminSections.js';
 import { isAdminConfigured, isSignedIn } from '#lib/server/auth.js';
 
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
+const PRELOADED_FONT = 'raleway-latin-wght-normal.woff2';
 
 function looksLikeAdminPath(pathname: string): boolean {
 	let decoded: string;
@@ -35,7 +36,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 		redirect(303, `/admin/login?redirectTo=${encodeURIComponent(redirectTo)}`);
 	}
 
-	const response = await resolve(event);
+	const response = await resolve(event, {
+		preload: (file) =>
+			file.type === 'js' ||
+			file.type === 'css' ||
+			(file.type === 'font' && file.filename.endsWith(PRELOADED_FONT))
+	});
 
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('X-Frame-Options', 'DENY');

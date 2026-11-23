@@ -1,18 +1,15 @@
 import nodemailer from 'nodemailer';
 import type { Transporter } from 'nodemailer';
 
-/** An environment variable, with a blank value treated as unset. */
 function env(key: string): string | undefined {
 	return process.env[key] || undefined;
 }
 
-/** A true/false environment variable ("true" or "1" is true), or undefined when unset. */
 function envFlag(key: string): boolean | undefined {
 	const value = env(key);
 	return value === undefined ? undefined : value === 'true' || value === '1';
 }
 
-/** A mail transport built from the SMTP_* environment variables, or null if SMTP isn't set up. */
 export function getEmailTransporter(): Transporter | null {
 	const service = env('SMTP_SERVICE');
 	const host = env('SMTP_HOST');
@@ -22,7 +19,6 @@ export function getEmailTransporter(): Transporter | null {
 	const user = env('SMTP_USER');
 	const pass = env('SMTP_PASS');
 	return nodemailer.createTransport({
-		// A named service (such as "gmail") brings its own host, port and TLS settings.
 		...(service ? { service } : { host, port, secure: envFlag('SMTP_SECURE') ?? port === 465 }),
 		...(user || pass ? { auth: { user: user ?? '', pass: pass ?? '' } } : {}),
 		requireTLS: envFlag('SMTP_REQUIRE_TLS'),
@@ -30,7 +26,6 @@ export function getEmailTransporter(): Transporter | null {
 	});
 }
 
-/** Sends an email over SMTP, or prints it to the server log when SMTP isn't set up. */
 export async function sendEmail(options: {
 	to: string;
 	subject: string;
@@ -64,7 +59,6 @@ export async function sendEmail(options: {
 	}
 }
 
-/** Sends a password reset link to the admin's email address. */
 export async function sendPasswordResetEmail(to: string, resetUrl: string): Promise<boolean> {
 	const text =
 		`Hello,\n\n` +

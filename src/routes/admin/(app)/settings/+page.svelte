@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { pendingForm } from '#lib/pendingForm.svelte.js';
 	import AdminHeading from '#lib/components/admin/AdminHeading.svelte';
+	import BackupCodesCard from '#lib/components/admin/BackupCodesCard.svelte';
 	import FormStatus from '#lib/components/admin/FormStatus.svelte';
 	import Field from '#lib/components/admin/Field.svelte';
 	import NewPasswordFields from '#lib/components/admin/NewPasswordFields.svelte';
@@ -16,6 +17,7 @@
 	const passwordForm = pendingForm({ reset: false });
 	const recoveryForm = pendingForm({ reset: false });
 	const twoFactorForm = pendingForm();
+	const backupCodesForm = pendingForm();
 </script>
 
 {#snippet currentPassword(id: string, label = 'Current password', className = '')}
@@ -31,7 +33,7 @@
 	/>
 {/snippet}
 
-{#snippet secondFactorCode(id: string, label = 'Authentication or recovery code', className = '')}
+{#snippet secondFactorCode(id: string, label = 'Authentication or backup code', className = '')}
 	<Field
 		{id}
 		name="code"
@@ -149,27 +151,17 @@
 		{/snippet}
 		{#snippet description()}
 			When on, signing in also needs a 6-digit code from an authenticator app such as Google
-			Authenticator, 1Password or Authy. If you lose access to the app, you can sign in with your
-			emergency recovery code instead.
+			Authenticator, 1Password or Authy. If you lose access to the app, you can sign in with one of
+			your backup codes instead.
 		{/snippet}
-		{#if !data.twoFactorKeyConfigured}
-			<p class="mt-3 text-base text-error">
-				TOTP_ENCRYPTION_KEY is not configured. New two-factor setups are unavailable; if your
-				existing secret is encrypted, restore its original key to use authenticator codes. Your
-				emergency recovery code can still be used to sign in and turn two-factor authentication off.
-			</p>
-		{/if}
-
 		{#if data.twoFactorEnabled}
-			{#if form?.twoFactorRecoveryKey}
-				<RecoveryKeyCard
-					recoveryKey={form.twoFactorRecoveryKey}
-					title="Your Emergency Recovery Code"
-					class="mt-6"
-				>
-					Save this code somewhere safe now. It won't be shown again, and it replaces any previous
-					recovery code. You can use it to sign in if you lose your authenticator.
-				</RecoveryKeyCard>
+			{#if form?.backupCodes}
+				<BackupCodesCard codes={form.backupCodes} class="mt-6" />
+			{:else if data.backupCodesLeft === 0}
+				<p class="mt-6 text-base font-medium text-error">
+					You have no backup codes left. Generate new ones below so you can still sign in if you
+					lose your authenticator.
+				</p>
 			{/if}
 			<form
 				method="POST"
@@ -239,7 +231,6 @@
 						pending={twoFactorForm.pending}
 						label="Turn On Two-Factor Authentication"
 						pendingLabel="Verifying…"
-						disabled={!data.twoFactorKeyConfigured}
 						class="btn-primary-lg"
 					/>
 					<button
@@ -272,7 +263,6 @@
 						pending={twoFactorForm.pending}
 						label="Set Up Two-Factor Authentication"
 						pendingLabel="Starting…"
-						disabled={!data.twoFactorKeyConfigured}
 						class="btn-primary-lg"
 					/>
 					<FormStatus large error={form?.twoFactorError} saved={form?.twoFactorSuccess} />
@@ -281,10 +271,45 @@
 		{/if}
 	</SettingsSection>
 
+	{#if data.twoFactorEnabled}
+		<SettingsSection title="Backup Codes">
+			{#snippet description()}
+				Backup codes let you sign in when you can't use your authenticator app. Each code works
+				once. You have {data.backupCodesLeft} left. Generating new codes replaces all of them.
+			{/snippet}
+
+			{#if form?.regeneratedBackupCodes}
+				<BackupCodesCard codes={form.regeneratedBackupCodes} class="mt-6" />
+			{/if}
+
+			<form
+				method="POST"
+				action="?/regenerateBackupCodes"
+				class="mt-6 space-y-5"
+				use:enhance={backupCodesForm.submit}
+			>
+				<div class="grid gap-5 sm:grid-cols-2">
+					{@render currentPassword('backupCodesPassword')}
+					{@render secondFactorCode('backupCodesTwoFactorCode')}
+				</div>
+
+				<div class="flex flex-wrap items-center gap-3">
+					<SubmitButton
+						pending={backupCodesForm.pending}
+						label="Generate New Backup Codes"
+						pendingLabel="Generating…"
+						class="btn-secondary-lg"
+					/>
+					<FormStatus large error={form?.backupCodesError} />
+				</div>
+			</form>
+		</SettingsSection>
+	{/if}
+
 	<SettingsSection title="Emergency Recovery Code">
 		{#snippet description()}
-			An emergency recovery code allows you to regain access to your admin account if you forget
-			your password and cannot receive reset emails.
+			An emergency recovery code lets you reset your password if you forget it and can't receive
+			reset emails. Two-factor authentication still applies when you sign in afterwards.
 		{/snippet}
 
 		{#if form?.recoverySuccess && form.newRecoveryKey}

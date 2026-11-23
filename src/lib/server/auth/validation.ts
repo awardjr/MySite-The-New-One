@@ -1,29 +1,32 @@
-const MIN_PASSWORD_LENGTH = 8;
+import { z } from 'zod';
+import { MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH } from './instance';
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const profileSchema = z.object({
+	username: z
+		.string()
+		.min(1, 'Username is required.')
+		.refine((name) => !name.includes('@'), 'Username can’t contain “@”.'),
+	email: z.email('Please enter a valid email address.')
+});
 
-export function isValidEmail(email: string): boolean {
-	return EMAIL_REGEX.test(email);
+const newPasswordSchema = z
+	.object({
+		password: z
+			.string()
+			.min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`)
+			.max(MAX_PASSWORD_LENGTH, `Password must be at most ${MAX_PASSWORD_LENGTH} characters long.`),
+		confirmation: z.string()
+	})
+	.refine(({ password, confirmation }) => password === confirmation, 'Passwords do not match.');
+
+function firstIssue(result: z.ZodSafeParseResult<unknown>): string | null {
+	return result.success ? null : (result.error.issues[0]?.message ?? 'Invalid input.');
 }
 
-/** Returns the reason a username and email can't be used, or null if both are acceptable. */
 export function validateProfile(username: string, email: string): string | null {
-	if (!username) {
-		return 'Username is required.';
-	}
-	if (!isValidEmail(email)) {
-		return 'Please enter a valid email address.';
-	}
-	return null;
+	return firstIssue(profileSchema.safeParse({ username, email }));
 }
 
-/** Returns the reason a new password can't be used, or null if it is acceptable. */
 export function validateNewPassword(password: string, confirmation: string): string | null {
-	if (password.length < MIN_PASSWORD_LENGTH) {
-		return `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`;
-	}
-	if (password !== confirmation) {
-		return 'Passwords do not match.';
-	}
-	return null;
+	return firstIssue(newPasswordSchema.safeParse({ password, confirmation }));
 }

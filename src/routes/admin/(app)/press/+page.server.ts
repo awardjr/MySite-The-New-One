@@ -6,7 +6,8 @@ import {
 } from '#lib/server/content.js';
 import { saveHeadlineAction } from '#lib/server/headlineAction.js';
 import { saveListAction } from '#lib/server/listAction.js';
-import { safeUrl, text } from '#lib/server/forms.js';
+import { z } from 'zod';
+import { fields } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -16,13 +17,13 @@ export const load: PageServerLoad = () => {
 export const actions: Actions = {
 	saveHeadline: saveHeadlineAction('press'),
 	save: saveListAction('items', {
-		toItem: (item): PressItem => ({
-			outlet: text(item.outlet),
-			title: text(item.title),
-			summary: text(item.summary),
-			href: safeUrl(item.href),
-			date: text(item.date)
-		}),
+		row: z.object({
+			outlet: fields.text,
+			title: fields.text,
+			summary: fields.text,
+			href: fields.safeUrl,
+			date: fields.text
+		}) satisfies z.ZodType<PressItem>,
 		keep: (item) => item.title,
 		skipReason: 'without a title',
 		linkField: 'href',

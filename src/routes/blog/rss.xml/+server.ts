@@ -1,42 +1,38 @@
+import { isValid, parseISO } from 'date-fns';
+import { Feed } from 'feed';
 import { getPublishedPosts, readContent } from '#lib/server/content.js';
 import { siteOrigin } from '#lib/server/origin.js';
 import type { RequestHandler } from './$types';
 
-function esc(text: string): string {
-	return text
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;');
+type FeedItem = Parameters<Feed['addItem']>[0];
+
+function cdataSafe(text: string): string {
+	return text.replaceAll(']]>', ']] >');
 }
 
 export const GET: RequestHandler = ({ url }) => {
 	const origin = siteOrigin(url);
 	const { home } = readContent();
-	const items = getPublishedPosts()
-		.map((p) => {
-			const link = `${origin}/blog/${encodeURIComponent(p.slug)}`;
-			const time = Date.parse(p.date);
-			return `<item>
-<title>${esc(p.title)}</title>
-<link>${link}</link>
-<guid isPermaLink="true">${link}</guid>
-${Number.isNaN(time) ? '' : `<pubDate>${new Date(time).toUTCString()}</pubDate>\n`}<description>${esc(p.preview)}</description>
-</item>`;
-		})
-		.join('\n');
 	const title = home.name ? `${home.name} – Blog` : 'Blog';
-	const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-<channel>
-<title>${esc(title)}</title>
-<link>${origin}/blog</link>
-<description>${esc(title)} blog posts</description>
-<atom:link href="${origin}/blog/rss.xml" rel="self" type="application/rss+xml" />
-${items}
-</channel>
-</rss>`;
-	return new Response(xml, {
+	const feed = new Feed({
+		title,
+		id: `${origin}/blog`,
+		link: `${origin}/blog`,
+		description: `${title} blog posts`,
+		feedLinks: { rss: `${origin}/blog/rss.xml` },
+		generator: false
+	});
+	for (const post of getPublishedPosts()) {
+		const date = parseISO(`${post.date}T00:00:00Z`);
+		const item: Omit<FeedItem, 'date'> & { date?: Date } = {
+			title: cdataSafe(post.title),
+			link: `${origin}/blog/${encodeURIComponent(post.slug)}`,
+			description: cdataSafe(post.preview),
+			date: isValid(date) ? date : undefined
+		};
+		feed.addItem(item as FeedItem);
+	}
+	return new Response(feed.rss2(), {
 		headers: { 'Content-Type': 'application/xml; charset=utf-8' }
 	});
 };

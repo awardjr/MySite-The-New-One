@@ -10,7 +10,6 @@ export type WorkItem = {
 	platforms: string[];
 };
 
-/** A work as stored: the platforms are a JSON string. */
 type WorkItemRow = Omit<WorkItem, 'platforms'> & { platforms: string };
 
 const getWorkItemsStmt = db.prepare(
@@ -26,7 +25,6 @@ export function getWorks(): WorkItem[] {
 	return rows.map((row) => ({ ...row, platforms: parseJsonArray<string>(row.platforms) }));
 }
 
-/** Saves works, re-using each submitted row id so it stays the same across saves; new or duplicate ids get a fresh one. */
 export function setWorks(items: WorkItem[]): void {
 	deleteWorkItemsStmt.run();
 	const used = new Set<number>();

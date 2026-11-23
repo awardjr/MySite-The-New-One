@@ -181,7 +181,6 @@ describe('renderPostHtml', () => {
 		'javascript:alert(1)',
 		'https://www.youtube.com.evil.test/watch?v=a',
 		'https://www.twitch.tv/directory/category/chess',
-		// By handle: the editor swaps in the DID before saving, which the embed needs.
 		'https://bsky.app/profile/bsky.app/post/3n2ozugncr22j'
 	])('removes the unsupported embed %s', (url) => {
 		expect(render(url)).toBe('');

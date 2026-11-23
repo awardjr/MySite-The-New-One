@@ -1,49 +1,63 @@
-/**
- * Helpers shared by the admin form actions. The list editors post their rows as
- * a JSON string in a hidden field, so every action needs the same parsing and
- * value coercion before it can validate its own fields.
- */
-
-function isRow(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** Reads a hidden JSON array of objects. A missing field is an empty list; anything else invalid is null. */
-export function readJsonRows(formData: FormData, field: string): Record<string, unknown>[] | null {
-	try {
-		const parsed: unknown = JSON.parse(String(formData.get(field) ?? '[]'));
-		return Array.isArray(parsed) && parsed.every(isRow) ? parsed : null;
-	} catch {
-		return null;
-	}
-}
-
-/** Reads a form field as a string exactly as submitted. Use for passwords and codes, which must not be trimmed. */
-export function raw(formData: FormData, field: string): string {
-	return String(formData.get(field) ?? '');
-}
-
-/** Coerces a submitted value to a trimmed string. */
-export function text(value: unknown): string {
-	return String(value ?? '').trim();
-}
+import { z } from 'zod';
 
 const URL_SCHEME = /^([a-z][a-z0-9+.-]*):/i;
 const SAFE_SCHEMES = new Set(['http', 'https', 'mailto', 'tel']);
 
-/**
- * Coerces a submitted link to a trimmed string, or '' if it uses a scheme other than
- * http, https, mailto or tel (e.g. `javascript:`). Relative and scheme-less links pass through.
- */
-export function safeUrl(value: unknown): string {
-	const url = text(value);
-	// Browsers skip control characters and tabs/newlines in URLs, so "\x01java\tscript:" must be caught too.
+const rawField = z
+	.unknown()
+	.optional()
+	.transform((value) => String(value ?? ''));
+const textField = rawField.transform((value) => value.trim());
+const safeUrlField = textField.transform((url) => {
 	// eslint-disable-next-line no-control-regex
-	const scheme = URL_SCHEME.exec(url.replace(/[\u0000-\u0020]/g, ''))?.[1].toLowerCase();
+	const scheme = URL_SCHEME.exec(url.replace(/[\u0000- ]/g, ''))?.[1].toLowerCase();
 	return scheme === undefined || SAFE_SCHEMES.has(scheme) ? url : '';
+});
+const textListField = z
+	.array(textField)
+	.catch([])
+	.transform((items) => items.filter(Boolean));
+
+const jsonRows = z
+	.string()
+	.transform((value, ctx) => {
+		try {
+			return JSON.parse(value) as unknown;
+		} catch {
+			ctx.addIssue({ code: 'custom', message: 'Invalid JSON.' });
+			return z.NEVER;
+		}
+	})
+	.pipe(z.array(z.record(z.string(), z.unknown())));
+
+export const fields = {
+	raw: rawField,
+	text: textField,
+	safeUrl: safeUrlField,
+	textList: textListField
+};
+
+export function raw(formData: FormData, field: string): string {
+	return rawField.parse(formData.get(field));
 }
 
-/** Coerces a submitted value to a list of non-empty trimmed strings. */
+export function text(value: unknown): string {
+	return textField.parse(value);
+}
+
+export function safeUrl(value: unknown): string {
+	return safeUrlField.parse(value);
+}
+
 export function textList(value: unknown): string[] {
-	return Array.isArray(value) ? value.map(text).filter(Boolean) : [];
+	return textListField.parse(value);
+}
+
+export function readJsonRows(formData: FormData, field: string): Record<string, unknown>[] | null {
+	const rows = jsonRows.safeParse(String(formData.get(field) ?? '[]'));
+	return rows.success ? rows.data : null;
+}
+
+export function firstIssue(error: z.ZodError): string {
+	return error.issues[0]?.message ?? 'Invalid input.';
 }

@@ -4,7 +4,6 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vitest/config';
 
-// `npm run dev` creates these with scripts/dev-cert.sh; when present, dev and preview use https.
 const DEV_KEY = '.certs/localhost-key.pem';
 const DEV_CERT = '.certs/localhost.pem';
 const https =
@@ -24,10 +23,6 @@ export default defineConfig({
 			adapter: adapter(),
 			paths: {
 				relative: false,
-				// SvelteKit fixes the site origin at build time. When `ORIGIN` is set for the build
-				// it is baked in (and the request's Host header is ignored); otherwise the origin
-				// is derived from each request, and src/lib/server/origin.ts reads `ORIGIN` at
-				// runtime for links that leave the site.
 				origin: process.env.ORIGIN || undefined
 			},
 			csp: {
@@ -56,5 +51,9 @@ export default defineConfig({
 			}
 		})
 	],
-	test: { environment: 'node', include: ['tests/**/*.{test,spec}.ts'] }
+	test: {
+		environment: 'node',
+		include: ['tests/**/*.{test,spec}.ts'],
+		setupFiles: ['tests/setup.ts']
+	}
 });

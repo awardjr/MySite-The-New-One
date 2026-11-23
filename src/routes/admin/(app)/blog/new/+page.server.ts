@@ -1,19 +1,11 @@
+import slugify from '@sindresorhus/slugify';
 import { fail, redirect } from '@sveltejs/kit';
 import { createPost } from '#lib/server/content.js';
 import { text } from '#lib/server/forms.js';
 import { readPostFields } from '../postForm';
 import type { Actions } from './$types';
 
-/** `/admin/blog/new` is this page, so a post with this slug could never be opened for editing. */
 const RESERVED_SLUGS = new Set(['new']);
-
-function slugify(value: string): string {
-	return value
-		.trim()
-		.toLowerCase()
-		.replace(/[^a-z0-9]+/g, '-')
-		.replace(/^-+|-+$/g, '');
-}
 
 export const actions: Actions = {
 	default: async ({ request }) => {
@@ -26,7 +18,7 @@ export const actions: Actions = {
 			return invalid('Title is required.');
 		}
 
-		const slug = slugify(slugInput || fields.title);
+		const slug = slugify(slugInput || fields.title, { decamelize: false });
 
 		if (!slug) {
 			return invalid('Slug is required.');

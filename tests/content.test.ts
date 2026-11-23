@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('#lib/server/db.js', async () => {
-	const { getTestDb } = await import('./test-db');
-	return { db: getTestDb() };
+	const { migratedTestDb } = await import('./test-db');
+	return { db: await migratedTestDb() };
 });
 
 import { getTestDb } from './test-db';
@@ -58,8 +58,6 @@ beforeEach(() => {
 		DELETE FROM posts WHERE slug IS NOT NULL;
 		DELETE FROM page_headlines WHERE page IS NOT NULL;
 	`);
-	// The content controller caches the site content in module state; a write forces a fresh
-	// read from the (now-empty) tables for every test.
 	updateSection('contact', []);
 });
 
@@ -205,7 +203,6 @@ describe('updateSection', () => {
 
 		expect(() => updateSection('press', [press('New'), invalid])).toThrow();
 
-		// Another write drops the cache, so this reads what the failed save left in the table.
 		saveHeadlineForPage('any', '', '');
 		expect(readContent().press.map((item) => item.title)).toEqual(['Kept']);
 	});

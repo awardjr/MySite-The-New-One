@@ -10,16 +10,13 @@ export type Post = {
 	draft: boolean;
 };
 
-/** The editable fields of a post; the slug is fixed once the post exists. */
 export type PostFields = Omit<Post, 'slug'>;
 
-/** A post as stored: the draft flag is 0 or 1. */
 type PostRow = Omit<Post, 'draft'> & { draft: number };
 
 const getBlogPostsStmt = db.prepare(
 	'SELECT slug, title, date, image, preview, content, draft FROM posts ORDER BY sort_order, rowid'
 );
-// A new post goes after every existing one.
 const appendBlogPostStmt = db.prepare(`
 	INSERT INTO posts (slug, title, date, image, preview, content, draft, sort_order)
 	VALUES (@slug, @title, @date, @image, @preview, @content, @draft,
@@ -38,17 +35,14 @@ export function getBlog(): Post[] {
 	return rows.map((row) => ({ ...row, draft: Boolean(row.draft) }));
 }
 
-/** Adds a post after the existing ones. The slug must not be in use. */
 export function insertPost(post: Post): void {
 	appendBlogPostStmt.run({ ...post, draft: post.draft ? 1 : 0 });
 }
 
-/** Updates one post in place. Returns false if no post has that slug. */
 export function updatePostBySlug(slug: string, fields: PostFields): boolean {
 	return updateBlogPostStmt.run({ ...fields, slug, draft: fields.draft ? 1 : 0 }).changes > 0;
 }
 
-/** Deletes one post. Returns false if no post has that slug. */
 export function deletePostBySlug(slug: string): boolean {
 	return deleteBlogPostStmt.run(slug).changes > 0;
 }

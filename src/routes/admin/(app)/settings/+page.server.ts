@@ -1,105 +1,85 @@
-import { fail } from '@sveltejs/kit';
+import { error, fail, type RequestEvent } from '@sveltejs/kit';
 import QRCode from 'qrcode';
 import {
+	backupCodes,
 	cancelTotpSetup,
+	changePassword,
 	checkPassword,
 	confirmTotpSetup,
 	disableTotp,
-	getAdminProfile,
-	getPendingTotpSecret,
-	loginAttempts,
-	invalidateAllResetTokens,
-	invalidateAllSessions,
-	isTotpEnabled,
+	getAdmin,
 	LOCKED_MESSAGE,
+	loginAttempts,
+	pendingTotpUri,
+	regenerateBackupCodes,
 	rotateRecoveryKey,
-	setAdminPassword,
-	startSession,
 	startTotpSetup,
+	submitSecondFactor,
 	updateAdminProfile,
 	validateNewPassword,
 	validateProfile,
-	verifySecondFactor
+	type AdminUser
 } from '#lib/server/auth.js';
 import { readContent } from '#lib/server/content.js';
 import { raw, text } from '#lib/server/forms.js';
-import { isEncryptionKeyConfigured } from '#lib/server/secretbox.js';
-import { totpUri } from '#lib/server/totp.js';
 import type { Actions, PageServerLoad } from './$types';
 
-type IdentityCheck = { ok: true; newRecoveryKey?: string } | { ok: false; error: string };
+const WRONG_PASSWORD = 'Current password is incorrect.';
+const WRONG_CODE = 'Authentication code is incorrect.';
 
-/**
- * Confirms the current password and, when asked, a 2FA or recovery code. Both checks share the
- * login lockout so a stolen session can't brute-force them; a locked-out address is reported the
- * same way as a wrong answer.
- */
+async function currentAdmin(): Promise<AdminUser> {
+	const admin = await getAdmin();
+	if (!admin) error(401, 'Not signed in.');
+	return admin;
+}
+
+function totpIssuer(url: URL): string {
+	return readContent().home.name.trim() || url.host;
+}
+
 async function confirmIdentity(
+	{ request, getClientAddress }: RequestEvent,
 	formData: FormData,
-	clientAddress: string,
 	{ secondFactor }: { secondFactor: boolean }
-): Promise<IdentityCheck> {
-	const password = raw(formData, 'currentPassword');
-	if ((await loginAttempts.guard(clientAddress, () => checkPassword(password))) !== true) {
-		return { ok: false, error: 'Current password is incorrect.' };
-	}
-	if (!secondFactor) return { ok: true };
-
-	const factor = await loginAttempts.guard(clientAddress, () =>
-		verifySecondFactor(raw(formData, 'code'))
+): Promise<string | null> {
+	const passwordOk = await loginAttempts.guard(getClientAddress(), () =>
+		checkPassword(request.headers, raw(formData, 'currentPassword'))
 	);
-	if (!factor || factor === 'locked') {
-		return { ok: false, error: 'Authentication code is incorrect.' };
-	}
-	return {
-		ok: true,
-		newRecoveryKey: factor.method === 'recovery' ? factor.newRecoveryKey : undefined
-	};
+	if (passwordOk !== true) return WRONG_PASSWORD;
+	if (!secondFactor) return null;
+
+	const code = await loginAttempts.guard(
+		getClientAddress(),
+		() => submitSecondFactor(request.headers, raw(formData, 'code')),
+		(outcome) => outcome === 'ok'
+	);
+	return code === 'ok' ? null : WRONG_CODE;
 }
 
-function missingEncryptionKey(step: string) {
-	return fail(503, {
-		twoFactorError: `Set TOTP_ENCRYPTION_KEY in the server environment before ${step} two-factor authentication.`
-	});
-}
-
-/** Builds what the setup step shows: a QR code for the app, and the secret for manual entry. */
-async function twoFactorSetup(secret: string, accountName: string, host: string) {
-	const issuer = readContent().home.name.trim() || host;
+async function twoFactorSetup(uri: string) {
+	const secret = new URL(uri).searchParams.get('secret') ?? '';
 	return {
 		secret: secret.match(/.{1,4}/g)?.join(' ') ?? secret,
-		qrCode: await QRCode.toDataURL(totpUri(secret, accountName || 'admin', issuer), {
-			margin: 1,
-			width: 200
-		})
+		qrCode: await QRCode.toDataURL(uri, { margin: 1, width: 200 })
 	};
-}
-
-/**
- * Form fields that make the page show a replacement recovery code. A recovery code only works
- * once, so whenever one is used (or regenerated) its successor has to be shown.
- */
-function recoveryKeyReplaced(newRecoveryKey: string | undefined) {
-	return newRecoveryKey ? { recoverySuccess: true, newRecoveryKey } : {};
 }
 
 export const load: PageServerLoad = async ({ url }) => {
-	const profile = getAdminProfile();
-	const pendingSecret = getPendingTotpSecret();
+	const admin = await currentAdmin();
+	const pendingUri = admin.twoFactorEnabled ? null : await pendingTotpUri(admin, totpIssuer(url));
 	return {
-		username: profile?.username ?? '',
-		email: profile?.email ?? '',
-		twoFactorEnabled: isTotpEnabled(),
-		twoFactorKeyConfigured: isEncryptionKeyConfigured(),
-		twoFactorSetup: pendingSecret
-			? await twoFactorSetup(pendingSecret, profile?.username ?? '', url.host)
-			: null
+		username: admin.displayUsername || admin.username,
+		email: admin.email,
+		twoFactorEnabled: admin.twoFactorEnabled,
+		backupCodesLeft: admin.twoFactorEnabled ? (await backupCodes(admin.id)).length : null,
+		twoFactorSetup: pendingUri ? await twoFactorSetup(pendingUri) : null
 	};
 };
 
 export const actions: Actions = {
-	updateProfile: async ({ request, getClientAddress }) => {
-		const formData = await request.formData();
+	updateProfile: async (event) => {
+		const admin = await currentAdmin();
+		const formData = await event.request.formData();
 		const username = text(formData.get('username'));
 		const email = text(formData.get('email'));
 
@@ -108,121 +88,118 @@ export const actions: Actions = {
 			return fail(400, { profileError });
 		}
 
-		// The email address receives password reset links, so changing it needs the same proof of
-		// identity as changing the password: a hijacked session alone must not be enough.
-		const identity = await confirmIdentity(formData, getClientAddress(), {
-			secondFactor: isTotpEnabled()
+		const identityError = await confirmIdentity(event, formData, {
+			secondFactor: admin.twoFactorEnabled
 		});
-		if (!identity.ok) {
-			return fail(401, { profileError: identity.error });
+		if (identityError) {
+			return fail(401, { profileError: identityError });
 		}
 
-		const emailChanged = getAdminProfile()?.email !== email.toLowerCase();
-		updateAdminProfile(username, email);
-		// Reset links already sent went to the old address, which may no longer be trusted.
-		if (emailChanged) invalidateAllResetTokens();
-
-		return { profileSuccess: true, ...recoveryKeyReplaced(identity.newRecoveryKey) };
+		await updateAdminProfile(event.request.headers, username, email);
+		return { profileSuccess: true };
 	},
 
-	changePassword: async ({ request, cookies, getClientAddress }) => {
-		const formData = await request.formData();
+	changePassword: async (event) => {
+		const formData = await event.request.formData();
+		const currentPassword = raw(formData, 'currentPassword');
 		const newPassword = raw(formData, 'newPassword');
 
-		const identity = await confirmIdentity(formData, getClientAddress(), { secondFactor: false });
-		if (!identity.ok) {
-			return fail(401, { passwordError: identity.error });
+		const identityError = await confirmIdentity(event, formData, { secondFactor: false });
+		if (identityError) {
+			return fail(401, { passwordError: identityError });
 		}
 		const passwordError = validateNewPassword(newPassword, raw(formData, 'confirmPassword'));
 		if (passwordError) {
 			return fail(400, { passwordError });
 		}
 
-		await setAdminPassword(newPassword);
-		invalidateAllResetTokens();
-
-		// Revoke every existing session then issue a fresh one so the admin stays logged in.
-		invalidateAllSessions();
-		startSession(cookies);
-
+		if (!(await changePassword(event.request.headers, currentPassword, newPassword))) {
+			return fail(401, { passwordError: WRONG_PASSWORD });
+		}
 		return { passwordSuccess: true };
 	},
 
-	rotateRecoveryKey: async ({ request, getClientAddress }) => {
-		const identity = await confirmIdentity(await request.formData(), getClientAddress(), {
-			secondFactor: isTotpEnabled()
+	rotateRecoveryKey: async (event) => {
+		const admin = await currentAdmin();
+		const identityError = await confirmIdentity(event, await event.request.formData(), {
+			secondFactor: admin.twoFactorEnabled
 		});
-		if (!identity.ok) {
-			return fail(401, { recoveryError: identity.error });
+		if (identityError) {
+			return fail(401, { recoveryError: identityError });
 		}
 
-		return recoveryKeyReplaced(await rotateRecoveryKey());
+		return { recoverySuccess: true, newRecoveryKey: await rotateRecoveryKey(admin.id) };
 	},
 
-	startTwoFactor: async ({ request, getClientAddress }) => {
-		const formData = await request.formData();
-
-		if (isTotpEnabled()) {
+	startTwoFactor: async (event) => {
+		const admin = await currentAdmin();
+		if (admin.twoFactorEnabled) {
 			return fail(400, { twoFactorError: 'Two-factor authentication is already on.' });
 		}
-		if (!isEncryptionKeyConfigured()) {
-			return missingEncryptionKey('setting up');
-		}
-		const identity = await confirmIdentity(formData, getClientAddress(), { secondFactor: false });
-		if (!identity.ok) {
-			return fail(401, { twoFactorError: identity.error });
-		}
 
-		startTotpSetup();
+		const formData = await event.request.formData();
+		const started = await loginAttempts.guard(event.getClientAddress(), () =>
+			startTotpSetup(event.request.headers, raw(formData, 'currentPassword'), totpIssuer(event.url))
+		);
+		if (started === 'locked') {
+			return fail(429, { twoFactorError: LOCKED_MESSAGE });
+		}
+		if (!started) {
+			return fail(401, { twoFactorError: WRONG_PASSWORD });
+		}
 		return {};
 	},
 
-	confirmTwoFactor: async ({ request, cookies, getClientAddress }) => {
-		const formData = await request.formData();
-
-		if (!isEncryptionKeyConfigured()) {
-			return missingEncryptionKey('confirming');
-		}
-		const confirmed = await loginAttempts.guard(getClientAddress(), () =>
-			confirmTotpSetup(raw(formData, 'code'))
+	confirmTwoFactor: async (event) => {
+		const admin = await currentAdmin();
+		const formData = await event.request.formData();
+		const codes = await loginAttempts.guard(event.getClientAddress(), () =>
+			confirmTotpSetup(event.request.headers, admin.id, raw(formData, 'code'))
 		);
-		if (confirmed === 'locked') {
+		if (codes === 'locked') {
 			return fail(429, { twoFactorError: LOCKED_MESSAGE });
 		}
-		if (!confirmed) {
+		if (!codes) {
 			return fail(400, {
 				twoFactorError: 'That code didn’t match. Check your authenticator app and try again.'
 			});
 		}
 
-		// Sign out every other session, so 2FA applies to all of them from now on.
-		invalidateAllSessions();
-		startSession(cookies);
-
-		return {
-			twoFactorSuccess: 'Two-factor authentication is now on.',
-			// Issue a fresh recovery code so it can be shown (once) right after setup.
-			twoFactorRecoveryKey: await rotateRecoveryKey()
-		};
+		return { twoFactorSuccess: 'Two-factor authentication is now on.', backupCodes: codes };
 	},
 
 	cancelTwoFactor: async () => {
-		cancelTotpSetup();
+		await cancelTotpSetup((await currentAdmin()).id);
 		return {};
 	},
 
-	disableTwoFactor: async ({ request, getClientAddress }) => {
-		const identity = await confirmIdentity(await request.formData(), getClientAddress(), {
-			secondFactor: true
-		});
-		if (!identity.ok) {
-			return fail(401, { twoFactorError: identity.error });
+	disableTwoFactor: async (event) => {
+		const formData = await event.request.formData();
+		const identityError = await confirmIdentity(event, formData, { secondFactor: true });
+		if (identityError) {
+			return fail(401, { twoFactorError: identityError });
 		}
 
-		disableTotp();
-		return {
-			twoFactorSuccess: 'Two-factor authentication is now off.',
-			...recoveryKeyReplaced(identity.newRecoveryKey)
-		};
+		if (!(await disableTotp(event.request.headers, raw(formData, 'currentPassword')))) {
+			return fail(401, { twoFactorError: WRONG_PASSWORD });
+		}
+		return { twoFactorSuccess: 'Two-factor authentication is now off.' };
+	},
+
+	regenerateBackupCodes: async (event) => {
+		const formData = await event.request.formData();
+		const identityError = await confirmIdentity(event, formData, { secondFactor: true });
+		if (identityError) {
+			return fail(401, { backupCodesError: identityError });
+		}
+
+		const codes = await regenerateBackupCodes(
+			event.request.headers,
+			raw(formData, 'currentPassword')
+		);
+		if (!codes) {
+			return fail(401, { backupCodesError: WRONG_PASSWORD });
+		}
+		return { regeneratedBackupCodes: codes };
 	}
 };

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# Creates a self-signed certificate for the dev server (https://localhost:5173) if there isn't
-# one yet. vite.config.ts serves over https whenever these files exist.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."

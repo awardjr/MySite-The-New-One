@@ -1,51 +1,43 @@
 import { fail, redirect } from '@sveltejs/kit';
 import {
-	resetAttempts,
 	isAdminConfigured,
 	LOCKED_MESSAGE,
 	requestEmailPasswordReset,
+	resetAttempts,
 	resetPasswordWithRecoveryKey,
 	validateNewPassword
 } from '#lib/server/auth.js';
 import { raw, text } from '#lib/server/forms.js';
-import { siteOrigin } from '#lib/server/origin.js';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = async ({ locals }) => {
 	if (locals.isAdmin) {
 		redirect(303, '/admin');
 	}
-	if (!isAdminConfigured()) {
+	if (!(await isAdminConfigured())) {
 		redirect(303, '/admin/setup');
 	}
 };
 
 export const actions: Actions = {
-	requestEmailLink: async ({ request, url, getClientAddress }) => {
-		const clientAddress = getClientAddress();
-		if (resetAttempts.isLocked(clientAddress)) {
-			return fail(429, { emailError: LOCKED_MESSAGE });
-		}
-
+	requestEmailLink: async ({ request, getClientAddress }) => {
 		const formData = await request.formData();
 		const identifier = text(formData.get('identifier'));
 
 		if (!identifier) {
 			return fail(400, { emailError: 'Please enter your username or email address.' });
 		}
+		if (!(await resetAttempts.take(getClientAddress()))) {
+			return fail(429, { emailError: LOCKED_MESSAGE });
+		}
 
-		// Every request counts toward the limit, so this form can't be used to flood the admin inbox.
-		resetAttempts.recordFailure(clientAddress);
-		// Not awaited: sending takes noticeably longer than not sending, and waiting for it would
-		// let response time reveal whether the identifier matched the admin account.
-		requestEmailPasswordReset(identifier, siteOrigin(url)).catch((error) => {
+		requestEmailPasswordReset(identifier).catch((error) => {
 			console.error('[PASSWORD RESET] Failed to send reset email:', error);
 		});
 		return { emailSent: true };
 	},
 
 	resetWithRecoveryKey: async ({ request, getClientAddress }) => {
-		const clientAddress = getClientAddress();
 		const formData = await request.formData();
 		const recoveryKey = raw(formData, 'recoveryKey');
 		const newPassword = raw(formData, 'newPassword');
@@ -59,7 +51,7 @@ export const actions: Actions = {
 			return fail(400, { error: passwordError });
 		}
 
-		const newRecoveryKey = await resetAttempts.guard(clientAddress, () =>
+		const newRecoveryKey = await resetAttempts.guard(getClientAddress(), () =>
 			resetPasswordWithRecoveryKey(recoveryKey, newPassword)
 		);
 		if (newRecoveryKey === 'locked') {
@@ -69,10 +61,7 @@ export const actions: Actions = {
 			return fail(400, { error: 'Invalid emergency recovery code.' });
 		}
 
-		resetAttempts.clear(clientAddress);
-
-		// No session is created here: signing in afterwards keeps two-factor authentication in
-		// force. The recovery code was used up, so its replacement is shown once.
+		await resetAttempts.clear(getClientAddress());
 		return { passwordReset: true, newRecoveryKey };
 	}
 };

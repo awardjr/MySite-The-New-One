@@ -1,10 +1,5 @@
-/** What the endpoint should send; checked at runtime because it arrives as untyped JSON. */
 type UploadResponse = { path?: unknown; error?: unknown };
 
-/**
- * Uploads an image through the admin upload endpoint and returns its public path.
- * Throws an Error with a message suitable for showing to the admin if the upload fails.
- */
 export async function uploadImage(file: File): Promise<string> {
 	const body = new FormData();
 	body.append('file', file);

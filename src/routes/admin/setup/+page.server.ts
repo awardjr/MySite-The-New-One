@@ -1,40 +1,28 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { constantTimeEqual } from 'better-auth/crypto';
 import {
 	createAdmin,
-	generateRecoveryKey,
 	isAdminConfigured,
-	safeEqual,
-	startSession,
 	validateNewPassword,
 	validateProfile
 } from '#lib/server/auth.js';
 import { raw, text } from '#lib/server/forms.js';
 import type { Actions, PageServerLoad } from './$types';
 
-/**
- * Optional `SETUP_TOKEN` environment variable. When set, the setup form also asks for it, so
- * whoever reaches a freshly deployed site first can't claim the admin account.
- */
 function requiredSetupToken(): string | null {
 	return process.env.SETUP_TOKEN || null;
 }
 
-export const load: PageServerLoad = ({ locals, request }) => {
-	// Setup is only for a brand-new database with no admin account yet. The exception is the
-	// form post that has just created the account: its response must render this page once more
-	// to show the recovery code, so only page views are redirected.
-	if (isAdminConfigured() && request.method !== 'POST') {
-		if (locals.isAdmin) {
-			redirect(303, '/admin');
-		}
-		redirect(303, '/admin/login');
+export const load: PageServerLoad = async ({ locals, request }) => {
+	if ((await isAdminConfigured()) && request.method !== 'POST') {
+		redirect(303, locals.isAdmin ? '/admin' : '/admin/login');
 	}
 	return { setupTokenRequired: requiredSetupToken() !== null };
 };
 
 export const actions: Actions = {
-	default: async ({ request, cookies }) => {
-		if (isAdminConfigured()) {
+	default: async ({ request }) => {
+		if (await isAdminConfigured()) {
 			redirect(303, '/admin/login');
 		}
 
@@ -45,32 +33,22 @@ export const actions: Actions = {
 		const invalid = (error: string) => fail(400, { username, email, error });
 
 		const setupToken = requiredSetupToken();
-		if (setupToken !== null && !safeEqual(raw(formData, 'setupToken').trim(), setupToken)) {
+		if (setupToken !== null && !constantTimeEqual(raw(formData, 'setupToken').trim(), setupToken)) {
 			return invalid('The setup token is incorrect.');
 		}
 
-		const profileError = validateProfile(username, email);
-		if (profileError) {
-			return invalid(profileError);
+		const inputError =
+			validateProfile(username, email) ??
+			validateNewPassword(password, raw(formData, 'confirmPassword'));
+		if (inputError) {
+			return invalid(inputError);
 		}
 
-		const passwordError = validateNewPassword(password, raw(formData, 'confirmPassword'));
-		if (passwordError) {
-			return invalid(passwordError);
-		}
-
-		const recoveryKey = generateRecoveryKey();
-		if (!(await createAdmin(username, email, password, recoveryKey))) {
-			// Another request finished setup first.
+		const recoveryKey = await createAdmin(username, email, password);
+		if (!recoveryKey) {
 			redirect(303, '/admin/login');
 		}
-		startSession(cookies);
 
-		return {
-			success: true,
-			recoveryKey,
-			username,
-			email
-		};
+		return { success: true, recoveryKey, username, email };
 	}
 };

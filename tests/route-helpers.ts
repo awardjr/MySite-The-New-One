@@ -1,4 +1,5 @@
 import { isActionFailure, isHttpError, isRedirect } from '@sveltejs/kit';
+import { setActiveEvent } from './request-event';
 
 type FieldValue = string | File | string[];
 
@@ -10,7 +11,6 @@ export function formData(fields: Record<string, FieldValue> = {}): FormData {
 	return data;
 }
 
-/** An in-memory stand-in for SvelteKit's `cookies`, remembering the options each cookie was set with. */
 export function fakeCookies(initial: Record<string, string> = {}) {
 	const values = new Map(Object.entries(initial));
 	const options = new Map<string, Record<string, unknown>>();
@@ -30,7 +30,6 @@ export function fakeCookies(initial: Record<string, string> = {}) {
 
 let addressCounter = 0;
 
-/** The attempt limiters live in module state, so each test takes its own client address. */
 export function uniqueAddress(): string {
 	addressCounter += 1;
 	return `10.0.${Math.floor(addressCounter / 256)}.${addressCounter % 256}`;
@@ -46,26 +45,35 @@ interface EventOptions {
 	method?: string;
 }
 
+export function cookieHeader(cookies: ReturnType<typeof fakeCookies>): string {
+	return [...cookies.values]
+		.map(([name, value]) => `${name}=${encodeURIComponent(value)}`)
+		.join('; ');
+}
+
 function requestEvent(options: EventOptions) {
 	const url = options.url ?? 'https://example.test/';
 	const method = options.method ?? 'POST';
 	const address = options.address ?? uniqueAddress();
-	return {
-		request: new Request(url, method === 'POST' ? { method, body: formData(options.fields) } : {}),
+	const cookies = options.cookies ?? fakeCookies();
+	const headers = { cookie: cookieHeader(cookies) };
+	const event = {
+		request: new Request(
+			url,
+			method === 'POST' ? { method, headers, body: formData(options.fields) } : { headers }
+		),
 		url: new URL(url),
-		cookies: options.cookies ?? fakeCookies(),
+		cookies,
 		getClientAddress: () => address,
 		params: options.params ?? {},
 		locals: options.locals ?? {}
 	};
+	setActiveEvent(event);
+	return event;
 }
 
 type RouteData = Record<string, unknown>;
 
-/**
- * How a handler ended. `data` is what it returned, or undefined for a redirect or thrown error;
- * routes are typed loosely by SvelteKit, so a test names the shape it expects through `T`.
- */
 export interface Outcome<T = RouteData> {
 	kind: 'ok' | 'failure' | 'redirect' | 'error';
 	status?: number;
@@ -73,7 +81,6 @@ export interface Outcome<T = RouteData> {
 	data: T;
 }
 
-/** Runs a handler and reports how it ended, including SvelteKit's thrown redirects and errors. */
 export async function outcome<T = RouteData>(run: () => unknown): Promise<Outcome<T>> {
 	const noData = undefined as T;
 	try {
@@ -92,7 +99,6 @@ export async function outcome<T = RouteData>(run: () => unknown): Promise<Outcom
 
 type Handler = (event: never) => unknown;
 
-/** Submits a form action. */
 export function submit<T = RouteData>(
 	action: Handler,
 	options: EventOptions = {}
@@ -100,7 +106,6 @@ export function submit<T = RouteData>(
 	return outcome<T>(() => action(requestEvent(options) as never));
 }
 
-/** Runs a page `load` function, as a plain page view unless `method` says otherwise. */
 export function loadPage<T = RouteData>(
 	load: Handler,
 	options: EventOptions = {}
